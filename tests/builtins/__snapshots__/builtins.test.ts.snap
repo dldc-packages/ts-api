@@ -1,0 +1,81 @@
+export const snapshot = {};
+
+snapshot[`Snapshot structure 1`] = `
+{
+  builtins: [
+    {
+      getSchema: [Function: getSchema],
+      key: "builtin.Date",
+      kind: "builtin",
+      name: "Date",
+    },
+    {
+      getSchema: [Function: getSchema],
+      key: "builtin.MyBuiltin",
+      kind: "builtin",
+      name: "MyBuiltin",
+    },
+  ],
+  key: "root",
+  kind: "root",
+  mode: "graph",
+  types: [
+    {
+      key: "root.Graph",
+      kind: "interface",
+      name: "Graph",
+      parameters: [],
+      properties: [
+        {
+          name: "now",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [],
+              key: "root.Graph.now.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.now",
+            kind: "function",
+            returns: {
+              key: "root.Graph.now.returns",
+              kind: "ref",
+              params: [],
+              ref: "MyBuiltin",
+            },
+          },
+        },
+        {
+          name: "doStuff",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [
+                {
+                  name: "date",
+                  optional: false,
+                  structure: {
+                    key: "root.Graph.doStuff.arguments.date",
+                    kind: "ref",
+                    params: [],
+                    ref: "MyBuiltin",
+                  },
+                },
+              ],
+              key: "root.Graph.doStuff.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.doStuff",
+            kind: "function",
+            returns: {
+              key: "root.Graph.doStuff.returns",
+              kind: "primitive",
+              type: "string",
+            },
+          },
+        },
+      ],
+    },
+  ],
+}
+`;

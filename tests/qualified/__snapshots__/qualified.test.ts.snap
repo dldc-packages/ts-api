@@ -1,0 +1,91 @@
+export const snapshot = {};
+
+snapshot[`Qualified builtin snapshot structure 1`] = `
+{
+  builtins: [
+    {
+      getSchema: [Function: getSchema],
+      key: "builtin.Date",
+      kind: "builtin",
+      name: "Date",
+    },
+    {
+      getSchema: [Function: getSchema],
+      key: "builtin.Temporal.PlainDate",
+      kind: "builtin",
+      name: "Temporal.PlainDate",
+    },
+  ],
+  key: "root",
+  kind: "root",
+  mode: "graph",
+  types: [
+    {
+      key: "root.Graph",
+      kind: "interface",
+      name: "Graph",
+      parameters: [],
+      properties: [
+        {
+          name: "birthday",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [],
+              key: "root.Graph.birthday.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.birthday",
+            kind: "function",
+            returns: {
+              key: "root.Graph.birthday.returns",
+              kind: "ref",
+              params: [],
+              ref: "Temporal.PlainDate",
+            },
+          },
+        },
+        {
+          name: "daysBetween",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [
+                {
+                  name: "from",
+                  optional: false,
+                  structure: {
+                    key: "root.Graph.daysBetween.arguments.from",
+                    kind: "ref",
+                    params: [],
+                    ref: "Temporal.PlainDate",
+                  },
+                },
+                {
+                  name: "to",
+                  optional: false,
+                  structure: {
+                    key: "root.Graph.daysBetween.arguments.to",
+                    kind: "ref",
+                    params: [],
+                    ref: "Temporal.PlainDate",
+                  },
+                },
+              ],
+              key: "root.Graph.daysBetween.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.daysBetween",
+            kind: "function",
+            returns: {
+              key: "root.Graph.daysBetween.returns",
+              kind: "primitive",
+              type: "number",
+            },
+          },
+        },
+      ],
+    },
+  ],
+}
+`;
