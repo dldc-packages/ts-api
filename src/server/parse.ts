@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import type {
   FunctionTypeNode,
   InterfaceDeclaration,
@@ -12,7 +13,6 @@ import {
   NullLiteral,
   NumericLiteral,
   Project,
-  ResolutionHosts,
   StringLiteral,
   SyntaxKind,
 } from "@ts-morph/ts-morph";
@@ -41,12 +41,13 @@ export function parse<Types extends TTypesBase>(
   builtins: TGraphBaseAny = DEFAULT_BUILTINS_GRAPH,
 ): TGraphOf<Types> {
   const project = new Project({
-    resolutionHost: ResolutionHosts.deno,
+    useInMemoryFileSystem: true,
   });
 
-  project.addSourceFilesAtPaths(schemaPath);
-
-  const file = project.getSourceFileOrThrow(schemaPath);
+  const file = project.createSourceFile(
+    schemaPath,
+    readFileSync(schemaPath, "utf-8"),
+  );
   const key = "root";
 
   const builtinsRootStructure = builtins[ROOT];
