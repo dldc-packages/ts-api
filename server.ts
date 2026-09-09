@@ -6,6 +6,7 @@ export * from "./src/server/constants.ts";
 export * from "./src/server/context.ts";
 export * from "./src/server/engine.ts";
 export * from "./src/server/erreur.ts";
+export * from "./src/server/extract.ts";
 export * from "./src/server/graph.ts";
 export * from "./src/server/parse.ts";
 export * from "./src/server/resolver.ts";

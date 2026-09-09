@@ -1,0 +1,726 @@
+export const snapshot = {};
+
+snapshot[`extractApi: snapshot basic 1`] = `
+{
+  entry: "Graph",
+  root: {
+    children: [
+      {
+        arguments: [],
+        kind: "endpoint",
+        name: "group",
+        path: [
+          "Graph",
+          "group",
+        ],
+        returns: {
+          kind: "ref",
+          name: "Group",
+          params: [],
+        },
+      },
+      {
+        arguments: [],
+        kind: "endpoint",
+        name: "user",
+        path: [
+          "Graph",
+          "user",
+        ],
+        returns: {
+          kind: "ref",
+          name: "User",
+          params: [],
+        },
+      },
+      {
+        arguments: [],
+        kind: "endpoint",
+        name: "randomItem",
+        path: [
+          "Graph",
+          "randomItem",
+        ],
+        returns: {
+          kind: "union",
+          types: [
+            {
+              kind: "ref",
+              name: "User",
+              params: [],
+            },
+            {
+              kind: "ref",
+              name: "Group",
+              params: [],
+            },
+          ],
+        },
+      },
+    ],
+    kind: "namespace",
+    name: "Graph",
+    path: [
+      "Graph",
+    ],
+  },
+  types: [
+    {
+      kind: "alias",
+      name: "Role",
+      parameters: [],
+      type: {
+        kind: "union",
+        types: [
+          {
+            kind: "literal",
+            value: "admin",
+          },
+          {
+            kind: "literal",
+            value: "user",
+          },
+        ],
+      },
+    },
+    {
+      kind: "interface",
+      name: "User",
+      parameters: [],
+      properties: [
+        {
+          name: "name",
+          optional: false,
+          type: {
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          name: "age",
+          optional: false,
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "primitive",
+              type: "number",
+            },
+          },
+        },
+        {
+          name: "group",
+          optional: false,
+          type: {
+            kind: "ref",
+            name: "Group",
+            params: [],
+          },
+        },
+        {
+          name: "maybeGroup",
+          optional: false,
+          type: {
+            kind: "nullable",
+            type: {
+              kind: "ref",
+              name: "Group",
+              params: [],
+            },
+          },
+        },
+      ],
+    },
+    {
+      kind: "interface",
+      name: "Group",
+      parameters: [],
+      properties: [
+        {
+          name: "name",
+          optional: false,
+          type: {
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          name: "users",
+          optional: false,
+          type: {
+            items: {
+              kind: "ref",
+              name: "User",
+              params: [],
+            },
+            kind: "array",
+          },
+        },
+      ],
+    },
+    {
+      kind: "interface",
+      name: "Graph",
+      parameters: [],
+      properties: [
+        {
+          name: "group",
+          optional: false,
+          type: {
+            arguments: [],
+            kind: "function",
+            returns: {
+              kind: "ref",
+              name: "Group",
+              params: [],
+            },
+          },
+        },
+        {
+          name: "user",
+          optional: false,
+          type: {
+            arguments: [],
+            kind: "function",
+            returns: {
+              kind: "ref",
+              name: "User",
+              params: [],
+            },
+          },
+        },
+        {
+          name: "randomItem",
+          optional: false,
+          type: {
+            arguments: [],
+            kind: "function",
+            returns: {
+              kind: "union",
+              types: [
+                {
+                  kind: "ref",
+                  name: "User",
+                  params: [],
+                },
+                {
+                  kind: "ref",
+                  name: "Group",
+                  params: [],
+                },
+              ],
+            },
+          },
+        },
+      ],
+    },
+  ],
+}
+`;
+
+snapshot[`extractApi: snapshot todolist 1`] = `
+{
+  entry: "Graph",
+  root: {
+    children: [
+      {
+        arguments: [],
+        kind: "endpoint",
+        name: "auth",
+        path: [
+          "Graph",
+          "auth",
+        ],
+        returns: {
+          kind: "nullable",
+          type: {
+            kind: "object",
+            properties: [
+              {
+                name: "user",
+                optional: false,
+                type: {
+                  kind: "ref",
+                  name: "User",
+                  params: [],
+                },
+              },
+            ],
+          },
+        },
+      },
+      {
+        children: [
+          {
+            arguments: [
+              {
+                name: "id",
+                optional: false,
+                type: {
+                  kind: "primitive",
+                  type: "string",
+                },
+              },
+            ],
+            kind: "endpoint",
+            name: "byId",
+            path: [
+              "Graph",
+              "users",
+              "byId",
+            ],
+            returns: {
+              kind: "ref",
+              name: "User",
+              params: [],
+            },
+          },
+        ],
+        kind: "namespace",
+        name: "users",
+        path: [
+          "Graph",
+          "users",
+        ],
+      },
+      {
+        children: [
+          {
+            arguments: [
+              {
+                name: "pagination",
+                optional: true,
+                type: {
+                  kind: "ref",
+                  name: "PaginationParams",
+                  params: [],
+                },
+              },
+            ],
+            kind: "endpoint",
+            name: "all",
+            path: [
+              "Graph",
+              "apps",
+              "all",
+            ],
+            returns: {
+              items: {
+                kind: "ref",
+                name: "App",
+                params: [],
+              },
+              kind: "array",
+            },
+          },
+          {
+            arguments: [
+              {
+                name: "id",
+                optional: false,
+                type: {
+                  kind: "primitive",
+                  type: "string",
+                },
+              },
+            ],
+            kind: "endpoint",
+            name: "byId",
+            path: [
+              "Graph",
+              "apps",
+              "byId",
+            ],
+            returns: {
+              kind: "ref",
+              name: "App",
+              params: [],
+            },
+          },
+        ],
+        kind: "namespace",
+        name: "apps",
+        path: [
+          "Graph",
+          "apps",
+        ],
+      },
+      {
+        arguments: [],
+        kind: "endpoint",
+        name: "flip",
+        path: [
+          "Graph",
+          "flip",
+        ],
+        returns: {
+          kind: "union",
+          types: [
+            {
+              kind: "ref",
+              name: "CoinHeads",
+              params: [],
+            },
+            {
+              kind: "ref",
+              name: "CoinTails",
+              params: [],
+            },
+          ],
+        },
+      },
+      {
+        arguments: [],
+        kind: "endpoint",
+        name: "config",
+        path: [
+          "Graph",
+          "config",
+        ],
+        returns: {
+          kind: "ref",
+          name: "Config",
+          params: [],
+        },
+      },
+    ],
+    kind: "namespace",
+    name: "Graph",
+    path: [
+      "Graph",
+    ],
+  },
+  types: [
+    {
+      kind: "interface",
+      name: "PaginationParams",
+      parameters: [],
+      properties: [
+        {
+          name: "page",
+          optional: true,
+          type: {
+            kind: "primitive",
+            type: "number",
+          },
+        },
+        {
+          name: "limit",
+          optional: true,
+          type: {
+            kind: "primitive",
+            type: "number",
+          },
+        },
+      ],
+    },
+    {
+      kind: "interface",
+      name: "User",
+      parameters: [],
+      properties: [
+        {
+          name: "userName",
+          optional: false,
+          type: {
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          name: "app",
+          optional: false,
+          type: {
+            kind: "ref",
+            name: "App",
+            params: [],
+          },
+        },
+      ],
+    },
+    {
+      kind: "interface",
+      name: "App",
+      parameters: [],
+      properties: [
+        {
+          name: "appName",
+          optional: false,
+          type: {
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          name: "todos",
+          optional: false,
+          type: {
+            items: {
+              kind: "ref",
+              name: "Todo",
+              params: [],
+            },
+            kind: "array",
+          },
+        },
+      ],
+    },
+    {
+      kind: "interface",
+      name: "Todo",
+      parameters: [],
+      properties: [
+        {
+          name: "todoName",
+          optional: false,
+          type: {
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          name: "done",
+          optional: false,
+          type: {
+            kind: "primitive",
+            type: "boolean",
+          },
+        },
+      ],
+    },
+    {
+      kind: "interface",
+      name: "CoinHeads",
+      parameters: [],
+      properties: [
+        {
+          name: "foo",
+          optional: false,
+          type: {
+            kind: "primitive",
+            type: "string",
+          },
+        },
+      ],
+    },
+    {
+      kind: "interface",
+      name: "CoinTails",
+      parameters: [],
+      properties: [
+        {
+          name: "bar",
+          optional: false,
+          type: {
+            kind: "primitive",
+            type: "string",
+          },
+        },
+      ],
+    },
+    {
+      kind: "interface",
+      name: "Config",
+      parameters: [],
+      properties: [
+        {
+          name: "env",
+          optional: false,
+          type: {
+            kind: "object",
+            properties: [
+              {
+                name: "version",
+                optional: false,
+                type: {
+                  kind: "primitive",
+                  type: "string",
+                },
+              },
+              {
+                name: "num",
+                optional: false,
+                type: {
+                  kind: "primitive",
+                  type: "number",
+                },
+              },
+              {
+                name: "str",
+                optional: false,
+                type: {
+                  kind: "primitive",
+                  type: "string",
+                },
+              },
+              {
+                name: "bool",
+                optional: false,
+                type: {
+                  kind: "primitive",
+                  type: "boolean",
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+    {
+      kind: "interface",
+      name: "Graph",
+      parameters: [],
+      properties: [
+        {
+          name: "auth",
+          optional: false,
+          type: {
+            arguments: [],
+            kind: "function",
+            returns: {
+              kind: "nullable",
+              type: {
+                kind: "object",
+                properties: [
+                  {
+                    name: "user",
+                    optional: false,
+                    type: {
+                      kind: "ref",
+                      name: "User",
+                      params: [],
+                    },
+                  },
+                ],
+              },
+            },
+          },
+        },
+        {
+          name: "users",
+          optional: false,
+          type: {
+            kind: "object",
+            properties: [
+              {
+                name: "byId",
+                optional: false,
+                type: {
+                  arguments: [
+                    {
+                      name: "id",
+                      optional: false,
+                      type: {
+                        kind: "primitive",
+                        type: "string",
+                      },
+                    },
+                  ],
+                  kind: "function",
+                  returns: {
+                    kind: "ref",
+                    name: "User",
+                    params: [],
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          name: "apps",
+          optional: false,
+          type: {
+            kind: "object",
+            properties: [
+              {
+                name: "all",
+                optional: false,
+                type: {
+                  arguments: [
+                    {
+                      name: "pagination",
+                      optional: true,
+                      type: {
+                        kind: "ref",
+                        name: "PaginationParams",
+                        params: [],
+                      },
+                    },
+                  ],
+                  kind: "function",
+                  returns: {
+                    items: {
+                      kind: "ref",
+                      name: "App",
+                      params: [],
+                    },
+                    kind: "array",
+                  },
+                },
+              },
+              {
+                name: "byId",
+                optional: false,
+                type: {
+                  arguments: [
+                    {
+                      name: "id",
+                      optional: false,
+                      type: {
+                        kind: "primitive",
+                        type: "string",
+                      },
+                    },
+                  ],
+                  kind: "function",
+                  returns: {
+                    kind: "ref",
+                    name: "App",
+                    params: [],
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          name: "flip",
+          optional: false,
+          type: {
+            arguments: [],
+            kind: "function",
+            returns: {
+              kind: "union",
+              types: [
+                {
+                  kind: "ref",
+                  name: "CoinHeads",
+                  params: [],
+                },
+                {
+                  kind: "ref",
+                  name: "CoinTails",
+                  params: [],
+                },
+              ],
+            },
+          },
+        },
+        {
+          name: "config",
+          optional: false,
+          type: {
+            arguments: [],
+            kind: "function",
+            returns: {
+              kind: "ref",
+              name: "Config",
+              params: [],
+            },
+          },
+        },
+      ],
+    },
+  ],
+}
+`;

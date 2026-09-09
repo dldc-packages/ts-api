@@ -673,6 +673,90 @@ Helper to define a builtin type.
 builtin<Date>({ getSchema: () => v.date() });
 ```
 
+#### `getStructure(graph)`
+
+Extracts the raw parsed structure from a graph returned by `parse`. This gives
+full access to the internal parse tree — all top-level interfaces, type aliases,
+their properties, and registered builtins. Use this when you need low-level
+access that `extractApi` does not provide.
+
+```ts
+import { getStructure, parse } from "@dldc/ts-api/server";
+
+const graph = parse<AllTypes>(resolve("./api/graph.ts"));
+const structure = getStructure(graph);
+
+// List all declared types
+console.log(structure.types.map((t) => t.name));
+// ["User", "Graph", ...]
+
+// Inspect builtins
+console.log(structure.builtins.map((b) => b.name));
+// ["Date"]
+```
+
+Returns a `TRootStructure` with:
+
+- `types` — array of `TTopLevelStructure` (interfaces and type aliases)
+- `builtins` — array of `TBuiltinStructure`
+- `mode` — `"graph"` for a parsed schema, `"builtins"` for a builtins graph
+
+#### `extractApi(graph, entry)`
+
+Extracts a serializable API tree from a parsed graph. Walks the graph from the
+given entry interface and returns a clean tree of namespaces and endpoints, plus
+a flat list of all type declarations. The result is fully JSON-serializable (no
+symbols, no circular references) — suitable for documentation generation,
+introspection, or any tooling that needs to understand the API structure.
+
+```ts
+import { extractApi, parse } from "@dldc/ts-api/server";
+import type { ApiNode } from "@dldc/ts-api/server";
+
+const graph = parse<AllTypes>(resolve("./api/graph.ts"));
+const api = extractApi(graph, "Graph");
+
+// Walk all endpoints
+function visit(node: ApiNode) {
+  if (node.kind === "endpoint") {
+    console.log(node.path.join("."), node.arguments, node.returns);
+  } else {
+    node.children.forEach(visit);
+  }
+}
+visit(api.root);
+// Graph.version [] { kind: "primitive", type: "string" }
+// Graph.users.list [] { kind: "array", items: { kind: "ref", name: "User", ... } }
+// Graph.users.byId [{ name: "id", ... }] { kind: "ref", name: "User", ... }
+```
+
+Returns an `ApiTree` with:
+
+- `entry` — the name of the root interface (the `entry` argument)
+- `root` — an `ApiNamespace` containing nested `ApiNamespace` and `ApiEndpoint`
+  nodes
+- `types` — array of `ApiTypeDeclaration` (all interfaces and type aliases from
+  the schema)
+
+Each `ApiEndpoint` has:
+
+- `path` — e.g. `["Graph", "users", "byId"]`
+- `arguments` — array of `{ name, type, optional }`
+- `returns` — an `ApiType`
+
+Each `ApiTypeDeclaration` has:
+
+- `name`, `kind` (`"interface"` or `"alias"`), `parameters` (generic type
+  params)
+- `properties` (for interfaces) — array of `{ name, type, optional }`
+- `type` (for aliases) — an `ApiType`
+
+`ApiType` is a discriminated union covering all supported type constructs:
+`primitive`, `literal`, `array`, `nullable`, `union`, `object`, `ref`,
+`builtin`, and `function`. Refs are preserved as `{ kind: "ref", name, params }`
+so that generic types like `Paginated<TodoItem>` stay cross-referenceable.
+Builtins (e.g. `Date`) are resolved to `{ kind: "builtin", name }`.
+
 #### Errors
 
 ts-api uses `@dldc/erreur` for error handling. Errors are categorized:
