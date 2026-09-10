@@ -38,7 +38,7 @@ Deno.test("Fail if output is not a date", async () => {
     graph,
     entry: "Graph",
     resolvers: [
-      fn(graph.Graph.sub.now, () => 42),
+      fn(graph.Graph.sub.now, () => 42 as any),
     ],
   });
 

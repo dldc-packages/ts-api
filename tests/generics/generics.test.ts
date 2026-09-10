@@ -92,7 +92,7 @@ Deno.test("Fails if a property is missing", async () => {
         graph.Graph.todos,
         () => ({
           data: [],
-        }),
+        } as any),
       ),
     ],
   });

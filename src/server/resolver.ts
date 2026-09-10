@@ -21,7 +21,7 @@ export function fn<G extends TGraphBaseAny>(
   resolver: (
     ctx: ApiContext,
     args: G[typeof TYPES]["input"],
-  ) => unknown | Promise<unknown>,
+  ) => G[typeof TYPES]["output"] | Promise<G[typeof TYPES]["output"]>,
 ): TResolver {
   return {
     kind: "resolver",

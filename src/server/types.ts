@@ -1,6 +1,7 @@
 import type { ApiContext } from "./context.ts";
 import type { Primitive } from "../utils/types.ts";
 import type { TBuiltinConfig, TBuiltinTypesConfig } from "./builtins.ts";
+import type { TYPES } from "./constants.ts";
 import type { TGraphBase } from "./graph.ts";
 import type { TStructure } from "./structure.types.ts";
 
@@ -20,6 +21,7 @@ export type TGraphOf<T> = T extends Primitive ? TGraphBase<unknown>
 export interface TGraphFunction<
   Fn extends (...args: any) => any,
 > extends TGraphBase<Parameters<Fn>> {
+  [TYPES]: { input: Parameters<Fn>; output: ReturnType<Fn> };
   return: TGraphOf<NonNullable<ReturnType<Fn>>>;
 }
 

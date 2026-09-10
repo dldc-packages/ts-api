@@ -57,7 +57,7 @@ Deno.test("Fail if output is not a string", async () => {
     graph,
     entry: "Graph",
     resolvers: [
-      fn(graph.Graph.now, () => 42),
+      fn(graph.Graph.now, () => 42 as any),
     ],
   });
 
@@ -78,7 +78,7 @@ Deno.test("validateOutput: false skips return value validation", async () => {
     entry: "Graph",
     validateOutput: false,
     resolvers: [
-      fn(graph.Graph.now, () => 42),
+      fn(graph.Graph.now, () => 42 as any),
     ],
   });
 

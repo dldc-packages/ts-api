@@ -41,7 +41,7 @@ Deno.test("Resolve enum", async () => {
     graph,
     entry: "Graph",
     resolvers: [
-      fn(graph.Graph.role, () => "admin"),
+      fn(graph.Graph.role, () => "admin" as const),
     ],
   });
 
@@ -56,7 +56,7 @@ Deno.test("Fail with invalid value", async () => {
     graph,
     entry: "Graph",
     resolvers: [
-      fn(graph.Graph.role, () => "yolo"),
+      fn(graph.Graph.role, () => "yolo" as any),
     ],
   });
 

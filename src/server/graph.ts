@@ -11,7 +11,7 @@ export type TGraphGet = (
 ) => TGraphBaseAny;
 
 export interface TGraphBase<Input> {
-  [TYPES]: { input: Input };
+  [TYPES]: { input: Input; output: unknown };
   [ROOT]: TRootStructure;
   [STRUCTURE]: TAllStructure;
   // This is a list of all leaf structures in the path.

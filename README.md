@@ -725,7 +725,17 @@ fn(graph.Graph.users.byId, (_ctx, [id]) => {
 });
 ```
 
-The resolver returns the value (or a promise of it).
+The resolver returns the value (or a promise of it). The return type is checked
+against the graph node's expected output at compile time.
+
+> **Note on literals:** because the expected output flows through a generic
+> type, TypeScript widens string/number literals. When a function returns a
+> union of literals (enums, literal types), annotate the returned literal with
+> `as const` or the expected type to keep it valid:
+
+```ts
+fn(graph.Graph.role, () => "admin" as const);
+```
 
 #### `resolver(path, ...middlewares)`
 

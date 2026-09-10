@@ -106,7 +106,7 @@ Deno.test("Resolve numeric literal", async () => {
     graph,
     entry: "Graph",
     resolvers: [
-      fn(graph.Graph.numericLiterals, () => 42),
+      fn(graph.Graph.numericLiterals, () => 42 as const),
     ],
   });
 
@@ -121,7 +121,7 @@ Deno.test("Fail with invalid numeric literal", async () => {
     graph,
     entry: "Graph",
     resolvers: [
-      fn(graph.Graph.numericLiterals, () => 99),
+      fn(graph.Graph.numericLiterals, () => 99 as any),
     ],
   });
 
@@ -141,7 +141,7 @@ Deno.test("Resolve string with escape sequences", async () => {
     graph,
     entry: "Graph",
     resolvers: [
-      fn(graph.Graph.stringWithEscapes, () => "hello\nworld"),
+      fn(graph.Graph.stringWithEscapes, () => "hello\nworld" as const),
     ],
   });
 
@@ -171,7 +171,7 @@ Deno.test("Resolve mixed literal (number)", async () => {
     graph,
     entry: "Graph",
     resolvers: [
-      fn(graph.Graph.mixedLiterals, () => 200),
+      fn(graph.Graph.mixedLiterals, () => 200 as const),
     ],
   });
 
