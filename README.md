@@ -267,6 +267,14 @@ send them to the server.
 - `graph` — the result of `parse`
 - `entry` — the name of the root interface (e.g. `"Graph"`)
 - `resolvers` — an array of resolvers
+- `validateOutput` (optional, default `true`) — whether to validate the returned
+  value of endpoints against their schema. Set to `false` to skip this
+  validation and return the resolver's value as-is.
+
+It returns an engine exposing:
+
+- `run({ path, args })` — executes the query and returns the validated result
+- `graph` — the graph it was created from
 
 When `engine.run({ path, args })` is called:
 
@@ -275,8 +283,9 @@ When `engine.run({ path, args })` is called:
    node.
 3. It validates `args` against the function's argument types (via valibot).
 4. It runs the composed middleware chain (resolvers).
-5. It validates the return value against the function's return type.
-6. It returns the validated value.
+5. It validates the return value against the function's return type (unless
+   `validateOutput: false`).
+6. It returns the value.
 
 ## Resolvers
 
@@ -515,7 +524,7 @@ const builtins = createBuiltins({
   "Temporal.PlainDate": PlainDateBuiltin,
 });
 
-const graph = parse<AllTypes>(resolve("./api/graph.ts"), builtins);
+const graph = parse<AllTypes>(resolve("./api/graph.ts"), { builtins });
 ```
 
 Then use the type directly in your graph:
@@ -527,6 +536,85 @@ export interface Graph {
   eventsOn: (date: Temporal.PlainDate) => string[];
 }
 ```
+
+### Missing builtins
+
+If a type referenced in the graph file is neither declared in the file nor
+registered as a builtin, `parse` **fails fast** by default. This catches typos,
+forgotten imports, or undeclared global types before any query runs:
+
+```ts
+// api/graph.ts
+import type { PlainDate } from "./types.ts"; // never registered as a builtin
+
+export interface Graph {
+  birthday: () => PlainDate; // → parse throws
+}
+```
+
+```ts
+parse<AllTypes>(resolve("./api/graph.ts"));
+// Error: Missing builtin type: PlainDate. Register them with createBuiltins()
+// or set missingBuiltinAction to 'warn' or 'ignore'.
+```
+
+You can opt out with the `missingBuiltinAction` option, which accepts either a
+single action or an object with separate actions for inputs and outputs:
+
+- `"throw"` (default) — throw at `parse` time.
+- `"warn"` — auto-register the missing type as a builtin (with an `unknown`
+  schema) and log a warning to the console.
+- `"ignore"` — auto-register the missing type as a builtin (with an `unknown`
+  schema) without logging.
+
+```ts
+const graph = parse<AllTypes>(
+  resolve("./api/graph.ts"),
+  { missingBuiltinAction: "warn" }, // auto-register + warn
+);
+```
+
+To apply different rules for types used as function arguments vs return values,
+pass an object `{ input, output }`:
+
+```ts
+const graph = parse<AllTypes>(
+  resolve("./api/graph.ts"),
+  {
+    missingBuiltinAction: {
+      input: "throw", // fail on unknown types received from clients
+      output: "warn", // but auto-register unknown return types
+    },
+  },
+);
+```
+
+- A missing type used only as an **input** (function argument) uses the `input`
+  action.
+- A missing type used only as an **output** (function return value) uses the
+  `output` action.
+- A missing type used on **both** sides uses the stricter of the two (`throw` >
+  `warn` > `ignore`).
+
+Auto-registered builtins are treated as opaque leaf values validated against an
+`unknown` schema (anything passes). They are added to the graph's root
+structure, so you can inspect them via `getStructure`:
+
+```ts
+import { getStructure } from "@dldc/ts-api/server";
+
+console.log(getStructure(graph).builtins.map((b) => b.name));
+// ["Date", "PlainDate"]
+```
+
+> **Security warning:** Auto-registering a type used as an **input** (function
+> argument) means its values will be validated against an `unknown` schema,
+> which accepts **anything**. Incoming arguments of that type will not be
+> checked at all, so arbitrary/unexpected data can reach your resolvers. Only
+> opt into `missingBuiltinAction: "warn"` / `"ignore"` for inputs when you are
+> certain it is safe, and prefer declaring a real builtin (with a proper valibot
+> schema) or keeping `"throw"` for client-supplied inputs. This risk does not
+> apply to outputs (return values), which are produced by your own resolvers.
 
 ## Supported types
 
@@ -582,17 +670,24 @@ const { path, args } = queryToObject(q.Graph.users.byId("1"));
 
 ### Server (`@dldc/ts-api/server`)
 
-#### `parse<Types>(schemaPath, builtins?)`
+#### `parse<Types>(schemaPath, options?)`
 
-Parses a TypeScript file into a graph object.
+Parses a TypeScript file into a graph object. Fails fast by default if the
+schema references a type that is neither declared nor registered as a builtin.
 
 ```ts
 const graph = parse<AllTypes>(resolve("./api/graph.ts"));
 ```
 
 - `schemaPath`: path to your `.ts` schema file.
-- `builtins` (optional): a builtins graph from `createBuiltins`. Defaults to
-  `DEFAULT_BUILTINS_GRAPH` (includes `Date`).
+- `options` (optional): an object with:
+  - `builtins` — a builtins graph from `createBuiltins`. Defaults to
+    `DEFAULT_BUILTINS_GRAPH` (includes `Date`).
+  - `missingBuiltinAction` — a single `"throw"` (default), `"warn"`, or
+    `"ignore"`, or an object `{ input, output }` to use different actions for
+    function arguments vs return values. Controls how types referenced in the
+    schema but neither declared nor registered as builtins are handled. See
+    [Missing builtins](#missing-builtins).
 
 #### `createEngine(options)`
 
@@ -606,8 +701,18 @@ const engine = createEngine({
 });
 ```
 
-Returns `{ graph, run }` where `run({ path, args })` executes the query and
-returns the validated result.
+Options:
+
+- `graph` — the graph returned by `parse`.
+- `entry` — the name of the root interface (e.g. `"Graph"`).
+- `resolvers` — an array of resolvers.
+- `validateOutput` (optional, default `true`) — when `false`, skips the schema
+  validation of endpoint return values and returns them as-is.
+
+Returns `{ graph, run }` where:
+
+- `graph` — the graph the engine was created from.
+- `run({ path, args })` — executes the query and returns the validated result.
 
 #### `fn(path, resolver)`
 

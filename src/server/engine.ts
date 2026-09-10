@@ -11,28 +11,64 @@ import type { TGraphBaseAny } from "./graph.ts";
 import type { TResolver } from "./resolver.ts";
 import { createSchemaContext, getStructureSchema } from "./schema.ts";
 import type { TMiddleware } from "./types.ts";
+import type { TQueryRequest } from "../client/query.types.ts";
 
 export type TExtendsContext = (
   ctx: ApiContext,
 ) => ApiContext | Promise<ApiContext>;
 
+/**
+ * An engine used to run queries against a parsed graph.
+ *
+ * Created by {@link createEngine}. Calling `run` validates the query's entry
+ * point, arguments and return value, and dispatches to the attached resolvers.
+ */
 export interface TEngine {
+  /** The graph the engine was created from. */
   graph: TGraphBaseAny;
-  run: (query: unknown, extendsCtx?: TExtendsContext) => Promise<unknown>;
+  /**
+   * Executes a query against the engine.
+   *
+   * @param query A `{ path, args }` object (as produced by the client's
+   *   `queryToObject`).
+   * @param extendsCtx An optional function that can extend the context before
+   *   resolvers run (e.g. to inject request-scoped data).
+   * @returns The validated return value of the targeted endpoint.
+   */
+  run: (query: TQueryRequest, extendsCtx?: TExtendsContext) => Promise<unknown>;
 }
 
+/** Options for {@link createEngine}. */
 export interface TEngineOptions {
+  /** The graph returned by `parse`. */
   graph: TGraphBaseAny;
+  /** The resolvers to attach to graph nodes. */
   resolvers: TResolver[];
+  /** The name of the root interface in the graph (e.g. `"Graph"`). */
   entry: string;
+  /**
+   * Whether to validate the returned value of endpoints against their schema.
+   *
+   * Defaults to `true`. Set to `false` to skip the schema validation of
+   * resolver return values (the value is returned as-is). This can improve
+   * performance when the return type is already trusted.
+   */
+  validateOutput?: boolean;
 }
 
+/**
+ * Create an engine used to run queries against a parsed graph.
+ *
+ * @param options See {@link TEngineOptions}.
+ * @returns A {@link TEngine} exposing `run` (to execute queries) and the
+ *   `graph` it was created from.
+ */
 export function createEngine(
-  { graph, resolvers, entry }: TEngineOptions,
+  { graph, resolvers, entry, validateOutput = true }: TEngineOptions,
 ): TEngine {
   const rootStructure = graph[ROOT];
-  const resolverMap = buildResolverMap(resolvers);
   const schemaContext = createSchemaContext(rootStructure);
+  const resolverMap = buildResolverMap(resolvers);
 
   return {
     graph,
@@ -40,14 +76,13 @@ export function createEngine(
   };
 
   async function run(
-    query: unknown,
+    query: TQueryRequest,
     extendsCtx?: TExtendsContext,
   ): Promise<unknown> {
     if (typeof query !== "object" || query === null) {
       throw new Error("Query must be an object with path and args");
     }
-    const q = query as { path: unknown; args: unknown };
-    const { path, args } = q;
+    const { path, args } = query;
 
     if (!Array.isArray(path) || path.length === 0) {
       throw new Error("Query path must be a non-empty array");
@@ -113,6 +148,10 @@ export function createEngine(
     const ctx = ApiContext.create(graph, validatedArgs);
     const extendedCtx = extendsCtx ? await extendsCtx(ctx) : ctx;
     const result = await mid(extendedCtx, () => Promise.resolve(undefined));
+
+    if (validateOutput === false) {
+      return result;
+    }
 
     const returnGraph = current[GET]("return");
     const returnSchema = getStructureSchema(schemaContext, returnGraph);

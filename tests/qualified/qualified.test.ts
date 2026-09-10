@@ -27,7 +27,7 @@ const builtins = createBuiltins({
 
 const graph = parse<AllTypes>(
   resolve("./tests/qualified/graph.ts"),
-  builtins,
+  { builtins },
 );
 
 Deno.test("Qualified builtin snapshot structure", async (test) => {

@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import * as v from "@valibot/valibot";
 import type {
   FunctionTypeNode,
   InterfaceDeclaration,
@@ -31,14 +32,66 @@ import type {
   TStructureUnion,
   TTopLevelStructure,
 } from "./structure.types.ts";
+import type { TBuiltinStructure } from "./structure.types.ts";
 import type { TGraphOf } from "./types.ts";
 
 /**
+ * What to do when the schema references a type that is neither declared in the
+ * schema file nor registered as a builtin.
+ *
+ * - `"throw"` (default): fail at parse time.
+ * - `"warn"`: auto-register the type as a builtin (with an `unknown` schema)
+ *   and log a warning.
+ * - `"ignore"`: auto-register the type as a builtin (with an `unknown` schema)
+ *   without logging.
+ */
+export type TMissingBuiltinAction = "ignore" | "throw" | "warn";
+
+/**
+ * Configuration for how to handle types referenced in the schema that are
+ * neither declared in the file nor registered as a builtin.
+ *
+ * Either a single action applied to every missing type, or an object allowing a
+ * different action for types used as function inputs (`input`) vs types used as
+ * function outputs / return values (`output`). When a type is used on both
+ * sides, the stricter of the two actions wins (`throw` > `warn` > `ignore`).
+ */
+export type TMissingBuiltinActionConfig =
+  | TMissingBuiltinAction
+  | { input: TMissingBuiltinAction; output: TMissingBuiltinAction };
+
+/** Options for {@link parse}. */
+export interface TParseOptions {
+  /**
+   * The builtins graph from `createBuiltins`. Defaults to
+   * `DEFAULT_BUILTINS_GRAPH` (includes `Date`).
+   */
+  builtins?: TGraphBaseAny;
+  /**
+   * What to do when the schema references a type that is neither declared in
+   * the schema file nor registered as a builtin.
+   *
+   * - `"throw"` (default): fail at parse time.
+   * - `"warn"`: auto-register the type as a builtin and log a warning.
+   * - `"ignore"`: auto-register the type as a builtin without logging.
+   *
+   * May also be `{ input, output }` to use different actions for types used as
+   * function arguments (`input`) vs function return values (`output`). A type
+   * used on both sides uses the stricter of the two.
+   */
+  missingBuiltinAction?: TMissingBuiltinActionConfig;
+}
+
+/**
  * Pass the path to the schema file as well as the the types to be used in the schema.
+ *
+ * Fails fast by default: it throws if the schema references a type that is
+ * neither declared in the file nor registered as a builtin (see
+ * {@link TMissingBuiltinAction}).
  */
 export function parse<Types extends TTypesBase>(
   schemaPath: string,
-  builtins: TGraphBaseAny = DEFAULT_BUILTINS_GRAPH,
+  options: TParseOptions = {},
 ): TGraphOf<Types> {
   const project = new Project({
     useInMemoryFileSystem: true,
@@ -50,6 +103,7 @@ export function parse<Types extends TTypesBase>(
   );
   const key = "root";
 
+  const builtins = options.builtins ?? DEFAULT_BUILTINS_GRAPH;
   const builtinsRootStructure = builtins[ROOT];
   if (builtinsRootStructure.mode !== "builtins") {
     throw new Error("Builtins must be in builtins mode");
@@ -59,7 +113,9 @@ export function parse<Types extends TTypesBase>(
     kind: "root",
     key,
     types: [],
-    builtins: builtinsRootStructure.builtins,
+    // Copy the array so auto-registering missing builtins never mutates the
+    // shared builtins graph passed in (e.g. DEFAULT_BUILTINS_GRAPH).
+    builtins: [...builtinsRootStructure.builtins],
     mode: "graph",
   };
 
@@ -86,6 +142,10 @@ export function parse<Types extends TTypesBase>(
   }
 
   validateNoFunctionsInReturns(rootStructure);
+  handleMissingBuiltins(
+    rootStructure,
+    options.missingBuiltinAction ?? "throw",
+  );
 
   return graph(rootStructure) as TGraphOf<Types>;
 }
@@ -520,4 +580,180 @@ function parseInterfaceDeclaration(
     return param.getName();
   });
   return { kind: "interface", key, name, properties, parameters };
+}
+
+function handleMissingBuiltins(
+  rootStructure: TRootStructure,
+  config: TMissingBuiltinActionConfig,
+): void {
+  const missing = collectMissingRefs(rootStructure);
+  if (missing.size === 0) {
+    return;
+  }
+
+  const toThrow: string[] = [];
+  for (const [name, usage] of missing) {
+    const action = resolveAction(config, usage);
+    if (action === "throw") {
+      toThrow.push(name);
+      continue;
+    }
+    if (action === "warn") {
+      console.warn(
+        `[ts-api] Type "${name}" is not declared in the schema nor registered as a builtin. ` +
+          "Automatically registering it as a builtin with an unknown schema.",
+      );
+    }
+    rootStructure.builtins.push(createAutoBuiltin(name));
+  }
+
+  if (toThrow.length > 0) {
+    throw new Error(
+      `Missing builtin type${toThrow.length > 1 ? "s" : ""}: ${
+        toThrow.join(", ")
+      }. ` +
+        "Register them with createBuiltins() or set missingBuiltinAction to 'warn' or 'ignore'.",
+    );
+  }
+}
+
+function createAutoBuiltin(name: string): TBuiltinStructure {
+  return {
+    kind: "builtin",
+    key: `builtin.${name}`,
+    name,
+    getSchema: () => v.unknown(),
+  };
+}
+
+type TMissingRefUsage = { input: boolean; output: boolean };
+type TMissingRefContext = "input" | "output" | "neutral";
+
+const MISSING_BUILTIN_SEVERITY: Record<TMissingBuiltinAction, number> = {
+  ignore: 0,
+  warn: 1,
+  throw: 2,
+};
+
+function resolveAction(
+  config: TMissingBuiltinActionConfig,
+  usage: TMissingRefUsage,
+): TMissingBuiltinAction {
+  if (typeof config === "string") {
+    return config;
+  }
+  if (usage.input && usage.output) {
+    // Used on both sides: take the stricter of the two.
+    return MISSING_BUILTIN_SEVERITY[config.input] >=
+        MISSING_BUILTIN_SEVERITY[config.output]
+      ? config.input
+      : config.output;
+  }
+  if (usage.input) {
+    return config.input;
+  }
+  // Used only as output, or in a neutral position (e.g. a non-endpoint data
+  // field): fall back to the output action.
+  return config.output;
+}
+
+function collectMissingRefs(
+  rootStructure: TRootStructure,
+): Map<string, TMissingRefUsage> {
+  const missing = new Map<string, TMissingRefUsage>();
+  for (const type of rootStructure.types) {
+    walkForMissingRefs(
+      rootStructure,
+      type,
+      new Set(type.parameters),
+      "neutral",
+      missing,
+    );
+  }
+  return missing;
+}
+
+function walkForMissingRefs(
+  rootStructure: TRootStructure,
+  structure: TStructure,
+  locals: Set<string>,
+  context: TMissingRefContext,
+  missing: Map<string, TMissingRefUsage>,
+): void {
+  switch (structure.kind) {
+    case "ref":
+      if (
+        !locals.has(structure.ref) &&
+        !rootStructure.types.some((t) => t.name === structure.ref) &&
+        !rootStructure.builtins.some((b) => b.name === structure.ref)
+      ) {
+        const usage = missing.get(structure.ref) ??
+          { input: false, output: false };
+        if (context === "input") {
+          usage.input = true;
+        }
+        if (context === "output") {
+          usage.output = true;
+        }
+        missing.set(structure.ref, usage);
+      }
+      structure.params.forEach((p) =>
+        walkForMissingRefs(rootStructure, p, locals, context, missing)
+      );
+      break;
+    case "interface":
+    case "object":
+      structure.properties.forEach((p) =>
+        walkForMissingRefs(rootStructure, p.structure, locals, context, missing)
+      );
+      break;
+    case "alias":
+      walkForMissingRefs(
+        rootStructure,
+        structure.type,
+        locals,
+        context,
+        missing,
+      );
+      break;
+    case "array":
+      walkForMissingRefs(
+        rootStructure,
+        structure.items,
+        locals,
+        context,
+        missing,
+      );
+      break;
+    case "nullable":
+      walkForMissingRefs(
+        rootStructure,
+        structure.type,
+        locals,
+        context,
+        missing,
+      );
+      break;
+    case "union":
+      structure.types.forEach((t) =>
+        walkForMissingRefs(rootStructure, t, locals, context, missing)
+      );
+      break;
+    case "function":
+      structure.arguments.arguments.forEach((a) =>
+        walkForMissingRefs(rootStructure, a.structure, locals, "input", missing)
+      );
+      walkForMissingRefs(
+        rootStructure,
+        structure.returns,
+        locals,
+        "output",
+        missing,
+      );
+      break;
+    case "primitive":
+    case "literal":
+    case "builtin":
+      break;
+  }
 }

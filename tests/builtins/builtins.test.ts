@@ -28,7 +28,7 @@ const builtins = createBuiltins({
 
 const graph = parse<AllTypes>(
   resolve("./tests/builtins/graph.ts"),
-  builtins,
+  { builtins },
 );
 
 Deno.test("Snapshot structure", async (test) => {
@@ -70,6 +70,23 @@ Deno.test("Fail if output is not a string", async () => {
     (err as Error).message,
     "Invalid resolved value for root.Graph.now (expected: valid value, received: 42)",
   );
+});
+
+Deno.test("validateOutput: false skips return value validation", async () => {
+  const engine = createEngine({
+    graph,
+    entry: "Graph",
+    validateOutput: false,
+    resolvers: [
+      fn(graph.Graph.now, () => 42),
+    ],
+  });
+
+  const q = client.Graph.now();
+  const { path, args } = queryToObject(q);
+  const result = await engine.run({ path, args });
+  // The invalid (non-string) value is returned as-is, no validation error.
+  assertEquals(result, 42);
 });
 
 Deno.test("MyBuiltin input", async (t) => {
