@@ -1,7 +1,8 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
-import { query, queryToObject } from "../../client.ts";
-import { createEngine, fn, parse } from "../../server.ts";
+import { query, queryToObject } from "../../src/client/mod.ts";
+import { createEngine, fn, parse } from "../../src/server/mod.ts";
+import { loadSchema } from "../utils/loadSchema.ts";
 import type { Graph, ListParams, Paginated, TodoItem } from "./graph.ts";
 
 export interface AllTypes {
@@ -14,7 +15,7 @@ export interface AllTypes {
 const client = query<AllTypes>();
 
 const graph = parse<AllTypes>(
-  resolve("./tests/generics/graph.ts"),
+  loadSchema(resolve("./tests/generics/graph.ts")),
 );
 
 Deno.test("Fails if no resolver", async () => {

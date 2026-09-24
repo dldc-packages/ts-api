@@ -1,6 +1,7 @@
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
-import { parse, REF } from "../../server.ts";
+import { loadSchema } from "../utils/loadSchema.ts";
+import { parse, REF } from "../../src/server/mod.ts";
 import { GET, PATH } from "../../src/server/constants.ts";
 import type { BaseFn, Graph, Paginated, TodoItem } from "./graph.ts";
 
@@ -12,7 +13,7 @@ export interface AllTypes {
 }
 
 const graph = parse<AllTypes>(
-  resolve("./tests/generics/graph.ts"),
+  loadSchema(resolve("./tests/generics/graph.ts")),
 );
 
 Deno.test("Simple Generic", () => {

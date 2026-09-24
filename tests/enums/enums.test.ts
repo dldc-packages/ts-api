@@ -1,7 +1,8 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
-import { query, queryToObject } from "../../client.ts";
-import { createEngine, fn, parse } from "../../server.ts";
+import { query, queryToObject } from "../../src/client/mod.ts";
+import { createEngine, fn, parse } from "../../src/server/mod.ts";
+import { loadSchema } from "../utils/loadSchema.ts";
 import { ROOT } from "../../src/server/constants.ts";
 import type { Graph, UserRole } from "./graph.ts";
 
@@ -11,7 +12,7 @@ interface AllTypes {
 }
 
 const graph = parse<AllTypes>(
-  resolve("./tests/enums/graph.ts"),
+  loadSchema(resolve("./tests/enums/graph.ts")),
 );
 
 const client = query<AllTypes>();

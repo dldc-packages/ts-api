@@ -1,13 +1,14 @@
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
-import { query, queryToObject } from "../client.ts";
-import { createEngine, fn, parse, resolver } from "../server.ts";
+import { query, queryToObject } from "../src/client/mod.ts";
+import { createEngine, fn, parse, resolver } from "../src/server/mod.ts";
+import { loadSchema } from "./utils/loadSchema.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
 
 const client = query<TodoListTypes>();
 
 const graph = parse<TodoListTypes>(
-  resolve("./tests/schemas/todolist.ts"),
+  loadSchema(resolve("./tests/schemas/todolist.ts")),
 );
 
 Deno.test("Resolver order on same node", async () => {

@@ -1,4 +1,4 @@
-import { fn } from "../../server.ts";
+import { fn } from "../../src/server/mod.ts";
 import * as db from "./database.ts";
 import { graph } from "./graph.ts";
 import type { Event, Member } from "./schema.ts";

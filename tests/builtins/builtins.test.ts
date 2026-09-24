@@ -2,7 +2,7 @@ import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { assertSnapshot } from "@std/testing/snapshot";
 import * as v from "@valibot/valibot";
-import { query, queryToObject } from "../../client.ts";
+import { query, queryToObject } from "../../src/client/mod.ts";
 import {
   builtin,
   createBuiltins,
@@ -11,7 +11,8 @@ import {
   fn,
   parse,
   ROOT,
-} from "../../server.ts";
+} from "../../src/server/mod.ts";
+import { loadSchema } from "../utils/loadSchema.ts";
 import type { MyBuiltin } from "./builtins.ts";
 import type { Graph } from "./graph.ts";
 
@@ -27,7 +28,7 @@ const builtins = createBuiltins({
 });
 
 const graph = parse<AllTypes>(
-  resolve("./tests/builtins/graph.ts"),
+  loadSchema(resolve("./tests/builtins/graph.ts")),
   { builtins },
 );
 

@@ -1,8 +1,9 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import type { IsExact } from "@std/testing/types";
-import { query, queryToObject, type TQuery } from "../../client.ts";
-import { createEngine, fn, parse } from "../../server.ts";
+import { query, queryToObject, type TQuery } from "../../src/client/mod.ts";
+import { createEngine, fn, parse } from "../../src/server/mod.ts";
+import { loadSchema } from "../utils/loadSchema.ts";
 import { assertType } from "../utils/assertType.ts";
 import type { Graph, Namespace } from "./graph.ts";
 
@@ -12,7 +13,7 @@ interface AllTypes {
 }
 
 const graph = parse<AllTypes>(
-  resolve("./tests/date/graph.ts"),
+  loadSchema(resolve("./tests/date/graph.ts")),
 );
 
 const client = query<AllTypes>();

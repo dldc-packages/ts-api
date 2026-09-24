@@ -1,7 +1,8 @@
 import { assertEquals, assertThrows } from "@std/assert";
 import { resolve } from "@std/path";
 import { assertSnapshot } from "@std/testing/snapshot";
-import { extractApi, getStructure, parse } from "../server.ts";
+import { extractApi, getStructure, parse } from "../src/server/mod.ts";
+import { loadSchema } from "./utils/loadSchema.ts";
 import type {
   ApiEndpoint,
   ApiNamespace,
@@ -10,9 +11,11 @@ import type {
 import type { BasicTypes } from "./schemas/basic.types.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
 
-const basicGraph = parse<BasicTypes>(resolve("./tests/schemas/basic.ts"));
+const basicGraph = parse<BasicTypes>(
+  loadSchema(resolve("./tests/schemas/basic.ts")),
+);
 const todolistGraph = parse<TodoListTypes>(
-  resolve("./tests/schemas/todolist.ts"),
+  loadSchema(resolve("./tests/schemas/todolist.ts")),
 );
 
 function findEndpoint(
@@ -356,7 +359,7 @@ Deno.test("extractApi: throws on unknown entry", () => {
 });
 
 Deno.test("extractApi: builtin types appear as builtin", () => {
-  const dateGraph = parse(resolve("./tests/date/graph.ts"));
+  const dateGraph = parse(loadSchema(resolve("./tests/date/graph.ts")));
   const api = extractApi(dateGraph, "Graph");
 
   const sub = findNamespace(api.root.children, "sub");

@@ -1,5 +1,5 @@
 import { assertType, type IsExact } from "@std/testing/types";
-import { query, type TQuery } from "../client.ts";
+import { query, type TQuery } from "../src/client/mod.ts";
 
 Deno.test("primitive return", () => {
   const client = query<{ foo: () => string }>();

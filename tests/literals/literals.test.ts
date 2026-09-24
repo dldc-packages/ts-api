@@ -1,12 +1,13 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
-import { query, queryToObject } from "../../client.ts";
-import { createEngine, fn, parse } from "../../server.ts";
+import { query, queryToObject } from "../../src/client/mod.ts";
+import { createEngine, fn, parse } from "../../src/server/mod.ts";
+import { loadSchema } from "../utils/loadSchema.ts";
 import { ROOT } from "../../src/server/constants.ts";
 import type { LiteralTypes } from "./literals.types.ts";
 
 const graph = parse<LiteralTypes>(
-  resolve("./tests/literals/graph.ts"),
+  loadSchema(resolve("./tests/literals/graph.ts")),
 );
 
 const client = query<LiteralTypes>();

@@ -1,13 +1,14 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
-import { query, queryToObject } from "../client.ts";
-import { createEngine, fn, parse } from "../server.ts";
+import { query, queryToObject } from "../src/client/mod.ts";
+import { createEngine, fn, parse } from "../src/server/mod.ts";
+import { loadSchema } from "./utils/loadSchema.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
 
 const client = query<TodoListTypes>();
 
 const graph = parse<TodoListTypes>(
-  resolve("./tests/schemas/todolist.ts"),
+  loadSchema(resolve("./tests/schemas/todolist.ts")),
 );
 
 const engine = createEngine({

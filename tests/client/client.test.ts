@@ -1,5 +1,5 @@
 import { assertEquals } from "@std/assert";
-import { query, queryToObject } from "../../client.ts";
+import { query, queryToObject } from "../../src/client/mod.ts";
 import type {
   App,
   CoinHeads,

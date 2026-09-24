@@ -1,7 +1,8 @@
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
-import { query, queryToObject } from "../../client.ts";
-import { createEngine, fn, parse } from "../../server.ts";
+import { query, queryToObject } from "../../src/client/mod.ts";
+import { createEngine, fn, parse } from "../../src/server/mod.ts";
+import { loadSchema } from "../utils/loadSchema.ts";
 import type {
   Graph,
   Namespace,
@@ -19,7 +20,7 @@ interface AllTypes {
 }
 
 const graph = parse<AllTypes>(
-  resolve("./tests/paginated/graph.ts"),
+  loadSchema(resolve("./tests/paginated/graph.ts")),
 );
 
 const client = query<AllTypes>();

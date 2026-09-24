@@ -1,6 +1,6 @@
 import { assertEquals, assertNotEquals, assertThrows } from "@std/assert";
 import { resolve } from "@std/path";
-import { query, queryToObject } from "../../client.ts";
+import { query, queryToObject } from "../../src/client/mod.ts";
 import {
   createEngine,
   extractApi,
@@ -9,7 +9,8 @@ import {
   parse,
   type TMissingBuiltinAction,
   type TMissingBuiltinActionConfig,
-} from "../../server.ts";
+} from "../../src/server/mod.ts";
+import { loadSchema } from "../utils/loadSchema.ts";
 import type { Graph } from "./graph.ts";
 import type { Graph2 } from "./graph2.ts";
 
@@ -28,14 +29,14 @@ function parseWith(
   action: TMissingBuiltinAction | TMissingBuiltinActionConfig = "throw",
 ) {
   return parse<AllTypes>(
-    resolve("./tests/undeclared-ref/graph.ts"),
+    loadSchema(resolve("./tests/undeclared-ref/graph.ts")),
     { missingBuiltinAction: action },
   );
 }
 
 function parseGraph2(config: TMissingBuiltinActionConfig) {
   return parse<AllTypes2>(
-    resolve("./tests/undeclared-ref/graph2.ts"),
+    loadSchema(resolve("./tests/undeclared-ref/graph2.ts")),
     { missingBuiltinAction: config },
   );
 }

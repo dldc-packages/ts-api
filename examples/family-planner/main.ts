@@ -1,4 +1,4 @@
-import { query, queryToObject, type TQuery } from "../../client.ts";
+import { query, queryToObject, type TQuery } from "../../src/client/mod.ts";
 import type { Graph } from "./schema.ts";
 import { server } from "./server.ts";
 

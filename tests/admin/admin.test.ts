@@ -1,6 +1,6 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
-import { query, queryToObject, type TQuery } from "../../client.ts";
+import { query, queryToObject, type TQuery } from "../../src/client/mod.ts";
 import {
   createEngine,
   fn,
@@ -8,7 +8,8 @@ import {
   resolver,
   STRUCTURE,
   type TGraphBaseAny,
-} from "../../server.ts";
+} from "../../src/server/mod.ts";
+import { loadSchema } from "../utils/loadSchema.ts";
 import { GET, REF } from "../../src/server/constants.ts";
 import type { Admin, Graph } from "./graph.ts";
 
@@ -20,7 +21,7 @@ export interface AllTypes {
 const client = query<AllTypes>();
 
 const graph = parse<AllTypes>(
-  resolve("./tests/admin/graph.ts"),
+  loadSchema(resolve("./tests/admin/graph.ts")),
 );
 
 /**

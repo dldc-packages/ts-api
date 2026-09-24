@@ -36,6 +36,33 @@ deno add jsr:@dldc/ts-api
 > This package is built for Deno and the JSR registry. To run the examples or
 > tests, use Deno. For Deno-specific setup, see [deno.com](https://deno.com).
 
+## Permissions
+
+`parse` is pure: it takes the schema **source text** and does no file-system
+access, so it runs anywhere — including the browser and edge runtimes. The only
+permission it needs from the environment is for the parser it imports
+(`@lezer/lr`), which reads a single environment variable at load time:
+
+```sh
+deno run --allow-env=LOG server.ts
+```
+
+- `--allow-env=LOG` — `parse` imports a lightweight syntax parser that reads the
+  `LOG` environment variable at module load time (used for optional debug
+  logging). Scoping it to just `LOG` is sufficient; it never touches any other
+  environment variable.
+
+On the server, _you_ are responsible for loading the schema file (either by
+reading it yourself, or with `parseFromFile` from
+`@dldc/ts-api/server/filesystem`), so your app also needs read access to it:
+
+```sh
+deno run --allow-env=LOG --allow-read=path/to/schema.ts server.ts
+```
+
+The rest of the library — `query` on the client, `createEngine`/resolvers on the
+server — is pure and needs no permissions at all.
+
 ## Quick start
 
 ### 1. Define your API
@@ -68,10 +95,11 @@ export interface Graph {
 ```ts
 // server.ts
 import { resolve } from "@std/path";
-import { createEngine, fn, parse } from "@dldc/ts-api/server";
+import { parseFromFile } from "@dldc/ts-api/server/filesystem";
+import { createEngine, fn } from "@dldc/ts-api/server";
 import type { Graph } from "./api/schema.ts";
 
-const graph = parse<{ Graph: Graph }>(resolve("./api/schema.ts"));
+const graph = parseFromFile<{ Graph: Graph }>(resolve("./api/schema.ts"));
 
 export const engine = createEngine({
   graph,
@@ -295,7 +323,7 @@ Because you reference `graph.Admin` directly (instead of navigating from the
 [Type maps (advanced)](#type-maps-advanced):
 
 ```ts
-const graph = parse<{ Graph: Graph; Admin: Admin<any> }>(
+const graph = parseFromFile<{ Graph: Graph; Admin: Admin<any> }>(
   resolve("./api/schema.ts"),
 );
 ```
@@ -316,10 +344,10 @@ must list `Admin`:
 ```ts
 // server.ts
 import { resolve } from "@std/path";
-import { parse } from "@dldc/ts-api/server";
+import { parseFromFile } from "@dldc/ts-api/server/filesystem";
 import type { Admin, Graph } from "./api/schema.ts";
 
-const graph = parse<{ Graph: Graph; Admin: Admin<any> }>(
+const graph = parseFromFile<{ Graph: Graph; Admin: Admin<any> }>(
   resolve("./api/schema.ts"),
 );
 ```
@@ -528,10 +556,11 @@ async function handler(req: Request): Promise<Response> {
 
 ## Builtins
 
-ts-api parses your schema file (the entry `.ts` file) to build its schema. It
-only reads **that one file** — it does not resolve imports or global types. This
-means any type that isn't an `interface` or `type` declared directly in the
-schema file needs a **builtin** to tell ts-api how to validate it at runtime.
+ts-api parses the source of your schema (the entry `.ts` file) to build its
+schema. It only works with **that one file** — it does not resolve imports or
+global types. This means any type that isn't an `interface` or `type` declared
+directly in the schema file needs a **builtin** to tell ts-api how to validate
+it at runtime.
 
 There are two common scenarios:
 
@@ -601,7 +630,9 @@ const builtins = createBuiltins({
   "Temporal.PlainDate": PlainDateBuiltin,
 });
 
-const graph = parse<{ Graph: Graph }>(resolve("./api/schema.ts"), { builtins });
+const graph = parseFromFile<{ Graph: Graph }>(resolve("./api/schema.ts"), {
+  builtins,
+});
 ```
 
 Then use the type directly in your graph:
@@ -630,7 +661,7 @@ export interface Graph {
 ```
 
 ```ts
-parse<{ Graph: Graph }>(resolve("./api/schema.ts"));
+parseFromFile<{ Graph: Graph }>(resolve("./api/schema.ts"));
 // Error: Missing builtin type: PlainDate. Register them with createBuiltins()
 // or set missingBuiltinAction to 'warn' or 'ignore'.
 ```
@@ -645,7 +676,7 @@ single action or an object with separate actions for inputs and outputs:
   schema) without logging.
 
 ```ts
-const graph = parse<{ Graph: Graph }>(
+const graph = parseFromFile<{ Graph: Graph }>(
   resolve("./api/schema.ts"),
   { missingBuiltinAction: "warn" }, // auto-register + warn
 );
@@ -655,7 +686,7 @@ To apply different rules for types used as function arguments vs return values,
 pass an object `{ input, output }`:
 
 ```ts
-const graph = parse<{ Graph: Graph }>(
+const graph = parseFromFile<{ Graph: Graph }>(
   resolve("./api/schema.ts"),
   {
     missingBuiltinAction: {
@@ -747,16 +778,26 @@ const { path, args } = queryToObject(q.Graph.users.byId("1"));
 
 ### Server (`@dldc/ts-api/server`)
 
-#### `parse<Types>(schemaPath, options?)`
+#### `parse<Types>(source, options?)`
 
-Parses a TypeScript file into a graph object. Fails fast by default if the
-schema references a type that is neither declared nor registered as a builtin.
+Parses the **source text** of a TypeScript schema into a graph object. `parse`
+is pure — it does no file-system access, so it works anywhere: Deno, Node, the
+browser, or edge runtimes. Fails fast by default if the schema references a type
+that is neither declared nor registered as a builtin.
 
 ```ts
-const graph = parse<{ Graph: Graph }>(resolve("./api/schema.ts"));
+import { parse } from "@dldc/ts-api/server";
+
+// Browser/edge: fetch or import the schema source
+const graph = parse<{ Graph: Graph }>(await (await fetch(schemaUrl)).text());
+
+// Deno/Node: load the file yourself, then pass the source
+const graph = parse<{ Graph: Graph }>(
+  await Deno.readTextFile("./api/schema.ts"),
+);
 ```
 
-- `schemaPath`: path to your `.ts` schema file.
+- `source`: the TypeScript source of your schema (a string).
 - `options` (optional): an object with:
   - `builtins` — a builtins graph from `createBuiltins`. Defaults to
     `DEFAULT_BUILTINS_GRAPH` (includes `Date`).
@@ -765,6 +806,17 @@ const graph = parse<{ Graph: Graph }>(resolve("./api/schema.ts"));
     function arguments vs return values. Controls how types referenced in the
     schema but neither declared nor registered as builtins are handled. See
     [Missing builtins](#missing-builtins).
+
+On Deno/Node you can also use the filesystem convenience variant
+(`@dldc/ts-api/server/filesystem`, not browser-safe) to read the file for you:
+`parseFromFile(path, options?)` behaves like the old path-based `parse`, and
+`readSchemaFile(path)` returns the file contents as a string.
+
+```ts
+import { parseFromFile } from "@dldc/ts-api/server/filesystem";
+
+const graph = parseFromFile<{ Graph: Graph }>(resolve("./api/schema.ts"));
+```
 
 #### `createEngine(options)`
 
@@ -873,9 +925,10 @@ their properties, and registered builtins. Use this when you need low-level
 access that `extractApi` does not provide.
 
 ```ts
-import { getStructure, parse } from "@dldc/ts-api/server";
+import { getStructure } from "@dldc/ts-api/server";
+import { parseFromFile } from "@dldc/ts-api/server/filesystem";
 
-const graph = parse<{ Graph: Graph }>(resolve("./api/schema.ts"));
+const graph = parseFromFile<{ Graph: Graph }>(resolve("./api/schema.ts"));
 const structure = getStructure(graph);
 
 // List all declared types
@@ -902,10 +955,11 @@ symbols, no circular references) — suitable for documentation generation,
 introspection, or any tooling that needs to understand the API structure.
 
 ```ts
-import { extractApi, parse } from "@dldc/ts-api/server";
+import { extractApi } from "@dldc/ts-api/server";
+import { parseFromFile } from "@dldc/ts-api/server/filesystem";
 import type { ApiNode } from "@dldc/ts-api/server";
 
-const graph = parse<{ Graph: Graph }>(resolve("./api/schema.ts"));
+const graph = parseFromFile<{ Graph: Graph }>(resolve("./api/schema.ts"));
 const api = extractApi(graph, "Graph");
 
 // Walk all endpoints

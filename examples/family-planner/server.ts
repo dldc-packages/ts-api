@@ -1,5 +1,5 @@
-import type { TQueryRequest } from "../../client.ts";
-import { createEngine } from "../../server.ts";
+import type { TQueryRequest } from "../../src/client/mod.ts";
+import { createEngine } from "../../src/server/mod.ts";
 import { graph } from "./graph.ts";
 import { resolvers } from "./resolvers.ts";
 
