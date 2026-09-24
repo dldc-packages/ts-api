@@ -3,18 +3,18 @@
   "specifiers": {
     "jsr:@dldc/erreur@^7.1.1": "7.1.1",
     "jsr:@dldc/stack@7": "7.0.0",
-    "jsr:@std/assert@^1.0.11": "1.0.19",
-    "jsr:@std/assert@^1.0.17": "1.0.19",
-    "jsr:@std/fs@^1.0.22": "1.0.24",
+    "jsr:@std/assert@^1.0.19": "1.0.19",
+    "jsr:@std/async@^1.5.0": "1.5.0",
+    "jsr:@std/data-structures@^1.1.2": "1.1.2",
+    "jsr:@std/fs@^1.0.24": "1.0.24",
     "jsr:@std/fs@^1.0.4": "1.0.4",
     "jsr:@std/internal@^1.0.12": "1.0.14",
     "jsr:@std/internal@^1.0.14": "1.0.14",
     "jsr:@std/path@^1.0.6": "1.0.6",
-    "jsr:@std/path@^1.0.8": "1.1.6",
-    "jsr:@std/path@^1.1.4": "1.1.6",
     "jsr:@std/path@^1.1.5": "1.1.6",
-    "jsr:@std/testing@^1.0.9": "1.0.17",
-    "jsr:@valibot/valibot@^1.0.0-rc.3": "1.0.0-rc.3",
+    "jsr:@std/path@^1.1.6": "1.1.6",
+    "jsr:@std/testing@^1.0.20": "1.0.20",
+    "jsr:@valibot/valibot@^1.5.0": "1.5.0",
     "npm:@lezer/common@*": "1.5.2",
     "npm:@lezer/common@^1.5.2": "1.5.2",
     "npm:@lezer/javascript@^1.5.5": "1.5.5"
@@ -34,6 +34,12 @@
       "dependencies": [
         "jsr:@std/internal@^1.0.12"
       ]
+    },
+    "@std/async@1.5.0": {
+      "integrity": "4c1f22d287a17ad7d8643b1952bc5a4d21e5d8b68dc8c20d8268eecc69096e82"
+    },
+    "@std/data-structures@1.1.2": {
+      "integrity": "2471377c9e0051f9ec34e57d0ebd0ad133a5a889677446ec6ba9938e4e102918"
     },
     "@std/fs@1.0.4": {
       "integrity": "2907d32d8d1d9e540588fd5fe0ec21ee638134bd51df327ad4e443aaef07123c",
@@ -59,17 +65,19 @@
         "jsr:@std/internal@^1.0.14"
       ]
     },
-    "@std/testing@1.0.17": {
-      "integrity": "87bdc2700fa98249d48a17cd72413352d3d3680dcfbdb64947fd0982d6bbf681",
+    "@std/testing@1.0.20": {
+      "integrity": "21380ed438672762e4ec549cbf4fe41c5b68f5598773a30b64abe7375513e721",
       "dependencies": [
-        "jsr:@std/assert@^1.0.17",
-        "jsr:@std/fs@^1.0.22",
-        "jsr:@std/internal@^1.0.12",
-        "jsr:@std/path@^1.1.4"
+        "jsr:@std/assert",
+        "jsr:@std/async",
+        "jsr:@std/data-structures",
+        "jsr:@std/fs@^1.0.24",
+        "jsr:@std/internal@^1.0.14",
+        "jsr:@std/path@^1.1.6"
       ]
     },
-    "@valibot/valibot@1.0.0-rc.3": {
-      "integrity": "1855217144474d4b798b585368a2ebad331c984a704241b9eee8c57e79d0be10"
+    "@valibot/valibot@1.5.0": {
+      "integrity": "126dc8e2235f19a6c23f3c14a7cec7b1f0d1876babee2c77a3436d42c5429af3"
     }
   },
   "npm": {
@@ -101,10 +109,10 @@
     "dependencies": [
       "jsr:@dldc/erreur@^7.1.1",
       "jsr:@dldc/stack@7",
-      "jsr:@std/assert@^1.0.11",
-      "jsr:@std/path@^1.0.8",
-      "jsr:@std/testing@^1.0.9",
-      "jsr:@valibot/valibot@^1.0.0-rc.3",
+      "jsr:@std/assert@^1.0.19",
+      "jsr:@std/path@^1.1.6",
+      "jsr:@std/testing@^1.0.20",
+      "jsr:@valibot/valibot@^1.5.0",
       "npm:@lezer/common@^1.5.2",
       "npm:@lezer/javascript@^1.5.5"
     ]
