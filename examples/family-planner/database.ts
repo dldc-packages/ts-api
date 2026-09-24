@@ -1,4 +1,4 @@
-import type { ListEventsParams, Weekday } from "./types/graph.ts";
+import type { ListEventsParams, Weekday } from "./schema.ts";
 
 export interface DbMember {
   id: string;

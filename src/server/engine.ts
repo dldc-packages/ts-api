@@ -98,32 +98,53 @@ export function createEngine(
     }
 
     const collected: TMiddleware[] = [];
+
+    // Fully resolve refs / aliases (e.g. `Admin<...>` instances) into a
+    // concrete structure, collecting middlewares registered on the resolved
+    // structures (like a generic `graph.Admin` guard) along the way.
+    const resolveNode = (node: TGraphBaseAny): TGraphBaseAny => {
+      let result = node;
+      for (let i = 0; i < 20; i++) {
+        const kind = result[STRUCTURE].kind;
+        if (kind !== "ref" && kind !== "alias") {
+          return result;
+        }
+        const resolved = result[GET](REF);
+        const resolvers = resolverMap.get(resolved[STRUCTURE].key);
+        if (resolvers) {
+          collected.push(...resolvers);
+        }
+        result = resolved;
+      }
+      throw new Error("Too many levels of ref/alias resolution");
+    };
+
     let current = graph[GET](entry);
+    let queriedNode = current;
     {
       const resolvers = resolverMap.get(current[STRUCTURE].key);
       if (resolvers) {
         collected.push(...resolvers);
       }
+      current = resolveNode(current);
     }
 
     for (let i = 1; i < path.length; i++) {
-      const struct = current[STRUCTURE];
-      if (struct.kind === "ref" || struct.kind === "alias") {
-        const resolved = current[GET](REF);
-        const resolvedStruct = resolved[STRUCTURE];
-        const resolvers = resolverMap.get(resolvedStruct.key);
-        if (resolvers) {
-          collected.push(...resolvers);
-        }
-        current = resolved;
-      }
-
       const prop = path[i];
       if (typeof prop !== "string") {
         throw new Error(`Query path element at index ${i} must be a string`);
       }
       current = current[GET](prop);
-      const resolvers = resolverMap.get(current[STRUCTURE].key);
+      // `queriedNode` keeps the raw node so error messages reference the
+      // user-facing path (e.g. `root.Graph.files.admin`) instead of an
+      // internal resolved structure key.
+      queriedNode = current;
+      const ownKey = current[STRUCTURE].key;
+      // Resolve before collecting so that middlewares registered on the
+      // resolved structure (e.g. `graph.Admin`) wrap middlewares registered
+      // on the queried node itself (e.g. the endpoint's `fn`).
+      current = resolveNode(current);
+      const resolvers = resolverMap.get(ownKey);
       if (resolvers) {
         collected.push(...resolvers);
       }
@@ -132,7 +153,9 @@ export function createEngine(
     const fnStructure = current[STRUCTURE];
     if (fnStructure.kind !== "function") {
       throw new Error(
-        `Query must target a function, got: ${fnStructure.kind} at ${fnStructure.key}`,
+        `Query must target a function, got: ${fnStructure.kind} at ${
+          queriedNode[STRUCTURE].key
+        }`,
       );
     }
 
@@ -140,7 +163,7 @@ export function createEngine(
     const argsSchema = getStructureSchema(schemaContext, argsGraph);
     const argsParse = v.safeParse(argsSchema, args);
     if (argsParse.success === false) {
-      throw createArgsValidationFailed(current, argsParse.issues);
+      throw createArgsValidationFailed(queriedNode, argsParse.issues);
     }
     const validatedArgs = argsParse.output;
 
@@ -157,7 +180,7 @@ export function createEngine(
     const returnSchema = getStructureSchema(schemaContext, returnGraph);
     const returnParse = v.safeParse(returnSchema, result);
     if (returnParse.success === false) {
-      throw createInvalidResolvedValue(current, result, "valid value");
+      throw createInvalidResolvedValue(queriedNode, result, "valid value");
     }
 
     return returnParse.output;

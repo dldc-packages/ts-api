@@ -44,7 +44,7 @@ Create a TypeScript file that describes your API. This file is the single source
 of truth — it is used by both the server and the client.
 
 ```ts
-// api/graph.ts
+// api/schema.ts
 
 export interface User {
   id: string;
@@ -63,34 +63,19 @@ export interface Graph {
 }
 ```
 
-### 2. Create the types map
-
-Create a file that maps all the types you want to use in the graph. This is what
-you pass to `parse` (server) and `query` (client) for type safety.
-
-```ts
-// api/types.ts
-import type { Graph, User } from "./graph.ts";
-
-export interface AllTypes {
-  Graph: Graph;
-  User: User;
-}
-```
-
-### 3. Set up the server
+### 2. Set up the server
 
 ```ts
 // server.ts
 import { resolve } from "@std/path";
 import { createEngine, fn, parse } from "@dldc/ts-api/server";
-import type { AllTypes } from "./api/types.ts";
+import type { Graph } from "./api/schema.ts";
 
-const graph = parse<AllTypes>(resolve("./api/graph.ts"));
+const graph = parse<{ Graph: Graph }>(resolve("./api/schema.ts"));
 
 export const engine = createEngine({
   graph,
-  entry: "Graph", // the root interface name in your graph file
+  entry: "Graph", // the root interface name in your schema file
   resolvers: [
     fn(graph.Graph.users.list, () => {
       return [
@@ -107,14 +92,14 @@ export const engine = createEngine({
 });
 ```
 
-### 4. Set up the client
+### 3. Set up the client
 
 ```ts
 // client.ts
 import { query, queryToObject, type TQuery } from "@dldc/ts-api/client";
-import type { AllTypes } from "./api/types.ts";
+import type { Graph } from "./api/schema.ts";
 
-const q = query<AllTypes>();
+const q = query<{ Graph: Graph }>();
 
 // A helper to send queries to the server
 async function executeQuery<R>(query: TQuery<R>): Promise<R> {
@@ -199,7 +184,7 @@ inferred from usage. For example, a `Paginated<T>` wrapper can be used both as a
 return type and as an argument type:
 
 ```ts
-// api/graph.ts
+// api/schema.ts
 
 export interface Paginated<T> {
   data: T[];
@@ -247,6 +232,98 @@ fn(graph.Graph.search, (_ctx, [params]) => {
 });
 ```
 
+### Generic wrapper middleware (e.g. admin-only endpoints)
+
+A generic type alias is resolved through all its usages in the graph. You can
+exploit this to attach a middleware to a **whole category** of endpoints at
+once, instead of repeating it on every node. This is useful for e.g.
+authorization ("admin-only" operations).
+
+Define a generic "marker" type and wrap the endpoints you want to protect:
+
+```ts
+// api/schema.ts
+
+export type Admin<T> = T;
+
+export interface Graph {
+  users: {
+    create: () => null;
+    // object form — a namespace of admin-only operations
+    admin: Admin<{ delete: () => null }>;
+  };
+  posts: {
+    create: () => null;
+    admin: Admin<{ delete: () => null }>;
+  };
+  files: {
+    // function form — a single admin-only endpoint
+    admin: Admin<() => null>;
+  };
+}
+```
+
+> **Note:** endpoint return types cannot be `void` — use `null` instead (see
+> [Supported types](#supported-types)).
+
+Then attach a single resolver to the generic type itself. It runs **before every
+endpoint wrapped in `Admin<...>`**, anywhere in the graph:
+
+```ts
+// server.ts
+resolver(
+  graph.Admin,
+  (ctx, next) => {
+    if (currentUser().role !== "admin") {
+      throw new Error("Forbidden: admin only");
+    }
+    // `next` requires the context — call `next(ctx)`, not `next()`
+    return next(ctx);
+  },
+);
+```
+
+The generic middleware wraps the endpoints' own resolvers, and namespace
+middlewares wrap them in turn:
+
+```
+namespace  →  graph.Admin guard  →  endpoint fn
+```
+
+Because you reference `graph.Admin` directly (instead of navigating from the
+`Graph` entry), `Admin` must be added to the type map — see
+[Type maps (advanced)](#type-maps-advanced):
+
+```ts
+const graph = parse<{ Graph: Graph; Admin: Admin<any> }>(
+  resolve("./api/schema.ts"),
+);
+```
+
+### Type maps (advanced)
+
+By default you pass the entry type to `parse` and `query` directly, as
+`{ Graph: Graph }` above. Everything reachable from the entry is typed
+structurally, so the resolvers and the client get full type safety from the
+entry alone — you never have to list every type of your schema.
+
+You only need a bigger type map when a resolver references a **top-level** type
+directly, outside of the `Graph` namespace. For example
+`resolver(graph.Admin, ...)` (see
+[Generic wrapper middleware](#generic-wrapper-middleware-eg-admin-only-endpoints))
+must list `Admin`:
+
+```ts
+// server.ts
+import { resolve } from "@std/path";
+import { parse } from "@dldc/ts-api/server";
+import type { Admin, Graph } from "./api/schema.ts";
+
+const graph = parse<{ Graph: Graph; Admin: Admin<any> }>(
+  resolve("./api/schema.ts"),
+);
+```
+
 ### The query format
 
 When you call a function on the client, it produces a `TQuery<R>` object
@@ -286,6 +363,8 @@ When `engine.run({ path, args })` is called:
 5. It validates the return value against the function's return type (unless
    `validateOutput: false`).
 6. It returns the value.
+
+
 
 ## Resolvers
 
@@ -408,7 +487,7 @@ request-scoped data like the authenticated user, request ID, etc.
 import { createEngine, createKey, parse } from "@dldc/ts-api/server";
 
 // 1. Define a key for the auth data
-const AuthKey = createKey<{ id: string; name: string } | null>("auth");
+const AuthKey = createKey<{ id: string; name: string }>("auth");
 
 const engine = createEngine({
   graph,
@@ -417,7 +496,6 @@ const engine = createEngine({
     // Guard: reject unauthenticated requests on the `users` namespace
     resolver(graph.Graph.users, (ctx, next) => {
       const user = ctx.getOrFail(AuthKey.Consumer);
-      if (!user) throw new Error("Unauthorized");
       return next(ctx);
     }),
     // Use the auth data in a resolver
@@ -452,14 +530,14 @@ async function handler(req: Request): Promise<Response> {
 
 ## Builtins
 
-ts-api parses your graph file (the entry `.ts` file) to build its schema. It
+ts-api parses your schema file (the entry `.ts` file) to build its schema. It
 only reads **that one file** — it does not resolve imports or global types. This
 means any type that isn't an `interface` or `type` declared directly in the
-graph file needs a **builtin** to tell ts-api how to validate it at runtime.
+schema file needs a **builtin** to tell ts-api how to validate it at runtime.
 
 There are two common scenarios:
 
-1. **Global types** like `Date` — ts-api sees `Date` in the graph file but can't
+1. **Global types** like `Date` — ts-api sees `Date` in the schema file but can't
    introspect its structure (it's a global, not an interface in the file).
 2. **Imported types** — if you `import type { PlainDate } from "./builtins.ts"`,
    ts-api won't follow the import. It just sees the name `PlainDate` and needs a
@@ -483,7 +561,7 @@ opaque to ts-api — it's treated as a leaf value, not introspected.
 by default — no extra setup needed:
 
 ```ts
-// api/graph.ts
+// api/schema.ts
 export interface Graph {
   now: () => Date;
   formatDate: (date: Date) => string;
@@ -518,19 +596,20 @@ the graph:
 // server.ts
 import { createBuiltins, DEFAULT_BUILTINS, parse } from "@dldc/ts-api/server";
 import { PlainDateBuiltin } from "./api/builtins.ts";
+import type { Graph } from "./api/schema.ts";
 
 const builtins = createBuiltins({
   ...DEFAULT_BUILTINS,
   "Temporal.PlainDate": PlainDateBuiltin,
 });
 
-const graph = parse<AllTypes>(resolve("./api/graph.ts"), { builtins });
+const graph = parse<{ Graph: Graph }>(resolve("./api/schema.ts"), { builtins });
 ```
 
 Then use the type directly in your graph:
 
 ```ts
-// api/graph.ts
+// api/schema.ts
 export interface Graph {
   birthday: () => Temporal.PlainDate;
   eventsOn: (date: Temporal.PlainDate) => string[];
@@ -539,13 +618,13 @@ export interface Graph {
 
 ### Missing builtins
 
-If a type referenced in the graph file is neither declared in the file nor
+If a type referenced in the schema file is neither declared in the file nor
 registered as a builtin, `parse` **fails fast** by default. This catches typos,
 forgotten imports, or undeclared global types before any query runs:
 
 ```ts
-// api/graph.ts
-import type { PlainDate } from "./types.ts"; // never registered as a builtin
+// api/schema.ts
+import type { PlainDate } from "./shared.ts"; // never registered as a builtin
 
 export interface Graph {
   birthday: () => PlainDate; // → parse throws
@@ -553,7 +632,7 @@ export interface Graph {
 ```
 
 ```ts
-parse<AllTypes>(resolve("./api/graph.ts"));
+parse<{ Graph: Graph }>(resolve("./api/schema.ts"));
 // Error: Missing builtin type: PlainDate. Register them with createBuiltins()
 // or set missingBuiltinAction to 'warn' or 'ignore'.
 ```
@@ -568,8 +647,8 @@ single action or an object with separate actions for inputs and outputs:
   schema) without logging.
 
 ```ts
-const graph = parse<AllTypes>(
-  resolve("./api/graph.ts"),
+const graph = parse<{ Graph: Graph }>(
+  resolve("./api/schema.ts"),
   { missingBuiltinAction: "warn" }, // auto-register + warn
 );
 ```
@@ -578,8 +657,8 @@ To apply different rules for types used as function arguments vs return values,
 pass an object `{ input, output }`:
 
 ```ts
-const graph = parse<AllTypes>(
-  resolve("./api/graph.ts"),
+const graph = parse<{ Graph: Graph }>(
+  resolve("./api/schema.ts"),
   {
     missingBuiltinAction: {
       input: "throw", // fail on unknown types received from clients
@@ -647,7 +726,7 @@ console.log(getStructure(graph).builtins.map((b) => b.name));
 Creates a type-safe proxy to build queries.
 
 ```ts
-const q = query<AllTypes>();
+const q = query<{ Graph: Graph }>();
 const userQuery = q.Graph.users.byId("1"); // TQuery<User>
 ```
 
@@ -676,7 +755,7 @@ Parses a TypeScript file into a graph object. Fails fast by default if the
 schema references a type that is neither declared nor registered as a builtin.
 
 ```ts
-const graph = parse<AllTypes>(resolve("./api/graph.ts"));
+const graph = parse<{ Graph: Graph }>(resolve("./api/schema.ts"));
 ```
 
 - `schemaPath`: path to your `.ts` schema file.
@@ -798,7 +877,7 @@ access that `extractApi` does not provide.
 ```ts
 import { getStructure, parse } from "@dldc/ts-api/server";
 
-const graph = parse<AllTypes>(resolve("./api/graph.ts"));
+const graph = parse<{ Graph: Graph }>(resolve("./api/schema.ts"));
 const structure = getStructure(graph);
 
 // List all declared types
@@ -828,7 +907,7 @@ introspection, or any tooling that needs to understand the API structure.
 import { extractApi, parse } from "@dldc/ts-api/server";
 import type { ApiNode } from "@dldc/ts-api/server";
 
-const graph = parse<AllTypes>(resolve("./api/graph.ts"));
+const graph = parse<{ Graph: Graph }>(resolve("./api/schema.ts"));
 const api = extractApi(graph, "Graph");
 
 // Walk all endpoints

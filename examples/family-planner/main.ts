@@ -1,11 +1,11 @@
 import { query, queryToObject, type TQuery } from "../../client.ts";
+import type { Graph } from "./schema.ts";
 import { server } from "./server.ts";
-import type { AllTypes } from "./types/graph.exposed.ts";
 
 /**
  * This our query builder
  */
-const q = query<AllTypes>();
+const q = query<{ Graph: Graph }>();
 
 /**
  * This is our client
