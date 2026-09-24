@@ -78,14 +78,15 @@ Deno.test("parse with 'ignore' auto-registers missing types as builtins", () => 
 
 Deno.test("extractApi resolves auto-registered builtins as builtin", () => {
   const api = extractApi(parseWith("ignore"), "Graph");
-  const graphDecl = api.types.find((t) => t.name === "Graph");
-  assertNotEquals(graphDecl, undefined);
-  if (!graphDecl || graphDecl.kind !== "interface" || !graphDecl.properties) {
-    throw new Error("Expected Graph interface declaration");
+  // The `get` endpoint returns the imported type, auto-registered as a builtin.
+  const get = api.root.children.find(
+    (c) => c.kind === "endpoint" && c.name === "get",
+  );
+  assertNotEquals(get, undefined);
+  if (get?.kind !== "endpoint") {
+    throw new Error("Expected `get` to be an endpoint");
   }
-  const value = graphDecl.properties.find((p) => p.name === "value");
-  assertNotEquals(value, undefined);
-  assertEquals(value!.type, { kind: "builtin", name: "ImportedType" });
+  assertEquals(get.returns, { kind: "builtin", name: "ImportedType" });
 });
 
 Deno.test("engine runs with an auto-registered builtin", async () => {
