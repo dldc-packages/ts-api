@@ -364,8 +364,6 @@ When `engine.run({ path, args })` is called:
    `validateOutput: false`).
 6. It returns the value.
 
-
-
 ## Resolvers
 
 Resolvers are functions attached to nodes in the graph. There are two kinds:
@@ -537,8 +535,8 @@ schema file needs a **builtin** to tell ts-api how to validate it at runtime.
 
 There are two common scenarios:
 
-1. **Global types** like `Date` — ts-api sees `Date` in the schema file but can't
-   introspect its structure (it's a global, not an interface in the file).
+1. **Global types** like `Date` — ts-api sees `Date` in the schema file but
+   can't introspect its structure (it's a global, not an interface in the file).
 2. **Imported types** — if you `import type { PlainDate } from "./builtins.ts"`,
    ts-api won't follow the import. It just sees the name `PlainDate` and needs a
    builtin to know how to validate it.
