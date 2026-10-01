@@ -1,17 +1,16 @@
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
-import { assertSnapshot } from "@std/testing/snapshot";
-import { parse, type TGraphBase } from "../src/server/mod.ts";
-import { loadSchema } from "./utils/loadSchema.ts";
 import { PATH, REF, ROOT } from "../src/server/constants.ts";
+import { parse, type TGraphBase } from "../src/server/mod.ts";
 import type { BasicTypes } from "./schemas/basic.types.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
+import { loadSchema } from "./utils/loadSchema.ts";
 
 Deno.test("todolist snapshot structure", async (test) => {
   const graph = parse<TodoListTypes>(
     loadSchema(resolve("./tests/schemas/todolist.ts")),
   );
-  await assertSnapshot(test, graph[ROOT]);
+  await test.assertSnapshot(graph[ROOT]);
 });
 
 const graph = parse<BasicTypes>(
@@ -19,7 +18,7 @@ const graph = parse<BasicTypes>(
 );
 
 Deno.test("snapshot structure", async (test) => {
-  await assertSnapshot(test, graph[ROOT]);
+  await test.assertSnapshot(graph[ROOT]);
 });
 
 Deno.test("g.User.age", () => {

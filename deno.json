@@ -1,6 +1,6 @@
 {
   "name": "@dldc/ts-api",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "exports": {
     "./client": "./src/client/mod.ts",
     "./server": "./src/server/mod.ts",
@@ -20,7 +20,7 @@
     "test:run": "deno test -A",
     "test:watch": "deno test -A --watch",
     "test:coverage": "deno test -A --coverage && deno coverage coverage --html",
-    "test:update-snapshots": "deno test -A -- --update",
+    "test:update-snapshots": "deno test -A --update-snapshots",
     "bump": "deno run -A jsr:@mys/bump@1",
     "deps:outdated": "deno outdated",
     "deps:update": "deno outdated --update --latest --interactive",

@@ -4,6 +4,7 @@ export interface TStructureObjectProperty {
   name: string;
   structure: TStructure;
   optional: boolean;
+  comment?: string;
 }
 
 export interface TStructureInterface {
@@ -12,6 +13,7 @@ export interface TStructureInterface {
   name: string;
   properties: TStructureObjectProperty[];
   parameters: string[];
+  comment?: string;
 }
 
 export interface TStructureAlias {
@@ -20,6 +22,7 @@ export interface TStructureAlias {
   name: string;
   parameters: string[];
   type: TStructure;
+  comment?: string;
 }
 
 export type TTopLevelStructure = TStructureInterface | TStructureAlias;
@@ -86,6 +89,7 @@ export interface TStructureArgumentItem {
   name: string;
   structure: TFunctionArgumentStructure;
   optional: boolean;
+  comment?: string;
 }
 
 export interface TStructureFunction {

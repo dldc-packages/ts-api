@@ -1,9 +1,9 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject } from "../../src/client/mod.ts";
+import { ROOT } from "../../src/server/constants.ts";
 import { createEngine, fn, parse } from "../../src/server/mod.ts";
 import { loadSchema } from "../utils/loadSchema.ts";
-import { ROOT } from "../../src/server/constants.ts";
 import type { LiteralTypes } from "./literals.types.ts";
 
 const graph = parse<LiteralTypes>(
@@ -18,6 +18,7 @@ Deno.test("String literals with escape sequences are parsed via getLiteralValue"
     "kind": "alias",
     "key": "root.StringWithEscapes",
     "name": "StringWithEscapes",
+    comment: undefined,
     "type": {
       "kind": "union",
       "key": "root.StringWithEscapes.type",
@@ -49,6 +50,7 @@ Deno.test("Numeric literals are supported", () => {
     "kind": "alias",
     "key": "root.NumericLiterals",
     "name": "NumericLiterals",
+    comment: undefined,
     "type": {
       "kind": "union",
       "key": "root.NumericLiterals.type",
@@ -68,6 +70,7 @@ Deno.test("Mixed literals (string, number, boolean, null) are supported", () => 
     "kind": "alias",
     "key": "root.MixedLiterals",
     "name": "MixedLiterals",
+    comment: undefined,
     "type": {
       "kind": "nullable",
       "key": "root.MixedLiterals.type",

@@ -1,9 +1,9 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject } from "../../src/client/mod.ts";
+import { ROOT } from "../../src/server/constants.ts";
 import { createEngine, fn, parse } from "../../src/server/mod.ts";
 import { loadSchema } from "../utils/loadSchema.ts";
-import { ROOT } from "../../src/server/constants.ts";
 import type { Graph, UserRole } from "./graph.ts";
 
 interface AllTypes {
@@ -24,6 +24,7 @@ Deno.test("Properly parse schema", () => {
     "kind": "alias",
     "key": "root.UserRole",
     "name": "UserRole",
+    comment: undefined,
     "type": {
       "kind": "union",
       "key": "root.UserRole.type",

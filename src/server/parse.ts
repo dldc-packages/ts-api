@@ -1,6 +1,7 @@
-import type { SyntaxNode } from "@lezer/common";
+import type { SyntaxNode, Tree } from "@lezer/common";
 import { parser } from "@lezer/javascript";
 import * as v from "@valibot/valibot";
+import { normalizeComment, type TCommentSource } from "../utils/comment.ts";
 import type { TTypesBase } from "../utils/types.ts";
 import { DEFAULT_BUILTINS_GRAPH } from "./builtins.ts";
 import { ROOT } from "./constants.ts";
@@ -28,7 +29,7 @@ import type { TGraphOf } from "./types.ts";
  * needs `--allow-env=LOG` (scoped to that single variable). This is the price
  * for a ~0.8MB dependency instead of the ~26MB TypeScript compiler.
  */
-const tsParser = parser.configure({ dialect: "ts" });
+const tsParser = parser.configure({ dialect: "ts", strict: true });
 
 /**
  * What to do when the schema references a type that is neither declared in the
@@ -94,6 +95,7 @@ export function parse<Types extends TTypesBase>(
   options: TParseOptions = {},
 ): TGraphOf<Types> {
   const tree = tsParser.parse(sourceText);
+  const commentsMap = buildCommentsMap(sourceText, tree);
   const key = "root";
 
   const builtins = options.builtins ?? DEFAULT_BUILTINS_GRAPH;
@@ -113,26 +115,26 @@ export function parse<Types extends TTypesBase>(
   };
 
   // find all statements in the file
-  const statements = children(tree.topNode);
+  const topNodes = children(tree.topNode);
   const importedNames = collectImportedNames(tree.topNode, sourceText);
 
-  for (const statement of statements) {
-    if (statement.type.name === "ImportDeclaration") {
+  for (const node of topNodes) {
+    if (node.type.name === "ImportDeclaration") {
       continue;
     }
-    if (statement.type.name === ";" || statement.type.name === "export") {
+    if (node.type.name === ";" || node.type.name === "export") {
       // Stray tokens at the top level (should not happen on valid input).
       continue;
     }
-    let structNode = statement;
-    if (statement.type.name === "ExportDeclaration") {
-      structNode = children(statement).find(
+    let structNode = node;
+    if (node.type.name === "ExportDeclaration") {
+      structNode = children(node).find(
         (c) =>
           c.type.name === "InterfaceDeclaration" ||
           c.type.name === "TypeAliasDeclaration",
-      ) ?? statement;
+      ) ?? node;
     }
-    const struct = parseNode(structNode, key, sourceText);
+    const struct = parseNode(commentsMap, structNode, key, sourceText);
     if (struct.kind !== "interface" && struct.kind !== "alias") {
       throw new Error(
         `Only interfaces and type aliases are supported at the root level, found: ${struct.kind}`,
@@ -580,39 +582,60 @@ const TS_KEYWORDS: Record<string, string | undefined> = {
 // ---------------------------------------------------------------------------
 
 function parseNode(
+  commentsMap: CommentsMap,
   node: SyntaxNode,
   parentKey: string,
   sourceText: string,
 ): TStructure {
   switch (node.type.name) {
     case "TypeAnnotation":
-      return parseNode(requiredType(node, "type"), parentKey, sourceText);
+      return parseNode(
+        commentsMap,
+        requiredType(node, "type"),
+        parentKey,
+        sourceText,
+      );
     case "ReadonlyType":
     case "ParenthesizedType":
       // Transparent wrappers: `readonly X` and `(X)` carry no semantic weight.
-      return parseNode(requiredType(node, "type"), parentKey, sourceText);
+      return parseNode(
+        commentsMap,
+        requiredType(node, "type"),
+        parentKey,
+        sourceText,
+      );
     case "TypeName":
       return parseTypeName(node, parentKey, sourceText);
     case "ParameterizedType":
-      return parseParameterizedType(node, parentKey, sourceText);
+      return parseParameterizedType(commentsMap, node, parentKey, sourceText);
     case "IndexedType":
       return parseIndexedType(node, parentKey, sourceText);
     case "ArrayType":
-      return parseArrayType(node, parentKey, sourceText);
+      return parseArrayType(commentsMap, node, parentKey, sourceText);
     case "UnionType":
-      return parseUnionType(node, parentKey, sourceText);
+      return parseUnionType(commentsMap, node, parentKey, sourceText);
     case "LiteralType":
       return parseLiteralType(node, parentKey, sourceText);
     case "NullType":
       return { kind: "literal", key: parentKey, type: null };
     case "ObjectType":
-      return parseObjectType(node, parentKey, sourceText);
+      return parseObjectType(commentsMap, node, parentKey, sourceText);
     case "FunctionSignature":
-      return parseFunctionSignature(node, parentKey, sourceText);
+      return parseFunctionSignature(commentsMap, node, parentKey, sourceText);
     case "InterfaceDeclaration":
-      return parseInterfaceDeclaration(node, parentKey, sourceText);
+      return parseInterfaceDeclaration(
+        commentsMap,
+        node,
+        parentKey,
+        sourceText,
+      );
     case "TypeAliasDeclaration":
-      return parseTypeAliasDeclaration(node, parentKey, sourceText);
+      return parseTypeAliasDeclaration(
+        commentsMap,
+        node,
+        parentKey,
+        sourceText,
+      );
     case "VoidType":
       throw new Error("Void expressions are not supported, use null instead");
     default:
@@ -643,6 +666,7 @@ function parseTypeName(
 }
 
 function parseParameterizedType(
+  commentsMap: CommentsMap,
   node: SyntaxNode,
   parentKey: string,
   sourceText: string,
@@ -667,7 +691,12 @@ function parseParameterizedType(
         c.type.name !== "<" && c.type.name !== ">" && c.type.name !== ","
       )
       .map((param, index) =>
-        parseNode(param, `${parentKey}.params.${index}`, sourceText)
+        parseNode(
+          commentsMap,
+          param,
+          `${parentKey}.params.${index}`,
+          sourceText,
+        )
       )
     : [];
   return { kind: "ref", key: parentKey, ref: refName, params };
@@ -692,6 +721,7 @@ function parseIndexedType(
 }
 
 function parseArrayType(
+  commentsMap: CommentsMap,
   node: SyntaxNode,
   parentKey: string,
   sourceText: string,
@@ -700,6 +730,7 @@ function parseArrayType(
     kind: "array",
     key: parentKey,
     items: parseNode(
+      commentsMap,
       requiredType(node, "element"),
       `${parentKey}.items`,
       sourceText,
@@ -708,6 +739,7 @@ function parseArrayType(
 }
 
 function parseUnionType(
+  commentsMap: CommentsMap,
   node: SyntaxNode,
   parentKey: string,
   sourceText: string,
@@ -722,11 +754,16 @@ function parseUnionType(
     return {
       kind: "nullable",
       key: parentKey,
-      type: parseNode(subTypes[0], `${parentKey}.type`, sourceText),
+      type: parseNode(
+        commentsMap,
+        subTypes[0],
+        `${parentKey}.type`,
+        sourceText,
+      ),
     };
   }
   const types: TStructure[] = subTypes.map((typeNode, i) =>
-    parseNode(typeNode, `${parentKey}.${i}`, sourceText)
+    parseNode(commentsMap, typeNode, `${parentKey}.${i}`, sourceText)
   );
   const union: TStructureUnion = { kind: "union", key: parentKey, types };
   return hasNull ? { kind: "nullable", key: parentKey, type: union } : union;
@@ -760,6 +797,7 @@ function parseLiteralType(
 }
 
 function parseObjectType(
+  commentsMap: CommentsMap,
   node: SyntaxNode,
   parentKey: string,
   sourceText: string,
@@ -767,7 +805,7 @@ function parseObjectType(
   return {
     kind: "object",
     key: parentKey,
-    properties: parseMembers(node, parentKey, sourceText, false),
+    properties: parseMembers(commentsMap, node, parentKey, sourceText, false),
   };
 }
 
@@ -783,6 +821,7 @@ function parseObjectType(
  *   unsupported constructs fail loudly instead of being misread.
  */
 function parseMembers(
+  commentsMap: CommentsMap,
   node: SyntaxNode,
   parentKey: string,
   sourceText: string,
@@ -792,7 +831,9 @@ function parseMembers(
   for (const member of children(node)) {
     const name = member.type.name;
     if (name === "PropertyType") {
-      properties.push(parsePropertyType(member, parentKey, sourceText));
+      properties.push(
+        parsePropertyType(commentsMap, member, parentKey, sourceText),
+      );
     } else if (name === "MethodType") {
       if (interfaceContext) {
         throw new Error(
@@ -815,6 +856,7 @@ function parseMembers(
 }
 
 function parsePropertyType(
+  commentsMap: CommentsMap,
   member: SyntaxNode,
   parentKey: string,
   sourceText: string,
@@ -841,12 +883,14 @@ function parsePropertyType(
   const propKey = `${parentKey}.${propName}`;
   return {
     name: propName,
-    structure: parseNode(valueNode, propKey, sourceText),
+    structure: parseNode(commentsMap, valueNode, propKey, sourceText),
     optional: hasChild(member, "Optional"),
+    comment: commentsMap.get(member.from),
   };
 }
 
 function parseFunctionSignature(
+  commentsMap: CommentsMap,
   node: SyntaxNode,
   parentKey: string,
   sourceText: string,
@@ -860,20 +904,26 @@ function parseFunctionSignature(
   const paramList = childByName(node, "ParamList");
   if (paramList) {
     let param:
-      | { name: string; optional: boolean; type: SyntaxNode | null }
+      | {
+        name: string;
+        optional: boolean;
+        type: SyntaxNode | null;
+        node: SyntaxNode;
+      }
       | null = null;
     for (const part of children(paramList)) {
       const name = part.type.name;
       if (name === "VariableDefinition") {
         if (param) {
           argumentsStruct.arguments.push(
-            flushParam(param, argsKey, sourceText),
+            flushParam(commentsMap, param, argsKey, sourceText),
           );
         }
         param = {
           name: textOf(part, sourceText),
           optional: false,
           type: null,
+          node: part,
         };
       } else if (name === "Optional") {
         if (param) param.optional = true;
@@ -888,7 +938,9 @@ function parseFunctionSignature(
       }
     }
     if (param) {
-      argumentsStruct.arguments.push(flushParam(param, argsKey, sourceText));
+      argumentsStruct.arguments.push(
+        flushParam(commentsMap, param, argsKey, sourceText),
+      );
     }
   }
   const returnsNode = children(node).find(
@@ -901,12 +953,23 @@ function parseFunctionSignature(
     kind: "function",
     key: parentKey,
     arguments: argumentsStruct,
-    returns: parseNode(returnsNode, `${parentKey}.returns`, sourceText),
+    returns: parseNode(
+      commentsMap,
+      returnsNode,
+      `${parentKey}.returns`,
+      sourceText,
+    ),
   };
 }
 
 function flushParam(
-  param: { name: string; optional: boolean; type: SyntaxNode | null },
+  commentsMap: CommentsMap,
+  param: {
+    name: string;
+    optional: boolean;
+    type: SyntaxNode | null;
+    node: SyntaxNode;
+  },
   argsKey: string,
   sourceText: string,
 ): TStructureArgumentItem {
@@ -918,11 +981,13 @@ function flushParam(
   return {
     name: param.name,
     structure: parseNode(
+      commentsMap,
       type,
       argKey,
       sourceText,
     ) as TFunctionArgumentStructure,
     optional: param.optional,
+    comment: commentsMap.get(param.node.from),
   };
 }
 
@@ -942,6 +1007,7 @@ function parseTypeParameters(node: SyntaxNode, sourceText: string): string[] {
 }
 
 function parseTypeAliasDeclaration(
+  commentsMap: CommentsMap,
   node: SyntaxNode,
   parentKey: string,
   sourceText: string,
@@ -960,12 +1026,14 @@ function parseTypeAliasDeclaration(
     kind: "alias",
     key,
     name,
-    type: parseNode(valueNode, `${key}.type`, sourceText),
+    type: parseNode(commentsMap, valueNode, `${key}.type`, sourceText),
     parameters: parseTypeParameters(node, sourceText),
+    comment: commentsMap.get(node.from),
   };
 }
 
 function parseInterfaceDeclaration(
+  commentsMap: CommentsMap,
   node: SyntaxNode,
   parentKey: string,
   sourceText: string,
@@ -979,7 +1047,7 @@ function parseInterfaceDeclaration(
   const properties: TStructureObjectProperty[] = [];
   const body = childByName(node, "ObjectType");
   if (body) {
-    properties.push(...parseMembers(body, key, sourceText, true));
+    properties.push(...parseMembers(commentsMap, body, key, sourceText, true));
   }
   return {
     kind: "interface",
@@ -987,6 +1055,7 @@ function parseInterfaceDeclaration(
     name,
     properties,
     parameters: parseTypeParameters(node, sourceText),
+    comment: commentsMap.get(node.from),
   };
 }
 
@@ -1164,4 +1233,67 @@ function walkForMissingRefs(
     case "builtin":
       break;
   }
+}
+
+// Map node "from" position to comment
+type CommentsMap = Map<number, string | undefined>;
+
+const SKIPPED_NODE_TYPES = new Set(["ExportDeclaration", "export", ";"]);
+
+/**
+ * Builds a map of node -> comment from the given syntax tree.
+ */
+function buildCommentsMap(
+  sourceText: string,
+  tree: Tree,
+): CommentsMap {
+  const commentsMap: CommentsMap = new Map();
+  const cursor = tree.cursor();
+  // traverse all node sequentially to build the comments map
+  let comment: TCommentSource | null = null;
+  do {
+    const node = cursor.node;
+    if (node.type.name === "BlockComment" || node.type.name === "LineComment") {
+      if (!startsLine(sourceText, node.from)) {
+        // A comment that shares its line with preceding code (e.g.
+        // `name: string; // stays here`) is a trailing comment: it documents
+        // the previous line, not the next declaration, so it is dropped.
+        comment = null;
+      } else if (node.type.name === "BlockComment") {
+        comment = { type: "BlockComment", content: textOf(node, sourceText) };
+      } else if (comment && comment.type === "LineComment") {
+        comment.content.push(textOf(node, sourceText));
+      } else {
+        comment = { type: "LineComment", content: [textOf(node, sourceText)] };
+      }
+      continue;
+    }
+    if (!comment) {
+      continue;
+    }
+    commentsMap.set(node.from, normalizeComment(comment));
+    if (SKIPPED_NODE_TYPES.has(node.type.name)) {
+      // Don't reset the comment to also assign the comment to the next relevant node
+      continue;
+    }
+    comment = null;
+  } while (cursor.next());
+
+  return commentsMap;
+}
+
+/**
+ * Whether `pos` sits at the beginning of a line (only spaces/tabs before it on
+ * that line). Used to tell leading doc comments (`/** ...`) from trailing
+ * comments (`// ...` after code on the same line).
+ */
+function startsLine(sourceText: string, pos: number): boolean {
+  const lineStart = sourceText.lastIndexOf("\n", pos - 1) + 1;
+  for (let i = lineStart; i < pos; i++) {
+    const code = sourceText.charCodeAt(i);
+    if (code !== 32 && code !== 9) {
+      return false;
+    }
+  }
+  return true;
 }

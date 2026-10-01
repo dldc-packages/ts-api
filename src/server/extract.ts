@@ -51,6 +51,7 @@ export interface ApiObjectProperty {
   name: string;
   type: ApiType;
   optional: boolean;
+  comment?: string;
 }
 
 /**
@@ -60,6 +61,8 @@ export interface ApiArgument {
   name: string;
   type: ApiType;
   optional: boolean;
+  /** The JSDoc comment attached to this argument, if any. */
+  comment?: string;
 }
 
 /**
@@ -75,6 +78,8 @@ export interface ApiNamespace {
   kind: "namespace";
   name: string;
   path: string[];
+  /** The JSDoc comment attached where this namespace is referenced, if any. */
+  comment?: string;
   children: ApiNode[];
 }
 
@@ -86,6 +91,8 @@ export interface ApiEndpoint {
   kind: "endpoint";
   name: string;
   path: string[];
+  /** The JSDoc comment attached to this endpoint, if any. */
+  comment?: string;
   arguments: ApiArgument[];
   returns: ApiType;
 }
@@ -97,6 +104,8 @@ export interface ApiTypeDeclaration {
   name: string;
   kind: "interface" | "alias";
   parameters: string[];
+  /** The JSDoc comment attached to this declaration, if any. */
+  comment?: string;
   properties?: ApiObjectProperty[];
   type?: ApiType;
 }
@@ -163,6 +172,7 @@ export function extractApi(
     entryType.kind === "alias" ? entryType.type : entryType,
     [entry],
     new Set<string>(),
+    entryType.comment,
   );
 
   if (!root) {
@@ -182,6 +192,7 @@ function walkNamespace(
   structure: TStructure,
   path: string[],
   visited: Set<string>,
+  comment?: string,
 ): ApiNamespace | null {
   const concrete = resolveToConcrete(rootStructure, localTypes, structure);
 
@@ -192,7 +203,13 @@ function walkNamespace(
   const name = path[path.length - 1];
 
   if (concrete.kind === "interface" && visited.has(concrete.name)) {
-    return { kind: "namespace", name, path, children: [] };
+    return {
+      kind: "namespace",
+      name,
+      path,
+      comment,
+      children: [],
+    };
   }
 
   const newVisited = concrete.kind === "interface"
@@ -213,10 +230,12 @@ function walkNamespace(
         kind: "endpoint",
         name: prop.name,
         path: propPath,
+        comment: prop.comment,
         arguments: propConcrete.arguments.arguments.map((a) => ({
           name: a.name,
           type: convertType(rootStructure, localTypes, a.structure),
           optional: a.optional,
+          comment: a.comment,
         })),
         returns: convertType(
           rootStructure,
@@ -231,6 +250,7 @@ function walkNamespace(
         prop.structure,
         propPath,
         newVisited,
+        prop.comment,
       );
       if (ns) {
         children.push(ns);
@@ -238,7 +258,13 @@ function walkNamespace(
     }
   }
 
-  return { kind: "namespace", name, path, children };
+  return {
+    kind: "namespace",
+    name,
+    path,
+    comment,
+    children,
+  };
 }
 
 function resolveToConcrete(
@@ -316,6 +342,7 @@ function convertType(
           name: p.name,
           type: convertType(rootStructure, localTypes, p.structure),
           optional: p.optional,
+          comment: p.comment,
         })),
       };
     case "ref": {
@@ -342,6 +369,7 @@ function convertType(
           name: p.name,
           type: convertType(rootStructure, localTypes, p.structure),
           optional: p.optional,
+          comment: p.comment,
         })),
       };
     case "alias":
@@ -353,6 +381,7 @@ function convertType(
           name: a.name,
           type: convertType(rootStructure, localTypes, a.structure),
           optional: a.optional,
+          comment: a.comment,
         })),
         returns: convertType(rootStructure, localTypes, structure.returns),
       };
@@ -368,10 +397,12 @@ function convertTopLevel(
       name: struct.name,
       kind: "interface",
       parameters: struct.parameters,
+      comment: struct.comment,
       properties: struct.properties.map((p) => ({
         name: p.name,
         type: convertType(rootStructure, {}, p.structure),
         optional: p.optional,
+        comment: p.comment,
       })),
     };
   }
@@ -379,6 +410,7 @@ function convertTopLevel(
     name: struct.name,
     kind: "alias",
     parameters: struct.parameters,
+    comment: struct.comment,
     type: convertType(rootStructure, {}, struct.type),
   };
 }

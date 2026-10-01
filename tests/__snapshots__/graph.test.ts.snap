@@ -15,12 +15,14 @@ snapshot[`todolist snapshot structure 1`] = `
   mode: "graph",
   types: [
     {
+      comment: undefined,
       key: "root.PaginationParams",
       kind: "interface",
       name: "PaginationParams",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "page",
           optional: true,
           structure: {
@@ -30,6 +32,7 @@ snapshot[`todolist snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "limit",
           optional: true,
           structure: {
@@ -41,12 +44,14 @@ snapshot[`todolist snapshot structure 1`] = `
       ],
     },
     {
+      comment: undefined,
       key: "root.User",
       kind: "interface",
       name: "User",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "userName",
           optional: false,
           structure: {
@@ -56,6 +61,7 @@ snapshot[`todolist snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "app",
           optional: false,
           structure: {
@@ -68,12 +74,14 @@ snapshot[`todolist snapshot structure 1`] = `
       ],
     },
     {
+      comment: undefined,
       key: "root.App",
       kind: "interface",
       name: "App",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "appName",
           optional: false,
           structure: {
@@ -83,6 +91,7 @@ snapshot[`todolist snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "todos",
           optional: false,
           structure: {
@@ -99,12 +108,14 @@ snapshot[`todolist snapshot structure 1`] = `
       ],
     },
     {
+      comment: undefined,
       key: "root.Todo",
       kind: "interface",
       name: "Todo",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "todoName",
           optional: false,
           structure: {
@@ -114,6 +125,7 @@ snapshot[`todolist snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "done",
           optional: false,
           structure: {
@@ -125,12 +137,14 @@ snapshot[`todolist snapshot structure 1`] = `
       ],
     },
     {
+      comment: undefined,
       key: "root.CoinHeads",
       kind: "interface",
       name: "CoinHeads",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "foo",
           optional: false,
           structure: {
@@ -142,12 +156,14 @@ snapshot[`todolist snapshot structure 1`] = `
       ],
     },
     {
+      comment: undefined,
       key: "root.CoinTails",
       kind: "interface",
       name: "CoinTails",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "bar",
           optional: false,
           structure: {
@@ -159,12 +175,14 @@ snapshot[`todolist snapshot structure 1`] = `
       ],
     },
     {
+      comment: undefined,
       key: "root.Config",
       kind: "interface",
       name: "Config",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "env",
           optional: false,
           structure: {
@@ -172,6 +190,7 @@ snapshot[`todolist snapshot structure 1`] = `
             kind: "object",
             properties: [
               {
+                comment: undefined,
                 name: "version",
                 optional: false,
                 structure: {
@@ -181,6 +200,7 @@ snapshot[`todolist snapshot structure 1`] = `
                 },
               },
               {
+                comment: undefined,
                 name: "num",
                 optional: false,
                 structure: {
@@ -190,6 +210,7 @@ snapshot[`todolist snapshot structure 1`] = `
                 },
               },
               {
+                comment: undefined,
                 name: "str",
                 optional: false,
                 structure: {
@@ -199,6 +220,7 @@ snapshot[`todolist snapshot structure 1`] = `
                 },
               },
               {
+                comment: undefined,
                 name: "bool",
                 optional: false,
                 structure: {
@@ -213,12 +235,14 @@ snapshot[`todolist snapshot structure 1`] = `
       ],
     },
     {
+      comment: undefined,
       key: "root.Graph",
       kind: "interface",
       name: "Graph",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "auth",
           optional: false,
           structure: {
@@ -237,6 +261,7 @@ snapshot[`todolist snapshot structure 1`] = `
                 kind: "object",
                 properties: [
                   {
+                    comment: undefined,
                     name: "user",
                     optional: false,
                     structure: {
@@ -252,6 +277,7 @@ snapshot[`todolist snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "users",
           optional: false,
           structure: {
@@ -259,12 +285,14 @@ snapshot[`todolist snapshot structure 1`] = `
             kind: "object",
             properties: [
               {
+                comment: undefined,
                 name: "byId",
                 optional: false,
                 structure: {
                   arguments: {
                     arguments: [
                       {
+                        comment: undefined,
                         name: "id",
                         optional: false,
                         structure: {
@@ -291,6 +319,7 @@ snapshot[`todolist snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "apps",
           optional: false,
           structure: {
@@ -298,12 +327,14 @@ snapshot[`todolist snapshot structure 1`] = `
             kind: "object",
             properties: [
               {
+                comment: undefined,
                 name: "all",
                 optional: false,
                 structure: {
                   arguments: {
                     arguments: [
                       {
+                        comment: undefined,
                         name: "pagination",
                         optional: true,
                         structure: {
@@ -332,12 +363,14 @@ snapshot[`todolist snapshot structure 1`] = `
                 },
               },
               {
+                comment: undefined,
                 name: "byId",
                 optional: false,
                 structure: {
                   arguments: {
                     arguments: [
                       {
+                        comment: undefined,
                         name: "id",
                         optional: false,
                         structure: {
@@ -364,6 +397,7 @@ snapshot[`todolist snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "flip",
           optional: false,
           structure: {
@@ -395,6 +429,7 @@ snapshot[`todolist snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "config",
           optional: false,
           structure: {
@@ -434,6 +469,7 @@ snapshot[`snapshot structure 1`] = `
   mode: "graph",
   types: [
     {
+      comment: undefined,
       key: "root.Role",
       kind: "alias",
       name: "Role",
@@ -456,12 +492,14 @@ snapshot[`snapshot structure 1`] = `
       },
     },
     {
+      comment: undefined,
       key: "root.User",
       kind: "interface",
       name: "User",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "name",
           optional: false,
           structure: {
@@ -471,6 +509,7 @@ snapshot[`snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "age",
           optional: false,
           structure: {
@@ -484,6 +523,7 @@ snapshot[`snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "group",
           optional: false,
           structure: {
@@ -494,6 +534,7 @@ snapshot[`snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "maybeGroup",
           optional: false,
           structure: {
@@ -510,12 +551,14 @@ snapshot[`snapshot structure 1`] = `
       ],
     },
     {
+      comment: undefined,
       key: "root.Group",
       kind: "interface",
       name: "Group",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "name",
           optional: false,
           structure: {
@@ -525,6 +568,7 @@ snapshot[`snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "users",
           optional: false,
           structure: {
@@ -541,12 +585,14 @@ snapshot[`snapshot structure 1`] = `
       ],
     },
     {
+      comment: undefined,
       key: "root.Graph",
       kind: "interface",
       name: "Graph",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "group",
           optional: false,
           structure: {
@@ -566,6 +612,7 @@ snapshot[`snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "user",
           optional: false,
           structure: {
@@ -585,6 +632,7 @@ snapshot[`snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "randomItem",
           optional: false,
           structure: {

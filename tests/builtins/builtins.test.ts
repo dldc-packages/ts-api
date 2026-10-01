@@ -1,6 +1,5 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
-import { assertSnapshot } from "@std/testing/snapshot";
 import * as v from "@valibot/valibot";
 import { query, queryToObject } from "../../src/client/mod.ts";
 import {
@@ -33,7 +32,7 @@ const graph = parse<AllTypes>(
 );
 
 Deno.test("Snapshot structure", async (test) => {
-  await assertSnapshot(test, graph[ROOT]);
+  await test.assertSnapshot(graph[ROOT]);
 });
 
 const client = query<AllTypes>();

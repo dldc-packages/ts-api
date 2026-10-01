@@ -7,6 +7,7 @@ snapshot[`extractApi: snapshot basic 1`] = `
     children: [
       {
         arguments: [],
+        comment: undefined,
         kind: "endpoint",
         name: "group",
         path: [
@@ -21,6 +22,7 @@ snapshot[`extractApi: snapshot basic 1`] = `
       },
       {
         arguments: [],
+        comment: undefined,
         kind: "endpoint",
         name: "user",
         path: [
@@ -35,6 +37,7 @@ snapshot[`extractApi: snapshot basic 1`] = `
       },
       {
         arguments: [],
+        comment: undefined,
         kind: "endpoint",
         name: "randomItem",
         path: [
@@ -58,6 +61,7 @@ snapshot[`extractApi: snapshot basic 1`] = `
         },
       },
     ],
+    comment: undefined,
     kind: "namespace",
     name: "Graph",
     path: [
@@ -66,6 +70,7 @@ snapshot[`extractApi: snapshot basic 1`] = `
   },
   types: [
     {
+      comment: undefined,
       kind: "alias",
       name: "Role",
       parameters: [],
@@ -84,11 +89,13 @@ snapshot[`extractApi: snapshot basic 1`] = `
       },
     },
     {
+      comment: undefined,
       kind: "interface",
       name: "User",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "name",
           optional: false,
           type: {
@@ -97,6 +104,7 @@ snapshot[`extractApi: snapshot basic 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "age",
           optional: false,
           type: {
@@ -108,6 +116,7 @@ snapshot[`extractApi: snapshot basic 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "group",
           optional: false,
           type: {
@@ -117,6 +126,7 @@ snapshot[`extractApi: snapshot basic 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "maybeGroup",
           optional: false,
           type: {
@@ -131,11 +141,13 @@ snapshot[`extractApi: snapshot basic 1`] = `
       ],
     },
     {
+      comment: undefined,
       kind: "interface",
       name: "Group",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "name",
           optional: false,
           type: {
@@ -144,6 +156,7 @@ snapshot[`extractApi: snapshot basic 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "users",
           optional: false,
           type: {
@@ -158,11 +171,13 @@ snapshot[`extractApi: snapshot basic 1`] = `
       ],
     },
     {
+      comment: undefined,
       kind: "interface",
       name: "Graph",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "group",
           optional: false,
           type: {
@@ -176,6 +191,7 @@ snapshot[`extractApi: snapshot basic 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "user",
           optional: false,
           type: {
@@ -189,6 +205,7 @@ snapshot[`extractApi: snapshot basic 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "randomItem",
           optional: false,
           type: {
@@ -224,6 +241,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
     children: [
       {
         arguments: [],
+        comment: undefined,
         kind: "endpoint",
         name: "auth",
         path: [
@@ -236,6 +254,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
             kind: "object",
             properties: [
               {
+                comment: undefined,
                 name: "user",
                 optional: false,
                 type: {
@@ -253,6 +272,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
           {
             arguments: [
               {
+                comment: undefined,
                 name: "id",
                 optional: false,
                 type: {
@@ -261,6 +281,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
                 },
               },
             ],
+            comment: undefined,
             kind: "endpoint",
             name: "byId",
             path: [
@@ -275,6 +296,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
             },
           },
         ],
+        comment: undefined,
         kind: "namespace",
         name: "users",
         path: [
@@ -287,6 +309,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
           {
             arguments: [
               {
+                comment: undefined,
                 name: "pagination",
                 optional: true,
                 type: {
@@ -296,6 +319,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
                 },
               },
             ],
+            comment: undefined,
             kind: "endpoint",
             name: "all",
             path: [
@@ -315,6 +339,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
           {
             arguments: [
               {
+                comment: undefined,
                 name: "id",
                 optional: false,
                 type: {
@@ -323,6 +348,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
                 },
               },
             ],
+            comment: undefined,
             kind: "endpoint",
             name: "byId",
             path: [
@@ -337,6 +363,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
             },
           },
         ],
+        comment: undefined,
         kind: "namespace",
         name: "apps",
         path: [
@@ -346,6 +373,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
       },
       {
         arguments: [],
+        comment: undefined,
         kind: "endpoint",
         name: "flip",
         path: [
@@ -370,6 +398,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
       },
       {
         arguments: [],
+        comment: undefined,
         kind: "endpoint",
         name: "config",
         path: [
@@ -383,6 +412,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
         },
       },
     ],
+    comment: undefined,
     kind: "namespace",
     name: "Graph",
     path: [
@@ -391,11 +421,13 @@ snapshot[`extractApi: snapshot todolist 1`] = `
   },
   types: [
     {
+      comment: undefined,
       kind: "interface",
       name: "PaginationParams",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "page",
           optional: true,
           type: {
@@ -404,6 +436,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "limit",
           optional: true,
           type: {
@@ -414,11 +447,13 @@ snapshot[`extractApi: snapshot todolist 1`] = `
       ],
     },
     {
+      comment: undefined,
       kind: "interface",
       name: "User",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "userName",
           optional: false,
           type: {
@@ -427,6 +462,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "app",
           optional: false,
           type: {
@@ -438,11 +474,13 @@ snapshot[`extractApi: snapshot todolist 1`] = `
       ],
     },
     {
+      comment: undefined,
       kind: "interface",
       name: "App",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "appName",
           optional: false,
           type: {
@@ -451,6 +489,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "todos",
           optional: false,
           type: {
@@ -465,11 +504,13 @@ snapshot[`extractApi: snapshot todolist 1`] = `
       ],
     },
     {
+      comment: undefined,
       kind: "interface",
       name: "Todo",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "todoName",
           optional: false,
           type: {
@@ -478,6 +519,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "done",
           optional: false,
           type: {
@@ -488,11 +530,13 @@ snapshot[`extractApi: snapshot todolist 1`] = `
       ],
     },
     {
+      comment: undefined,
       kind: "interface",
       name: "CoinHeads",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "foo",
           optional: false,
           type: {
@@ -503,11 +547,13 @@ snapshot[`extractApi: snapshot todolist 1`] = `
       ],
     },
     {
+      comment: undefined,
       kind: "interface",
       name: "CoinTails",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "bar",
           optional: false,
           type: {
@@ -518,17 +564,20 @@ snapshot[`extractApi: snapshot todolist 1`] = `
       ],
     },
     {
+      comment: undefined,
       kind: "interface",
       name: "Config",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "env",
           optional: false,
           type: {
             kind: "object",
             properties: [
               {
+                comment: undefined,
                 name: "version",
                 optional: false,
                 type: {
@@ -537,6 +586,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
                 },
               },
               {
+                comment: undefined,
                 name: "num",
                 optional: false,
                 type: {
@@ -545,6 +595,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
                 },
               },
               {
+                comment: undefined,
                 name: "str",
                 optional: false,
                 type: {
@@ -553,6 +604,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
                 },
               },
               {
+                comment: undefined,
                 name: "bool",
                 optional: false,
                 type: {
@@ -566,11 +618,13 @@ snapshot[`extractApi: snapshot todolist 1`] = `
       ],
     },
     {
+      comment: undefined,
       kind: "interface",
       name: "Graph",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "auth",
           optional: false,
           type: {
@@ -582,6 +636,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
                 kind: "object",
                 properties: [
                   {
+                    comment: undefined,
                     name: "user",
                     optional: false,
                     type: {
@@ -596,17 +651,20 @@ snapshot[`extractApi: snapshot todolist 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "users",
           optional: false,
           type: {
             kind: "object",
             properties: [
               {
+                comment: undefined,
                 name: "byId",
                 optional: false,
                 type: {
                   arguments: [
                     {
+                      comment: undefined,
                       name: "id",
                       optional: false,
                       type: {
@@ -627,17 +685,20 @@ snapshot[`extractApi: snapshot todolist 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "apps",
           optional: false,
           type: {
             kind: "object",
             properties: [
               {
+                comment: undefined,
                 name: "all",
                 optional: false,
                 type: {
                   arguments: [
                     {
+                      comment: undefined,
                       name: "pagination",
                       optional: true,
                       type: {
@@ -659,11 +720,13 @@ snapshot[`extractApi: snapshot todolist 1`] = `
                 },
               },
               {
+                comment: undefined,
                 name: "byId",
                 optional: false,
                 type: {
                   arguments: [
                     {
+                      comment: undefined,
                       name: "id",
                       optional: false,
                       type: {
@@ -684,6 +747,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "flip",
           optional: false,
           type: {
@@ -707,6 +771,7 @@ snapshot[`extractApi: snapshot todolist 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "config",
           optional: false,
           type: {

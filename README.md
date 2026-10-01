@@ -984,17 +984,29 @@ Returns an `ApiTree` with:
 - `types` — array of `ApiTypeDeclaration` (all interfaces and type aliases from
   the schema)
 
+Every node that can carry a doc comment always has a `comment` field (the
+normalized JSDoc comment from the schema file). It holds the comment when the
+schema has one above the declaration, property, or argument, and is `undefined`
+otherwise.
+
+Each `ApiNamespace` and `ApiEndpoint` has:
+
+- `name`, `path`
+- `comment` — the doc comment attached where the node is referenced (for the
+  root namespace, the entry declaration's comment)
+- namespaces additionally have `children`; endpoints have `arguments` and
+  `returns` (see below)
+
 Each `ApiEndpoint` has:
 
-- `path` — e.g. `["Graph", "users", "byId"]`
-- `arguments` — array of `{ name, type, optional }`
+- `arguments` — array of `{ name, type, optional, comment }`
 - `returns` — an `ApiType`
 
 Each `ApiTypeDeclaration` has:
 
 - `name`, `kind` (`"interface"` or `"alias"`), `parameters` (generic type
-  params)
-- `properties` (for interfaces) — array of `{ name, type, optional }`
+  params), `comment`
+- `properties` (for interfaces) — array of `{ name, type, optional, comment }`
 - `type` (for aliases) — an `ApiType`
 
 `ApiType` is a discriminated union covering all supported type constructs:

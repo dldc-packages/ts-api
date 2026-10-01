@@ -1,0 +1,522 @@
+export const snapshot = {};
+
+snapshot[`Parse schema with comments 1`] = `
+{
+  builtins: [
+    {
+      getSchema: [Function: getSchema],
+      key: "builtin.Date",
+      kind: "builtin",
+      name: "Date",
+    },
+  ],
+  key: "root",
+  kind: "root",
+  mode: "graph",
+  types: [
+    {
+      comment: "A single-line JSDoc comment",
+      key: "root.Role",
+      kind: "alias",
+      name: "Role",
+      parameters: [],
+      type: {
+        key: "root.Role.type",
+        kind: "union",
+        types: [
+          {
+            key: "root.Role.type.0",
+            kind: "literal",
+            type: "admin",
+          },
+          {
+            key: "root.Role.type.1",
+            kind: "literal",
+            type: "user",
+          },
+        ],
+      },
+    },
+    {
+      comment: "User of the system",
+      key: "root.User",
+      kind: "interface",
+      name: "User",
+      parameters: [],
+      properties: [
+        {
+          comment: undefined,
+          name: "name",
+          optional: false,
+          structure: {
+            key: "root.User.name",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          comment: "Single line comment",
+          name: "age",
+          optional: false,
+          structure: {
+            key: "root.User.age",
+            kind: "nullable",
+            type: {
+              key: "root.User.age.type",
+              kind: "primitive",
+              type: "number",
+            },
+          },
+        },
+        {
+          comment: "Inline multi-line
+comment",
+          name: "group",
+          optional: false,
+          structure: {
+            key: "root.User.group",
+            kind: "ref",
+            params: [],
+            ref: "Group",
+          },
+        },
+        {
+          comment: "Multiple
+single line
+comments",
+          name: "maybeGroup",
+          optional: false,
+          structure: {
+            key: "root.User.maybeGroup",
+            kind: "nullable",
+            type: {
+              key: "root.User.maybeGroup.type",
+              kind: "ref",
+              params: [],
+              ref: "Group",
+            },
+          },
+        },
+        {
+          comment: "list:
+- one
+- two",
+          name: "tags",
+          optional: false,
+          structure: {
+            items: {
+              key: "root.User.tags.items",
+              kind: "primitive",
+              type: "string",
+            },
+            key: "root.User.tags",
+            kind: "array",
+          },
+        },
+        {
+          comment: "Inline single-line JSDoc",
+          name: "label",
+          optional: false,
+          structure: {
+            key: "root.User.label",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          comment: "Block comment without JSDoc stars",
+          name: "code",
+          optional: false,
+          structure: {
+            key: "root.User.code",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+      ],
+    },
+    {
+      comment: "Group of users",
+      key: "root.Group",
+      kind: "interface",
+      name: "Group",
+      parameters: [],
+      properties: [
+        {
+          comment: undefined,
+          name: "name",
+          optional: false,
+          structure: {
+            key: "root.Group.name",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          comment: "line comment for the users property",
+          name: "users",
+          optional: false,
+          structure: {
+            items: {
+              key: "root.Group.users.items",
+              kind: "ref",
+              params: [],
+              ref: "User",
+            },
+            key: "root.Group.users",
+            kind: "array",
+          },
+        },
+      ],
+    },
+    {
+      comment: "Main Graph entry",
+      key: "root.Graph",
+      kind: "interface",
+      name: "Graph",
+      parameters: [],
+      properties: [
+        {
+          comment: "Retrieves the main group",
+          name: "group",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [],
+              key: "root.Graph.group.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.group",
+            kind: "function",
+            returns: {
+              key: "root.Graph.group.returns",
+              kind: "ref",
+              params: [],
+              ref: "Group",
+            },
+          },
+        },
+        {
+          comment: "Retrieves the main user",
+          name: "user",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [],
+              key: "root.Graph.user.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.user",
+            kind: "function",
+            returns: {
+              key: "root.Graph.user.returns",
+              kind: "ref",
+              params: [],
+              ref: "User",
+            },
+          },
+        },
+        {
+          comment: "Retrieves a random item, which can be either a user or a group",
+          name: "randomItem",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [],
+              key: "root.Graph.randomItem.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.randomItem",
+            kind: "function",
+            returns: {
+              key: "root.Graph.randomItem.returns",
+              kind: "union",
+              types: [
+                {
+                  key: "root.Graph.randomItem.returns.0",
+                  kind: "ref",
+                  params: [],
+                  ref: "User",
+                },
+                {
+                  key: "root.Graph.randomItem.returns.1",
+                  kind: "ref",
+                  params: [],
+                  ref: "Group",
+                },
+              ],
+            },
+          },
+        },
+        {
+          comment: "\`\`\`ts
+const v = Graph.version();
+\`\`\`",
+          name: "version",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [],
+              key: "root.Graph.version.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.version",
+            kind: "function",
+            returns: {
+              key: "root.Graph.version.returns",
+              kind: "primitive",
+              type: "string",
+            },
+          },
+        },
+        {
+          comment: "Administration endpoints",
+          name: "admin",
+          optional: false,
+          structure: {
+            key: "root.Graph.admin",
+            kind: "object",
+            properties: [
+              {
+                comment: "Deletes everything",
+                name: "wipe",
+                optional: false,
+                structure: {
+                  arguments: {
+                    arguments: [],
+                    key: "root.Graph.admin.wipe.arguments",
+                    kind: "arguments",
+                  },
+                  key: "root.Graph.admin.wipe",
+                  kind: "function",
+                  returns: {
+                    key: "root.Graph.admin.wipe.returns",
+                    kind: "literal",
+                    type: null,
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          comment: "Logs a user in",
+          name: "login",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [
+                {
+                  comment: undefined,
+                  name: "username",
+                  optional: false,
+                  structure: {
+                    key: "root.Graph.login.arguments.username",
+                    kind: "primitive",
+                    type: "string",
+                  },
+                },
+                {
+                  comment: "the password",
+                  name: "password",
+                  optional: false,
+                  structure: {
+                    key: "root.Graph.login.arguments.password",
+                    kind: "primitive",
+                    type: "string",
+                  },
+                },
+              ],
+              key: "root.Graph.login.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.login",
+            kind: "function",
+            returns: {
+              key: "root.Graph.login.returns",
+              kind: "primitive",
+              type: "boolean",
+            },
+          },
+        },
+      ],
+    },
+    {
+      comment: "Modifiers on properties keep their own doc comments",
+      key: "root.WithModifiers",
+      kind: "interface",
+      name: "WithModifiers",
+      parameters: [],
+      properties: [
+        {
+          comment: "readonly property",
+          name: "id",
+          optional: false,
+          structure: {
+            key: "root.WithModifiers.id",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          comment: "optional property",
+          name: "label",
+          optional: true,
+          structure: {
+            key: "root.WithModifiers.label",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          comment: "endpoint property",
+          name: "lookup",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [
+                {
+                  comment: undefined,
+                  name: "id",
+                  optional: false,
+                  structure: {
+                    key: "root.WithModifiers.lookup.arguments.id",
+                    kind: "primitive",
+                    type: "string",
+                  },
+                },
+              ],
+              key: "root.WithModifiers.lookup.arguments",
+              kind: "arguments",
+            },
+            key: "root.WithModifiers.lookup",
+            kind: "function",
+            returns: {
+              key: "root.WithModifiers.lookup.returns",
+              kind: "primitive",
+              type: "string",
+            },
+          },
+        },
+        {
+          comment: "nested inline object",
+          name: "config",
+          optional: false,
+          structure: {
+            key: "root.WithModifiers.config",
+            kind: "object",
+            properties: [
+              {
+                comment: "inner property of the inline object",
+                name: "enabled",
+                optional: false,
+                structure: {
+                  key: "root.WithModifiers.config.enabled",
+                  kind: "primitive",
+                  type: "boolean",
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+    {
+      comment: "A trailing comment after code on the same line is not a doc comment.",
+      key: "root.WithTrailing",
+      kind: "interface",
+      name: "WithTrailing",
+      parameters: [],
+      properties: [
+        {
+          comment: undefined,
+          name: "first",
+          optional: false,
+          structure: {
+            key: "root.WithTrailing.first",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          comment: undefined,
+          name: "second",
+          optional: true,
+          structure: {
+            key: "root.WithTrailing.second",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          comment: undefined,
+          name: "third",
+          optional: false,
+          structure: {
+            key: "root.WithTrailing.third",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+      ],
+    },
+    {
+      comment: "When several comment blocks pile up, the closest one applies",
+      key: "root.Separated",
+      kind: "interface",
+      name: "Separated",
+      parameters: [],
+      properties: [
+        {
+          comment: "second, closer comment",
+          name: "prop",
+          optional: false,
+          structure: {
+            key: "root.Separated.prop",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+      ],
+    },
+    {
+      comment: "A dangling comment before the closing brace must not leak",
+      key: "root.Dangling",
+      kind: "interface",
+      name: "Dangling",
+      parameters: [],
+      properties: [
+        {
+          comment: undefined,
+          name: "a",
+          optional: false,
+          structure: {
+            key: "root.Dangling.a",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+      ],
+    },
+    {
+      comment: undefined,
+      key: "root.AfterDangling",
+      kind: "interface",
+      name: "AfterDangling",
+      parameters: [],
+      properties: [
+        {
+          comment: undefined,
+          name: "b",
+          optional: false,
+          structure: {
+            key: "root.AfterDangling.b",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+      ],
+    },
+  ],
+}
+`;

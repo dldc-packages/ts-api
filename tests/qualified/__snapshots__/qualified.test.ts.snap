@@ -21,12 +21,14 @@ snapshot[`Qualified builtin snapshot structure 1`] = `
   mode: "graph",
   types: [
     {
+      comment: undefined,
       key: "root.Graph",
       kind: "interface",
       name: "Graph",
       parameters: [],
       properties: [
         {
+          comment: undefined,
           name: "birthday",
           optional: false,
           structure: {
@@ -46,12 +48,14 @@ snapshot[`Qualified builtin snapshot structure 1`] = `
           },
         },
         {
+          comment: undefined,
           name: "daysBetween",
           optional: false,
           structure: {
             arguments: {
               arguments: [
                 {
+                  comment: undefined,
                   name: "from",
                   optional: false,
                   structure: {
@@ -62,6 +66,7 @@ snapshot[`Qualified builtin snapshot structure 1`] = `
                   },
                 },
                 {
+                  comment: undefined,
                   name: "to",
                   optional: false,
                   structure: {

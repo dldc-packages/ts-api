@@ -1,15 +1,14 @@
 import { assertEquals, assertThrows } from "@std/assert";
 import { resolve } from "@std/path";
-import { assertSnapshot } from "@std/testing/snapshot";
-import { extractApi, getStructure, parse } from "../src/server/mod.ts";
-import { loadSchema } from "./utils/loadSchema.ts";
 import type {
   ApiEndpoint,
   ApiNamespace,
   ApiTypeDeclaration,
 } from "../src/server/extract.ts";
+import { extractApi, getStructure, parse } from "../src/server/mod.ts";
 import type { BasicTypes } from "./schemas/basic.types.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
+import { loadSchema } from "./utils/loadSchema.ts";
 
 const basicGraph = parse<BasicTypes>(
   loadSchema(resolve("./tests/schemas/basic.ts")),
@@ -103,12 +102,12 @@ Deno.test("getStructure: aliases have type and parameters", () => {
 
 Deno.test("extractApi: snapshot basic", async (test) => {
   const api = extractApi(basicGraph, "Graph");
-  await assertSnapshot(test, api);
+  await test.assertSnapshot(api);
 });
 
 Deno.test("extractApi: snapshot todolist", async (test) => {
   const api = extractApi(todolistGraph, "Graph");
-  await assertSnapshot(test, api);
+  await test.assertSnapshot(api);
 });
 
 Deno.test("extractApi: returns entry name", () => {
@@ -154,6 +153,7 @@ Deno.test("extractApi: endpoint has arguments and returns", () => {
       name: "id",
       type: { kind: "primitive", type: "string" },
       optional: false,
+      comment: undefined,
     },
   ]);
   assertEquals(byId.returns, {
@@ -185,6 +185,7 @@ Deno.test("extractApi: nested namespace paths", () => {
       name: "pagination",
       type: { kind: "ref", name: "PaginationParams", params: [] },
       optional: true,
+      comment: undefined,
     },
   ]);
   assertEquals(all.returns, {
@@ -219,6 +220,7 @@ Deno.test("extractApi: nullable return type", () => {
           name: "user",
           type: { kind: "ref", name: "User", params: [] },
           optional: false,
+          comment: undefined,
         },
       ],
     },
@@ -241,21 +243,25 @@ Deno.test("extractApi: inline object return type", () => {
         name: "version",
         type: { kind: "primitive", type: "string" },
         optional: false,
+        comment: undefined,
       },
       {
         name: "num",
         type: { kind: "primitive", type: "number" },
         optional: false,
+        comment: undefined,
       },
       {
         name: "str",
         type: { kind: "primitive", type: "string" },
         optional: false,
+        comment: undefined,
       },
       {
         name: "bool",
         type: { kind: "primitive", type: "boolean" },
         optional: false,
+        comment: undefined,
       },
     ],
   });
@@ -294,16 +300,19 @@ Deno.test("extractApi: interface type declaration has properties", () => {
     name: "name",
     type: { kind: "primitive", type: "string" },
     optional: false,
+    comment: undefined,
   });
   assertEquals(user.properties![1], {
     name: "age",
     type: { kind: "nullable", type: { kind: "primitive", type: "number" } },
     optional: false,
+    comment: undefined,
   });
   assertEquals(user.properties![2], {
     name: "group",
     type: { kind: "ref", name: "Group", params: [] },
     optional: false,
+    comment: undefined,
   });
   assertEquals(user.properties![3], {
     name: "maybeGroup",
@@ -312,6 +321,7 @@ Deno.test("extractApi: interface type declaration has properties", () => {
       type: { kind: "ref", name: "Group", params: [] },
     },
     optional: false,
+    comment: undefined,
   });
 });
 
@@ -373,6 +383,7 @@ Deno.test("extractApi: builtin types appear as builtin", () => {
       name: "date",
       type: { kind: "builtin", name: "Date" },
       optional: false,
+      comment: undefined,
     },
   ]);
   assertEquals(doStuff.returns, { kind: "primitive", type: "string" });
