@@ -1,16 +1,14 @@
 import * as v from "@valibot/valibot";
 import { GET, REF, STRUCTURE } from "./constants.ts";
 import type { TGraphBaseAny } from "./graph.ts";
-import type {
-  TAllStructure,
-  TRootStructure,
-  TStructureKind,
-} from "./structure.types.ts";
+import type { TRootStructure, TStructureKind } from "./structure.types.ts";
 
 export interface TSchemaContext {
   rootStructure: TRootStructure;
+  /**
+   * Cache of already resolved schemas for each graph node to avoid redundant computations.
+   */
   cache: WeakMap<TGraphBaseAny, v.BaseSchema<any, any, any>>;
-  building: Set<TAllStructure>;
 }
 
 export function createSchemaContext(
@@ -19,7 +17,6 @@ export function createSchemaContext(
   return {
     rootStructure,
     cache: new WeakMap(),
-    building: new Set(),
   };
 }
 
@@ -123,12 +120,19 @@ const SCHEMA_BY_STRUCTURE: TByStructureKind = {
     });
     return v.tuple(argsSchema);
   },
-  builtin: (_context, graph) => {
+  builtin: (context, graph) => {
     const structure = graph[STRUCTURE];
     if (structure.kind !== "builtin") {
       throw new Error("Invalid structure kind");
     }
-    return structure.getSchema();
+    // Resolve each declared generic type parameter (e.g. the `string` in
+    // `Wrapper<string>`) through the same graph navigation a body uses to read
+    // its fields — the arguments were bound into `localTypes` by `resolveRef`.
+    // A builtin used without type arguments receives an empty array.
+    const paramSchemas = structure.parameters.map((name) =>
+      getStructureSchema(context, graph[GET](name))
+    );
+    return structure.getSchema(paramSchemas);
   },
 };
 
@@ -140,18 +144,9 @@ export function getStructureSchema(
   if (cached !== undefined) {
     return cached;
   }
-  const structure = graph[STRUCTURE];
-  if (context.building.has(structure)) {
-    throw new Error(
-      `Recursive type detected at "${structure.key}". Recursive types are not supported by ts-api.`,
-    );
-  }
-  context.building.add(structure);
-  try {
-    const schema = SCHEMA_BY_STRUCTURE[structure.kind](context, graph);
-    context.cache.set(graph, schema);
-    return schema;
-  } finally {
-    context.building.delete(structure);
-  }
+  // Recursive types are rejected at parse time (see `validateNoRecursiveTypes`
+  // in `parse.ts`), so schema resolution is guaranteed to terminate here.
+  const schema = SCHEMA_BY_STRUCTURE[graph[STRUCTURE].kind](context, graph);
+  context.cache.set(graph, schema);
+  return schema;
 }

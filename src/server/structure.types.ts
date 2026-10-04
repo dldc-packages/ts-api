@@ -113,6 +113,12 @@ export interface TBuiltinStructure {
   kind: "builtin";
   key: string;
   name: string;
+  /**
+   * Names of the generic type parameters a builtin can be instantiated with
+   * (e.g. `["T"]` for `Page<T>`), mirroring the `parameters` list of declared
+   * interfaces and aliases. An empty array marks a non-generic builtin.
+   */
+  parameters: string[];
   getSchema: TBuiltinGetSchema;
 }
 

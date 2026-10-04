@@ -1,0 +1,330 @@
+export const snapshot = {};
+
+snapshot[`Snapshot structure 1`] = `
+{
+  builtins: [
+    {
+      getSchema: [Function: getSchema],
+      key: "builtin.Date",
+      kind: "builtin",
+      name: "Date",
+      parameters: [],
+    },
+    {
+      getSchema: [Function: getSchema],
+      key: "builtin.Page",
+      kind: "builtin",
+      name: "Page",
+      parameters: [
+        "T",
+      ],
+    },
+  ],
+  key: "root",
+  kind: "root",
+  mode: "graph",
+  types: [
+    {
+      comment: undefined,
+      key: "root.Todo",
+      kind: "interface",
+      name: "Todo",
+      parameters: [],
+      properties: [
+        {
+          comment: undefined,
+          name: "title",
+          optional: false,
+          structure: {
+            key: "root.Todo.title",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          comment: undefined,
+          name: "done",
+          optional: false,
+          structure: {
+            key: "root.Todo.done",
+            kind: "primitive",
+            type: "boolean",
+          },
+        },
+      ],
+    },
+    {
+      comment: "A declared generic type, used to exercise mixed nesting: a generic builtin
+(\`Page\`) as a type argument of a declared generic, and vice versa.",
+      key: "root.Box",
+      kind: "interface",
+      name: "Box",
+      parameters: [
+        "T",
+      ],
+      properties: [
+        {
+          comment: undefined,
+          name: "value",
+          optional: false,
+          structure: {
+            key: "root.Box.value",
+            kind: "ref",
+            params: [],
+            ref: "T",
+          },
+        },
+        {
+          comment: undefined,
+          name: "label",
+          optional: false,
+          structure: {
+            key: "root.Box.label",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+      ],
+    },
+    {
+      comment: undefined,
+      key: "root.Graph",
+      kind: "interface",
+      name: "Graph",
+      parameters: [],
+      properties: [
+        {
+          comment: "Generic builtin as an output, parameter is a declared interface.",
+          name: "todos",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [],
+              key: "root.Graph.todos.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.todos",
+            kind: "function",
+            returns: {
+              key: "root.Graph.todos.returns",
+              kind: "ref",
+              params: [
+                {
+                  key: "root.Graph.todos.returns.params.0",
+                  kind: "ref",
+                  params: [],
+                  ref: "Todo",
+                },
+              ],
+              ref: "Page",
+            },
+          },
+        },
+        {
+          comment: "Generic builtin as an input.",
+          name: "pageOfStrings",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [
+                {
+                  comment: undefined,
+                  name: "page",
+                  optional: false,
+                  structure: {
+                    key: "root.Graph.pageOfStrings.arguments.page",
+                    kind: "ref",
+                    params: [
+                      {
+                        key: "root.Graph.pageOfStrings.arguments.page.params.0",
+                        kind: "primitive",
+                        type: "string",
+                      },
+                    ],
+                    ref: "Page",
+                  },
+                },
+              ],
+              key: "root.Graph.pageOfStrings.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.pageOfStrings",
+            kind: "function",
+            returns: {
+              key: "root.Graph.pageOfStrings.returns",
+              kind: "primitive",
+              type: "number",
+            },
+          },
+        },
+        {
+          comment: "Nested generic builtin.",
+          name: "nested",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [],
+              key: "root.Graph.nested.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.nested",
+            kind: "function",
+            returns: {
+              key: "root.Graph.nested.returns",
+              kind: "ref",
+              params: [
+                {
+                  key: "root.Graph.nested.returns.params.0",
+                  kind: "ref",
+                  params: [
+                    {
+                      key: "root.Graph.nested.returns.params.0.params.0",
+                      kind: "primitive",
+                      type: "number",
+                    },
+                  ],
+                  ref: "Page",
+                },
+              ],
+              ref: "Page",
+            },
+          },
+        },
+        {
+          comment: "Generic builtin parameter that is another generic declared type.",
+          name: "pageOfMaybeTodo",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [],
+              key: "root.Graph.pageOfMaybeTodo.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.pageOfMaybeTodo",
+            kind: "function",
+            returns: {
+              key: "root.Graph.pageOfMaybeTodo.returns",
+              kind: "ref",
+              params: [
+                {
+                  key: "root.Graph.pageOfMaybeTodo.returns.params.0",
+                  kind: "nullable",
+                  type: {
+                    key: "root.Graph.pageOfMaybeTodo.returns.params.0.type",
+                    kind: "ref",
+                    params: [],
+                    ref: "Todo",
+                  },
+                },
+              ],
+              ref: "Page",
+            },
+          },
+        },
+        {
+          comment: "Nested declared generic.",
+          name: "nestedBox",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [],
+              key: "root.Graph.nestedBox.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.nestedBox",
+            kind: "function",
+            returns: {
+              key: "root.Graph.nestedBox.returns",
+              kind: "ref",
+              params: [
+                {
+                  key: "root.Graph.nestedBox.returns.params.0",
+                  kind: "ref",
+                  params: [
+                    {
+                      key: "root.Graph.nestedBox.returns.params.0.params.0",
+                      kind: "ref",
+                      params: [],
+                      ref: "Todo",
+                    },
+                  ],
+                  ref: "Box",
+                },
+              ],
+              ref: "Box",
+            },
+          },
+        },
+        {
+          comment: "Mixed: generic builtin nested inside a declared generic.",
+          name: "boxOfPage",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [],
+              key: "root.Graph.boxOfPage.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.boxOfPage",
+            kind: "function",
+            returns: {
+              key: "root.Graph.boxOfPage.returns",
+              kind: "ref",
+              params: [
+                {
+                  key: "root.Graph.boxOfPage.returns.params.0",
+                  kind: "ref",
+                  params: [
+                    {
+                      key: "root.Graph.boxOfPage.returns.params.0.params.0",
+                      kind: "ref",
+                      params: [],
+                      ref: "Todo",
+                    },
+                  ],
+                  ref: "Page",
+                },
+              ],
+              ref: "Box",
+            },
+          },
+        },
+        {
+          comment: "Mixed: declared generic nested inside a generic builtin.",
+          name: "pageOfBoxedTodo",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [],
+              key: "root.Graph.pageOfBoxedTodo.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.pageOfBoxedTodo",
+            kind: "function",
+            returns: {
+              key: "root.Graph.pageOfBoxedTodo.returns",
+              kind: "ref",
+              params: [
+                {
+                  key: "root.Graph.pageOfBoxedTodo.returns.params.0",
+                  kind: "ref",
+                  params: [
+                    {
+                      key: "root.Graph.pageOfBoxedTodo.returns.params.0.params.0",
+                      kind: "ref",
+                      params: [],
+                      ref: "Todo",
+                    },
+                  ],
+                  ref: "Box",
+                },
+              ],
+              ref: "Page",
+            },
+          },
+        },
+      ],
+    },
+  ],
+}
+`;

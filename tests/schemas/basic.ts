@@ -9,7 +9,7 @@ export interface User {
 
 export interface Group {
   name: string;
-  users: User[];
+  users: string[];
 }
 
 export interface Graph {

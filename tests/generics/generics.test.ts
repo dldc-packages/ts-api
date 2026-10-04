@@ -228,3 +228,58 @@ Deno.test("generic input validation: createMany rejects invalid data", async () 
     "Invalid arguments passed to root.Graph.createMany",
   );
 });
+
+Deno.test("nested declared generic: Paginated<Paginated<TodoItem>> resolves", async () => {
+  const engine = createEngine({
+    graph,
+    entry: "Graph",
+    resolvers: [
+      fn(
+        graph.Graph.nestedPaginated,
+        () => ({
+          total: 1,
+          data: [{ total: 1, data: [{ name: "todo1", done: true }] }],
+        }),
+      ),
+    ],
+  });
+
+  const q = client.Graph.nestedPaginated();
+  const { path: queryDef, args: variables } = queryToObject(q);
+  const result = await engine.run({ path: queryDef, args: variables });
+  assertEquals(result, {
+    total: 1,
+    data: [{ total: 1, data: [{ name: "todo1", done: true }] }],
+  });
+});
+
+Deno.test("nested declared generic output is validated deeply", async () => {
+  // The inner `Paginated<TodoItem>` is validated too: `done` is a boolean, so
+  // the resolver returning a string must be rejected.
+  const engine = createEngine({
+    graph,
+    entry: "Graph",
+    resolvers: [
+      fn(
+        graph.Graph.nestedPaginated,
+        () =>
+          ({
+            total: 1,
+            data: [{ total: 1, data: [{ name: "todo1", done: "yes" }] }],
+          }) as any,
+      ),
+    ],
+  });
+
+  const q = client.Graph.nestedPaginated();
+  const { path: queryDef, args: variables } = queryToObject(q);
+  const err = await assertRejects(() =>
+    engine.run({ path: queryDef, args: variables })
+  );
+  assertEquals(
+    (err as Error).message.startsWith(
+      "Invalid resolved value for root.Graph.nestedPaginated",
+    ),
+    true,
+  );
+});

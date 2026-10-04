@@ -1,6 +1,6 @@
 {
   "name": "@dldc/ts-api",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "exports": {
     "./client": "./src/client/mod.ts",
     "./server": "./src/server/mod.ts",

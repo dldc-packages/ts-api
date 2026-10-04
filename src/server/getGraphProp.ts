@@ -242,8 +242,32 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
   //     path: [found],
   //   });
   // },
-  builtin: () => {
-    throw new Error("Builtin has no properties");
+  builtin: (
+    { rootStructure, localTypes, path, structure, prop },
+  ) => {
+    if (typeof prop !== "string") {
+      throw new Error("Invalid path: expected string");
+    }
+    // A builtin's generic type arguments are navigable by their declared
+    // parameter names — the same way a body walks its fields. The bound
+    // structure comes from `localTypes`, which `resolveRef` populates exactly
+    // like it does for declared generics.
+    if (!structure.parameters.includes(prop)) {
+      throw new Error(
+        `Invalid path: ${prop} not found in builtin ${structure.name}`,
+      );
+    }
+    const paramStructure = localTypes[prop];
+    if (!paramStructure) {
+      throw new Error(
+        `Invalid path: no type argument bound for "${prop}" of builtin ${structure.name}`,
+      );
+    }
+    return graphInternal({
+      rootStructure,
+      localTypes,
+      path: pushTail(path, paramStructure),
+    });
   },
 };
 
@@ -269,34 +293,37 @@ function resolveRef(
     localTypes,
     structure,
   );
-  if (resolvedStructure.kind === "root") {
-    // If the ref point to a top level structure, it's an alias or a type
-    // We need to map type parameters
-    const nextLocalTypes: TLocalTypes = {};
-    resolvedStructure.structure.parameters.forEach((name, index) => {
-      const param = structure.params[index];
-      if (param.kind !== "ref") {
-        nextLocalTypes[name] = param;
-        return;
-      }
-      // resolve ref
-      const resolvedParams = resolveRefStructure(
-        rootStructure,
-        localTypes,
-        param,
-      );
-      nextLocalTypes[name] = resolvedParams.structure;
-    });
+  if (resolvedStructure.kind === "local") {
+    // The ref points to a bound type argument (or a ref to one): push the
+    // bound structure as-is and keep the current `localTypes`.
     return graphInternal({
       rootStructure,
-      localTypes: nextLocalTypes,
+      localTypes,
       path: pushTail(path, resolvedStructure.structure),
     });
   }
-  // Otherwise, it's a local type, we simply push the resolved type
+  // Both top-level declarations (`root`) and builtins declare a `parameters`
+  // list, so the ref's type arguments are bound into `localTypes` the exact
+  // same way for either target.
+  if (
+    resolvedStructure.kind === "builtin" &&
+    resolvedStructure.structure.parameters.length !== structure.params.length
+  ) {
+    throw new Error(
+      `Invalid type arguments: expected ${resolvedStructure.structure.parameters.length} parameter(s) for builtin "${resolvedStructure.structure.name}", got ${structure.params.length}`,
+    );
+  }
+  const nextLocalTypes: TLocalTypes = {};
+  // Keep the raw type arguments: a ref that carries its own `params` (e.g. the
+  // inner `Page<number>` of `Page<Page<number>>`) is re-resolved later through
+  // the normal machinery instead of being flattened, so nested generics bind
+  // correctly.
+  resolvedStructure.structure.parameters.forEach((name, index) => {
+    nextLocalTypes[name] = structure.params[index];
+  });
   return graphInternal({
     rootStructure,
-    localTypes,
+    localTypes: nextLocalTypes,
     path: pushTail(path, resolvedStructure.structure),
   });
 }

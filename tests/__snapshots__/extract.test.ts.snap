@@ -161,9 +161,8 @@ snapshot[`extractApi: snapshot basic 1`] = `
           optional: false,
           type: {
             items: {
-              kind: "ref",
-              name: "User",
-              params: [],
+              kind: "primitive",
+              type: "string",
             },
             kind: "array",
           },

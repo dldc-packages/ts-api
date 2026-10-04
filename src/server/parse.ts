@@ -1,13 +1,34 @@
-import type { SyntaxNode, Tree } from "@lezer/common";
+import type { SyntaxNode } from "@lezer/common";
 import { parser } from "@lezer/javascript";
-import * as v from "@valibot/valibot";
-import { normalizeComment, type TCommentSource } from "../utils/comment.ts";
 import type { TTypesBase } from "../utils/types.ts";
 import { DEFAULT_BUILTINS_GRAPH } from "./builtins.ts";
 import { ROOT } from "./constants.ts";
 import { graph, type TGraphBaseAny } from "./graph.ts";
+import {
+  buildCommentsMap,
+  type CommentsMap,
+} from "./parse/buildCommentsMap.ts";
+import { collectImportedNames } from "./parse/collectImportedNames.ts";
+import {
+  handleMissingBuiltins,
+  type TMissingBuiltinAction,
+  type TMissingBuiltinActionConfig,
+} from "./parse/handleMissingBuiltins.ts";
+import {
+  childByName,
+  children,
+  hasChild,
+  requiredType,
+  textOf,
+  throwUnknown,
+  TS_KEYWORDS,
+  typeChild,
+  unquote,
+} from "./parse/utils.ts";
+import { validateNoFunctionsInReturns } from "./parse/validateNoFunctionsInReturns.ts";
+import { validateNoImportedNamespaces } from "./parse/validateNoImportedNamespaces.ts";
+import { validateNoRecursiveTypes } from "./parse/validateNoRecursiveTypes.ts";
 import type {
-  TBuiltinStructure,
   TFunctionArgumentStructure,
   TRootStructure,
   TStructure,
@@ -17,7 +38,6 @@ import type {
   TStructureInterface,
   TStructureObjectProperty,
   TStructureUnion,
-  TTopLevelStructure,
 } from "./structure.types.ts";
 import type { TGraphOf } from "./types.ts";
 
@@ -30,31 +50,6 @@ import type { TGraphOf } from "./types.ts";
  * for a ~0.8MB dependency instead of the ~26MB TypeScript compiler.
  */
 const tsParser = parser.configure({ dialect: "ts", strict: true });
-
-/**
- * What to do when the schema references a type that is neither declared in the
- * schema file nor registered as a builtin.
- *
- * - `"throw"` (default): fail at parse time.
- * - `"warn"`: auto-register the type as a builtin (with an `unknown` schema)
- *   and log a warning.
- * - `"ignore"`: auto-register the type as a builtin (with an `unknown` schema)
- *   without logging.
- */
-export type TMissingBuiltinAction = "ignore" | "throw" | "warn";
-
-/**
- * Configuration for how to handle types referenced in the schema that are
- * neither declared in the file nor registered as a builtin.
- *
- * Either a single action applied to every missing type, or an object allowing a
- * different action for types used as function inputs (`input`) vs types used as
- * function outputs / return values (`output`). When a type is used on both
- * sides, the stricter of the two actions wins (`throw` > `warn` > `ignore`).
- */
-export type TMissingBuiltinActionConfig =
-  | TMissingBuiltinAction
-  | { input: TMissingBuiltinAction; output: TMissingBuiltinAction };
 
 /** Options for {@link parse}. */
 export interface TParseOptions {
@@ -77,6 +72,8 @@ export interface TParseOptions {
    */
   missingBuiltinAction?: TMissingBuiltinActionConfig;
 }
+
+export type { TMissingBuiltinAction, TMissingBuiltinActionConfig };
 
 /**
  * Parse the TypeScript source of a schema and turn it into a graph object.
@@ -149,6 +146,7 @@ export function parse<Types extends TTypesBase>(
     rootStructure.types.push(struct);
   }
 
+  validateNoRecursiveTypes(rootStructure);
   validateNoFunctionsInReturns(rootStructure);
   validateNoImportedNamespaces(rootStructure, importedNames);
   handleMissingBuiltins(
@@ -158,424 +156,6 @@ export function parse<Types extends TTypesBase>(
 
   return graph(rootStructure) as TGraphOf<Types>;
 }
-
-/**
- * Collect the local names bound by import declarations in the schema file.
- *
- * ts-api never follows imports — an imported type is opaque. Knowing which
- * names are imported lets us reject using them as part of the graph structure
- * (see {@link validateNoImportedNamespaces}).
- */
-function collectImportedNames(
-  root: SyntaxNode,
-  sourceText: string,
-): Set<string> {
-  const names = new Set<string>();
-  for (const statement of children(root)) {
-    if (statement.type.name !== "ImportDeclaration") {
-      continue;
-    }
-    for (const child of children(statement)) {
-      const name = child.type.name;
-      if (name === "ImportGroup") {
-        // Named imports: the local binding is always a `VariableDefinition`
-        // (aliased imports are `VariableName as VariableDefinition`).
-        for (const specifier of children(child)) {
-          if (specifier.type.name === "VariableDefinition") {
-            names.add(textOf(specifier, sourceText));
-          }
-        }
-      } else if (name === "VariableDefinition") {
-        // Default import, or `import * as NS` namespace import. Both bind a
-        // local name; we don't care which it is for validation purposes.
-        names.add(textOf(child, sourceText));
-      }
-    }
-  }
-  return names;
-}
-
-/**
- * Throw if a type imported into the schema file is used to build the graph
- * tree (a namespace property).
- *
- * Imported types can only be used as data: function arguments, return values,
- * or fields of non-namespace interfaces — where a registered builtin provides
- * the runtime schema. Using one as a namespace is broken because a builtin is
- * an opaque leaf that cannot be navigated, so it is rejected at parse time.
- */
-function validateNoImportedNamespaces(
-  rootStructure: TRootStructure,
-  importedNames: Set<string>,
-): void {
-  if (importedNames.size === 0) {
-    return;
-  }
-  for (const type of rootStructure.types) {
-    const locals = new Set(type.parameters);
-    const structure = type.kind === "alias" ? type.type : type;
-    walkNamespace(structure, locals);
-  }
-
-  // An interface/object containing endpoints is a namespace. Its non-endpoint
-  // properties are graph-tree nodes, so an imported type there is invalid.
-  // Pure data interfaces are never navigated, so imported data fields are fine.
-  function walkNamespace(structure: TStructure, locals: Set<string>): void {
-    if (structure.kind !== "interface" && structure.kind !== "object") {
-      return;
-    }
-    const hasEndpoint = structure.properties.some(
-      (prop) => prop.structure.kind === "function",
-    );
-    if (!hasEndpoint) {
-      return;
-    }
-    for (const prop of structure.properties) {
-      if (prop.structure.kind === "function") {
-        // Endpoint: arguments and return value are data, imported types are fine.
-        continue;
-      }
-      walkNodeValue(prop.structure, locals);
-    }
-  }
-
-  function walkNodeValue(structure: TStructure, locals: Set<string>): void {
-    switch (structure.kind) {
-      case "ref":
-        if (
-          importedNames.has(structure.ref) &&
-          !locals.has(structure.ref) &&
-          !rootStructure.types.some((t) => t.name === structure.ref)
-        ) {
-          throw new Error(
-            `Imported type "${structure.ref}" is used as a namespace, which is not supported. ` +
-              "Imported types can only be used as function input/output (registered as builtins) " +
-              "or as data fields of non-namespace interfaces. " +
-              `Declare "${structure.ref}" directly in the schema file instead.`,
-          );
-        }
-        // Generic arguments can also be namespaces (e.g. `Wrapper<Imported>`).
-        for (const param of structure.params) {
-          walkNodeValue(param, locals);
-        }
-        break;
-      case "nullable":
-        walkNodeValue(structure.type, locals);
-        break;
-      case "alias":
-        walkNodeValue(structure.type, locals);
-        break;
-      case "interface":
-      case "object": {
-        // Inline sub-namespace (contains endpoints) → recurse; otherwise data.
-        if (
-          structure.properties.some(
-            (prop) => prop.structure.kind === "function",
-          )
-        ) {
-          walkNamespace(structure, locals);
-        }
-        return;
-      }
-      default:
-        break;
-    }
-  }
-}
-
-function findType(
-  rootStructure: TRootStructure,
-  name: string,
-): TTopLevelStructure | undefined {
-  return rootStructure.types.find((t) => t.name === name);
-}
-
-function checkNoFunctionsInStructure(
-  rootStructure: TRootStructure,
-  structure: TStructure,
-  visited: Set<string>,
-  context: string,
-): void {
-  switch (structure.kind) {
-    case "function":
-      throw new Error(
-        `Function found in return type at ${context}. Return types must not contain functions. Use a separate namespace property instead.`,
-      );
-    case "object":
-    case "interface":
-      for (const prop of structure.properties) {
-        checkNoFunctionsInStructure(
-          rootStructure,
-          prop.structure,
-          visited,
-          `${context}.${prop.name}`,
-        );
-      }
-      break;
-    case "array":
-      checkNoFunctionsInStructure(
-        rootStructure,
-        structure.items,
-        visited,
-        `${context}.items`,
-      );
-      break;
-    case "nullable":
-      checkNoFunctionsInStructure(
-        rootStructure,
-        structure.type,
-        visited,
-        `${context}.type`,
-      );
-      break;
-    case "union":
-      structure.types.forEach((t, i) =>
-        checkNoFunctionsInStructure(
-          rootStructure,
-          t,
-          visited,
-          `${context}.${i}`,
-        )
-      );
-      break;
-    case "ref": {
-      const resolved = findType(rootStructure, structure.ref);
-      if (resolved) {
-        if (visited.has(resolved.key)) {
-          return;
-        }
-        visited.add(resolved.key);
-        checkNoFunctionsInStructure(
-          rootStructure,
-          resolved.kind === "alias" ? resolved.type : resolved,
-          visited,
-          context,
-        );
-      }
-      break;
-    }
-    case "alias":
-      checkNoFunctionsInStructure(
-        rootStructure,
-        structure.type,
-        visited,
-        context,
-      );
-      break;
-    case "primitive":
-    case "literal":
-    case "builtin":
-      break;
-  }
-}
-
-function validateNoFunctionsInReturns(rootStructure: TRootStructure): void {
-  const visited = new Set<string>();
-  for (const type of rootStructure.types) {
-    walkForFunctions(rootStructure, type, visited);
-  }
-}
-
-function walkForFunctions(
-  rootStructure: TRootStructure,
-  structure: TStructure,
-  visited: Set<string>,
-): void {
-  switch (structure.kind) {
-    case "function":
-      checkNoFunctionsInStructure(
-        rootStructure,
-        structure.returns,
-        new Set<string>(),
-        `${structure.key}.returns`,
-      );
-      break;
-    case "interface":
-    case "object":
-      for (const prop of structure.properties) {
-        walkForFunctions(rootStructure, prop.structure, visited);
-      }
-      break;
-    case "alias":
-      walkForFunctions(rootStructure, structure.type, visited);
-      break;
-    case "array":
-      walkForFunctions(rootStructure, structure.items, visited);
-      break;
-    case "nullable":
-      walkForFunctions(rootStructure, structure.type, visited);
-      break;
-    case "union":
-      structure.types.forEach((t) =>
-        walkForFunctions(rootStructure, t, visited)
-      );
-      break;
-    case "ref": {
-      const resolved = findType(rootStructure, structure.ref);
-      if (resolved) {
-        if (visited.has(resolved.key)) {
-          return;
-        }
-        visited.add(resolved.key);
-        walkForFunctions(
-          rootStructure,
-          resolved.kind === "alias" ? resolved.type : resolved,
-          visited,
-        );
-      }
-      break;
-    }
-    case "primitive":
-    case "literal":
-    case "builtin":
-      break;
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Lezer AST helpers
-// ---------------------------------------------------------------------------
-
-/** All children, including anonymous tokens, in source order. */
-function children(node: SyntaxNode): SyntaxNode[] {
-  const out: SyntaxNode[] = [];
-  const cur = node.cursor();
-  if (cur.firstChild()) {
-    do {
-      const name = cur.node.type.name;
-      // Comments carry no AST meaning for ts-api and can appear anywhere
-      // between tokens, so they are dropped from traversal everywhere.
-      if (
-        name === "LineComment" || name === "BlockComment" || name === "Hashbang"
-      ) {
-        continue;
-      }
-      out.push(cur.node);
-    } while (cur.nextSibling());
-  }
-  return out;
-}
-
-/**
- * The structural type node names emitted by the TS-dialect grammar. Named
- * (non-token) nodes in type positions always have one of these names.
- *
- * NOTE: in this build of @lezer/common the anonymous-token flag is not set on
- * token node types, so tokens and named nodes are indistinguishable via node
- * flags. We therefore classify by name: `children()` (a cursor walk) yields
- * everything — including punctuation/keyword tokens — and these sets pick out
- * the structural nodes.
- */
-const TYPE_NODE_NAMES = new Set([
-  "TypeName",
-  "ParameterizedType",
-  "IndexedType",
-  "ArrayType",
-  "UnionType",
-  "IntersectionType",
-  "LiteralType",
-  "NullType",
-  "ObjectType",
-  "FunctionSignature",
-  "VoidType",
-  "ReadonlyType",
-  "ParenthesizedType",
-  "TupleType",
-  "ConditionalType",
-  "KeyofType",
-  "TypeofType",
-  "InferredType",
-  "UniqueType",
-  "ImportType",
-  "TemplateType",
-  "ThisType",
-]);
-
-/** The first direct child that is a type node, if any. */
-function typeChild(node: SyntaxNode): SyntaxNode | undefined {
-  return children(node).find((c) => TYPE_NODE_NAMES.has(c.type.name));
-}
-
-function childByName(node: SyntaxNode, name: string): SyntaxNode | undefined {
-  return children(node).find((n) => n.type.name === name);
-}
-
-function hasChild(node: SyntaxNode, name: string): boolean {
-  return children(node).some((n) => n.type.name === name);
-}
-
-function textOf(node: SyntaxNode, sourceText: string): string {
-  return sourceText.slice(node.from, node.to);
-}
-
-/** 1-based line number of the start of a node. */
-function lineAt(node: SyntaxNode, sourceText: string): number {
-  let line = 1;
-  const end = Math.min(node.from, sourceText.length);
-  for (let i = 0; i < end; i++) {
-    if (sourceText.charCodeAt(i) === 10) {
-      line++;
-    }
-  }
-  return line;
-}
-
-function throwUnknown(
-  node: SyntaxNode,
-  sourceText: string,
-  kindName?: string,
-): never {
-  const kind = kindName ?? node.type.name;
-  console.info(textOf(node, sourceText), `at line ${lineAt(node, sourceText)}`);
-  throw new Error(
-    `Unknown node: ${textOf(node, sourceText)} (${kind}) at line ${
-      lineAt(node, sourceText)
-    }`,
-  );
-}
-
-/** Unescape a string literal (both `"` and `'` quoted forms). */
-function unquote(raw: string): string {
-  const q = raw.charCodeAt(0);
-  const last = raw.charCodeAt(raw.length - 1);
-  if (q === 34 && last === 34) { // double quotes
-    return JSON.parse(raw);
-  }
-  if (q === 39 && last === 39) { // single quotes
-    const inner = raw.slice(1, -1);
-    try {
-      return JSON.parse(
-        '"' + inner.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"',
-      );
-    } catch {
-      // Best effort: keep the raw content when escaping is ambiguous.
-      return inner;
-    }
-  }
-  throw new Error(`Unsupported literal type: ${raw}`);
-}
-
-function requiredType(node: SyntaxNode, label: string): SyntaxNode {
-  const child = typeChild(node);
-  if (!child) {
-    throw new Error(`Expected a ${label} type for ${node.type.name}`);
-  }
-  return child;
-}
-
-// `TypeName` is Lezer's catch-all name for both primitive keywords and plain
-// type references. Keywords the compiler would represent differently are
-// explicitly rejected, matching the previous ts-morph behaviour.
-const TS_KEYWORDS: Record<string, string | undefined> = {
-  any: "AnyKeyword",
-  unknown: "UnknownKeyword",
-  never: "NeverKeyword",
-  undefined: "UndefinedKeyword",
-  object: "ObjectKeyword",
-  symbol: "SymbolKeyword",
-  bigint: "BigIntKeyword",
-  this: "ThisType",
-};
 
 // ---------------------------------------------------------------------------
 // Node → TStructure
@@ -1057,243 +637,4 @@ function parseInterfaceDeclaration(
     parameters: parseTypeParameters(node, sourceText),
     comment: commentsMap.get(node.from),
   };
-}
-
-function handleMissingBuiltins(
-  rootStructure: TRootStructure,
-  config: TMissingBuiltinActionConfig,
-): void {
-  const missing = collectMissingRefs(rootStructure);
-  if (missing.size === 0) {
-    return;
-  }
-
-  const toThrow: string[] = [];
-  for (const [name, usage] of missing) {
-    const action = resolveAction(config, usage);
-    if (action === "throw") {
-      toThrow.push(name);
-      continue;
-    }
-    if (action === "warn") {
-      console.warn(
-        `[ts-api] Type "${name}" is not declared in the schema nor registered as a builtin. ` +
-          "Automatically registering it as a builtin with an unknown schema.",
-      );
-    }
-    rootStructure.builtins.push(createAutoBuiltin(name));
-  }
-
-  if (toThrow.length > 0) {
-    throw new Error(
-      `Missing builtin type${toThrow.length > 1 ? "s" : ""}: ${
-        toThrow.join(", ")
-      }. ` +
-        "Register them with createBuiltins() or set missingBuiltinAction to 'warn' or 'ignore'.",
-    );
-  }
-}
-
-function createAutoBuiltin(name: string): TBuiltinStructure {
-  return {
-    kind: "builtin",
-    key: `builtin.${name}`,
-    name,
-    getSchema: () => v.unknown(),
-  };
-}
-
-type TMissingRefUsage = { input: boolean; output: boolean };
-type TMissingRefContext = "input" | "output" | "neutral";
-
-const MISSING_BUILTIN_SEVERITY: Record<TMissingBuiltinAction, number> = {
-  ignore: 0,
-  warn: 1,
-  throw: 2,
-};
-
-function resolveAction(
-  config: TMissingBuiltinActionConfig,
-  usage: TMissingRefUsage,
-): TMissingBuiltinAction {
-  if (typeof config === "string") {
-    return config;
-  }
-  if (usage.input && usage.output) {
-    // Used on both sides: take the stricter of the two.
-    return MISSING_BUILTIN_SEVERITY[config.input] >=
-        MISSING_BUILTIN_SEVERITY[config.output]
-      ? config.input
-      : config.output;
-  }
-  if (usage.input) {
-    return config.input;
-  }
-  // Used only as output, or in a neutral position (e.g. a non-endpoint data
-  // field): fall back to the output action.
-  return config.output;
-}
-
-function collectMissingRefs(
-  rootStructure: TRootStructure,
-): Map<string, TMissingRefUsage> {
-  const missing = new Map<string, TMissingRefUsage>();
-  for (const type of rootStructure.types) {
-    walkForMissingRefs(
-      rootStructure,
-      type,
-      new Set(type.parameters),
-      "neutral",
-      missing,
-    );
-  }
-  return missing;
-}
-
-function walkForMissingRefs(
-  rootStructure: TRootStructure,
-  structure: TStructure,
-  locals: Set<string>,
-  context: TMissingRefContext,
-  missing: Map<string, TMissingRefUsage>,
-): void {
-  switch (structure.kind) {
-    case "ref":
-      if (
-        !locals.has(structure.ref) &&
-        !rootStructure.types.some((t) => t.name === structure.ref) &&
-        !rootStructure.builtins.some((b) => b.name === structure.ref)
-      ) {
-        const usage = missing.get(structure.ref) ??
-          { input: false, output: false };
-        if (context === "input") {
-          usage.input = true;
-        }
-        if (context === "output") {
-          usage.output = true;
-        }
-        missing.set(structure.ref, usage);
-      }
-      structure.params.forEach((p) =>
-        walkForMissingRefs(rootStructure, p, locals, context, missing)
-      );
-      break;
-    case "interface":
-    case "object":
-      structure.properties.forEach((p) =>
-        walkForMissingRefs(rootStructure, p.structure, locals, context, missing)
-      );
-      break;
-    case "alias":
-      walkForMissingRefs(
-        rootStructure,
-        structure.type,
-        locals,
-        context,
-        missing,
-      );
-      break;
-    case "array":
-      walkForMissingRefs(
-        rootStructure,
-        structure.items,
-        locals,
-        context,
-        missing,
-      );
-      break;
-    case "nullable":
-      walkForMissingRefs(
-        rootStructure,
-        structure.type,
-        locals,
-        context,
-        missing,
-      );
-      break;
-    case "union":
-      structure.types.forEach((t) =>
-        walkForMissingRefs(rootStructure, t, locals, context, missing)
-      );
-      break;
-    case "function":
-      structure.arguments.arguments.forEach((a) =>
-        walkForMissingRefs(rootStructure, a.structure, locals, "input", missing)
-      );
-      walkForMissingRefs(
-        rootStructure,
-        structure.returns,
-        locals,
-        "output",
-        missing,
-      );
-      break;
-    case "primitive":
-    case "literal":
-    case "builtin":
-      break;
-  }
-}
-
-// Map node "from" position to comment
-type CommentsMap = Map<number, string | undefined>;
-
-const SKIPPED_NODE_TYPES = new Set(["ExportDeclaration", "export", ";"]);
-
-/**
- * Builds a map of node -> comment from the given syntax tree.
- */
-function buildCommentsMap(
-  sourceText: string,
-  tree: Tree,
-): CommentsMap {
-  const commentsMap: CommentsMap = new Map();
-  const cursor = tree.cursor();
-  // traverse all node sequentially to build the comments map
-  let comment: TCommentSource | null = null;
-  do {
-    const node = cursor.node;
-    if (node.type.name === "BlockComment" || node.type.name === "LineComment") {
-      if (!startsLine(sourceText, node.from)) {
-        // A comment that shares its line with preceding code (e.g.
-        // `name: string; // stays here`) is a trailing comment: it documents
-        // the previous line, not the next declaration, so it is dropped.
-        comment = null;
-      } else if (node.type.name === "BlockComment") {
-        comment = { type: "BlockComment", content: textOf(node, sourceText) };
-      } else if (comment && comment.type === "LineComment") {
-        comment.content.push(textOf(node, sourceText));
-      } else {
-        comment = { type: "LineComment", content: [textOf(node, sourceText)] };
-      }
-      continue;
-    }
-    if (!comment) {
-      continue;
-    }
-    commentsMap.set(node.from, normalizeComment(comment));
-    if (SKIPPED_NODE_TYPES.has(node.type.name)) {
-      // Don't reset the comment to also assign the comment to the next relevant node
-      continue;
-    }
-    comment = null;
-  } while (cursor.next());
-
-  return commentsMap;
-}
-
-/**
- * Whether `pos` sits at the beginning of a line (only spaces/tabs before it on
- * that line). Used to tell leading doc comments (`/** ...`) from trailing
- * comments (`// ...` after code on the same line).
- */
-function startsLine(sourceText: string, pos: number): boolean {
-  const lineStart = sourceText.lastIndexOf("\n", pos - 1) + 1;
-  for (let i = lineStart; i < pos; i++) {
-    const code = sourceText.charCodeAt(i);
-    if (code !== 32 && code !== 9) {
-      return false;
-    }
-  }
-  return true;
 }

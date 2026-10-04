@@ -645,6 +645,83 @@ export interface Graph {
 }
 ```
 
+### Generic builtins
+
+A builtin can also have type parameters. When a generic builtin like
+`Page<Item>` is used in the graph, `getSchema` receives the **schemas of the
+type arguments** — so you can build a validation schema that depends on the
+concrete generic instantiation:
+
+```ts
+// api/builtins.ts
+import { builtin } from "@dldc/ts-api/server";
+import * as v from "@valibot/valibot";
+
+export type Page<T> = { items: T[]; cursor: string };
+
+export const PageBuiltin = builtin<Page<unknown>>({
+  // declare the generic type parameter of `Page<T>` (optional for non-generic builtins)
+  parameters: ["T"],
+  // params are the valibot schemas of the type arguments (here: the schema of T)
+  getSchema: (params) =>
+    v.object({
+      items: v.array(params[0]), // schema of `Page<string>` items, schema of `Page<Todo>` items, ...
+      cursor: v.string(),
+    }),
+});
+```
+
+Register it like any other builtin:
+
+```ts
+// server.ts
+import { createBuiltins, DEFAULT_BUILTINS, parse } from "@dldc/ts-api/server";
+import { PageBuiltin } from "./api/builtins.ts";
+
+const builtins = createBuiltins({
+  ...DEFAULT_BUILTINS,
+  Page: PageBuiltin,
+});
+
+const graph = parseFromFile<{ Graph: Graph }>(resolve("./api/schema.ts"), {
+  builtins,
+});
+```
+
+Then every use of `Page<...>` is validated with a schema built from its own type
+arguments — as a return type and as an argument type:
+
+```ts
+// api/schema.ts
+export interface TodoItem {
+  name: string;
+  done: boolean;
+}
+
+export interface Graph {
+  // output: `Page<TodoItem>` validated with the schema of `TodoItem`
+  todos: () => Page<TodoItem>;
+  // input: `Page<string>` validated with the schema of `string`
+  saveTodos: (page: Page<string>) => void; // use `null` for no return value
+}
+```
+
+Details to keep in mind:
+
+- The builtin declares its generic type parameters with `parameters` (e.g.
+  `["T"]` for a `Page<T>` builtin), mirroring the generic interfaces/aliases of
+  the schema. A non-generic builtin (no `parameters`) receives an empty array
+  (`getSchema([])`); using a generic builtin with the wrong number of type
+  arguments throws a clear error.
+- The type arguments can be any supported type: primitives, declared
+  interfaces/aliases, unions, arrays, or even other generic builtins
+  (`Page<Page<number>>`). Each is resolved to its schema before being handed to
+  `getSchema`.
+- Because a builtin is matched **by name**, the builtin name must not also be
+  declared as an interface/type alias in the schema file (declared types win
+  over builtins). Imported types or globals are the usual generic builtin
+  candidates.
+
 ### Missing builtins
 
 If a type referenced in the schema file is neither declared in the file nor
@@ -726,25 +803,26 @@ console.log(getStructure(graph).builtins.map((b) => b.name));
 
 ## Supported types
 
-| TypeScript construct                       | Supported | Notes                                  |
-| ------------------------------------------ | --------- | -------------------------------------- |
-| `string`, `number`, `boolean`              | ✅        | Primitives                             |
-| `null`                                     | ✅        | Literal null                           |
-| String literals (`"admin" \| "user"`)      | ✅        | Unions of string literals              |
-| Number/boolean literals                    | ✅        |                                        |
-| Arrays (`T[]`)                             | ✅        |                                        |
-| Nullable (`T \| null`)                     | ✅        |                                        |
-| Objects (`{ foo: string }`)                | ✅        | Inline type literals                   |
-| Interfaces                                 | ✅        | Named, reusable                        |
-| Type aliases                               | ✅        | Including unions                       |
-| References to other interfaces             | ✅        | `ref: OtherInterface`                  |
-| Generics                                   | ✅        | `interface Paginated<T> { data: T[] }` |
-| Optional properties (`foo?: string`)       | ✅        |                                        |
-| Functions `(arg: T) => R`                  | ✅        | RPC endpoints                          |
-| Function return types containing functions | ❌        | Rejected at parse time                 |
-| `undefined`                                | ❌        | Use `null` instead                     |
-| `void`                                     | ❌        | Use `null` instead                     |
-| Methods on interfaces                      | ❌        | Use `prop: () => T` instead            |
+| TypeScript construct                               | Supported | Notes                                  |
+| -------------------------------------------------- | --------- | -------------------------------------- |
+| `string`, `number`, `boolean`                      | ✅        | Primitives                             |
+| `null`                                             | ✅        | Literal null                           |
+| String literals (`"admin" \| "user"`)              | ✅        | Unions of string literals              |
+| Number/boolean literals                            | ✅        |                                        |
+| Arrays (`T[]`)                                     | ✅        |                                        |
+| Nullable (`T \| null`)                             | ✅        |                                        |
+| Objects (`{ foo: string }`)                        | ✅        | Inline type literals                   |
+| Interfaces                                         | ✅        | Named, reusable                        |
+| Type aliases                                       | ✅        | Including unions                       |
+| References to other interfaces                     | ✅        | `ref: OtherInterface`                  |
+| Generics                                           | ✅        | `interface Paginated<T> { data: T[] }` |
+| Optional properties (`foo?: string`)               | ✅        |                                        |
+| Functions `(arg: T) => R`                          | ✅        | RPC endpoints                          |
+| Function return types containing functions         | ❌        | Rejected at parse time                 |
+| Recursive types (`interface Node { next?: Node }`) | ❌        | Rejected at parse time                 |
+| `undefined`                                        | ❌        | Use `null` instead                     |
+| `void`                                             | ❌        | Use `null` instead                     |
+| Methods on interfaces                              | ❌        | Use `prop: () => T` instead            |
 
 ## API reference
 
@@ -911,10 +989,22 @@ const builtins = createBuiltins({
 
 #### `builtin<T>(config)`
 
-Helper to define a builtin type.
+Helper to define a builtin type. `getSchema` receives the valibot schemas of the
+builtin's generic type arguments (an empty array for a non-generic builtin), so
+you can build a schema that depends on the concrete generic instantiation.
+Generic builtins declare their type parameters with `parameters`:
 
 ```ts
-builtin<Date>({ getSchema: () => v.date() });
+builtin<Date>({ getSchema: () => v.date() }); // non-generic: no parameters
+
+builtin<Page<unknown>>({
+  parameters: ["T"], // `Page<T>` has one generic type parameter
+  getSchema: (params) =>
+    v.object({
+      items: v.array(params[0]), // the schema of the `Page<T>` type argument
+      cursor: v.string(),
+    }),
+});
 ```
 
 #### `getStructure(graph)`

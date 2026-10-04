@@ -33,7 +33,7 @@ interface User {
 export interface Group {
   name: string;
   // line comment for the users property
-  users: User[];
+  users: string[];
 }
 
 /**

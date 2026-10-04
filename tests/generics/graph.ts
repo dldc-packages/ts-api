@@ -20,4 +20,5 @@ export interface Graph {
   nested: (num: number) => TodoItem;
   createMany: (items: Paginated<TodoItem>) => TodoItem[];
   search: (params: ListParams<string>) => TodoItem[];
+  nestedPaginated: () => Paginated<Paginated<TodoItem>>;
 }
