@@ -1,17 +1,28 @@
 {
   "name": "@dldc/ts-api",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "exports": {
     "./client": "./src/client/mod.ts",
     "./server": "./src/server/mod.ts",
-    "./server/filesystem": "./src/server/filesystem.ts"
+    "./server/filesystem": "./src/server/filesystem.ts",
+    "./transports/http/client": "./src/transports/http/client.ts",
+    "./transports/http/server": "./src/transports/http/server.ts",
+    "./transports/sse/client": "./src/transports/sse/client.ts",
+    "./transports/sse/server": "./src/transports/sse/server.ts",
+    "./transports/web/builtins": "./src/transports/web/builtins.ts",
+    "./transports/web/client": "./src/transports/web/client.ts",
+    "./transports/web/resolvers": "./src/transports/web/resolvers.ts",
+    "./transports/web/server": "./src/transports/web/server.ts",
+    "./transports/web/types": "./src/transports/web/types.ts"
   },
   "imports": {
     "@dldc/erreur": "jsr:@dldc/erreur@^7.1.1",
     "@dldc/stack": "jsr:@dldc/stack@^7.0.0",
+    "@jsonurl/jsonurl": "npm:@jsonurl/jsonurl@^1.1.8",
     "@std/assert": "jsr:@std/assert@^1.0.19",
     "@std/path": "jsr:@std/path@^1.1.6",
     "@std/testing": "jsr:@std/testing@^1.0.20",
+    "superjson": "npm:superjson@^2.2.2",
     "@lezer/common": "npm:@lezer/common@^1.5.2",
     "@lezer/javascript": "npm:@lezer/javascript@^1.5.5",
     "@valibot/valibot": "jsr:@valibot/valibot@^1.5.0"
@@ -22,10 +33,13 @@
     "test:coverage": "deno test -A --coverage && deno coverage coverage --html",
     "test:update-snapshots": "deno test -A --update-snapshots",
     "bump": "deno run -A jsr:@mys/bump@1",
+    "format": "deno fmt",
     "deps:outdated": "deno outdated",
     "deps:update": "deno outdated --update --latest --interactive",
     "check": "deno fmt --check . && deno lint . && deno task test:run",
-    "example:family-planner": "deno run --allow-env=LOG --allow-read=examples/family-planner/schema.ts examples/family-planner/main.ts"
+    "example:family-planner": "deno run --allow-env=LOG --allow-read=examples/family-planner/schema.ts examples/family-planner/main.ts",
+    "example:pokedex": "deno run -A examples/pokedex/main.ts",
+    "example:pokedex:server": "deno run -A examples/pokedex/server.ts"
   },
   "lint": {
     "rules": {

@@ -15,9 +15,12 @@
     "jsr:@std/path@^1.1.6": "1.1.6",
     "jsr:@std/testing@^1.0.20": "1.0.20",
     "jsr:@valibot/valibot@^1.5.0": "1.5.0",
+    "npm:@jsonurl/jsonurl@1.1.8": "1.1.8",
+    "npm:@jsonurl/jsonurl@^1.1.8": "1.1.8",
     "npm:@lezer/common@*": "1.5.2",
     "npm:@lezer/common@^1.5.2": "1.5.2",
-    "npm:@lezer/javascript@^1.5.5": "1.5.5"
+    "npm:@lezer/javascript@^1.5.5": "1.5.5",
+    "npm:superjson@^2.2.2": "2.2.6"
   },
   "jsr": {
     "@dldc/erreur@7.1.1": {
@@ -81,6 +84,9 @@
     }
   },
   "npm": {
+    "@jsonurl/jsonurl@1.1.8": {
+      "integrity": "sha512-0D6VFTWahCZymjTA33qmTOgo3sjePaYFalOura76kN/CKJ3HtS4lyxdNLklhrnDrqjWHqgZEqPMwuTGUqDL/+w=="
+    },
     "@lezer/common@1.5.2": {
       "integrity": "sha512-sxQE460fPZyU3sdc8lafxiPwJHBzZRy/udNFynGQky1SePYBdhkBl1kOagA9uT3pxR8K09bOrmTUqA9wb/PjSQ=="
     },
@@ -103,6 +109,15 @@
       "dependencies": [
         "@lezer/common"
       ]
+    },
+    "copy-anything@4.1.5": {
+      "integrity": "sha512-vePst2VLTSqPglW7Q98VwFpGiGpOHTyXIo81MO5VyLecA5zMbZw/P/V1vmwD1jksa2iJpn/YkDrJ3XhTfzUyhQ=="
+    },
+    "superjson@2.2.6": {
+      "integrity": "sha512-H+ue8Zo4vJmV2nRjpx86P35lzwDT3nItnIsocgumgr0hHMQ+ZGq5vrERg9kJBo5AWGmxZDhzDo+WVIJqkB0cGA==",
+      "dependencies": [
+        "copy-anything"
+      ]
     }
   },
   "workspace": {
@@ -113,8 +128,10 @@
       "jsr:@std/path@^1.1.6",
       "jsr:@std/testing@^1.0.20",
       "jsr:@valibot/valibot@^1.5.0",
+      "npm:@jsonurl/jsonurl@^1.1.8",
       "npm:@lezer/common@^1.5.2",
-      "npm:@lezer/javascript@^1.5.5"
+      "npm:@lezer/javascript@^1.5.5",
+      "npm:superjson@^2.2.2"
     ]
   }
 }

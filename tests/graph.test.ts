@@ -1,7 +1,11 @@
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
 import { PATH, REF, ROOT } from "../src/server/constants.ts";
-import { parse, type TGraphBase } from "../src/server/mod.ts";
+import {
+  getEndpointResponseStructure,
+  parse,
+  type TGraphBase,
+} from "../src/server/mod.ts";
 import type { BasicTypes } from "./schemas/basic.types.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
 import { loadSchema } from "./utils/loadSchema.ts";
@@ -113,4 +117,29 @@ Deno.test("matrix", async (t) => {
       assertEquals(graph[PATH].map((p) => p.key), result);
     });
   }
+});
+
+Deno.test("getEndpointResponseStructure resolves an endpoint's return", () => {
+  assertEquals(
+    getEndpointResponseStructure(graph, ["Graph", "user"]),
+    { kind: "ref", key: "root.Graph.user.returns", ref: "User", params: [] },
+  );
+  assertEquals(
+    getEndpointResponseStructure(graph, ["Graph", "randomItem"])?.kind,
+    "union",
+  );
+});
+
+Deno.test("getEndpointResponseStructure returns undefined for non-endpoints", () => {
+  // An interface is not a function endpoint.
+  assertEquals(getEndpointResponseStructure(graph, ["User"]), undefined);
+  // Empty path.
+  assertEquals(getEndpointResponseStructure(graph, []), undefined);
+  // Unknown root type.
+  assertEquals(getEndpointResponseStructure(graph, ["Nope"]), undefined);
+  // Unknown property.
+  assertEquals(
+    getEndpointResponseStructure(graph, ["Graph", "nope"]),
+    undefined,
+  );
 });

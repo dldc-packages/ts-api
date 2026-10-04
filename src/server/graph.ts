@@ -1,17 +1,23 @@
 import type { TTypesBase } from "../utils/types.ts";
 import { GET, PATH, REF, ROOT, STRUCTURE, type TYPES } from "./constants.ts";
 import { getStructureProp } from "./getGraphProp.ts";
-import type { TAllStructure, TRootStructure } from "./structure.types.ts";
+import type {
+  TAllStructure,
+  TRootStructure,
+  TStructure,
+} from "./structure.types.ts";
 import type { TGraphOf, TLocalTypes } from "./types.ts";
 
-export type TGraphBaseAny = TGraphBase<any>;
+export type TGraphBaseAny = TGraphBase<any, any>;
+
+export type TGraphBaseOutput<Output> = TGraphBase<any, Output>;
 
 export type TGraphGet = (
   prop: string | number | symbol | TAllStructure,
 ) => TGraphBaseAny;
 
-export interface TGraphBase<Input> {
-  [TYPES]: { input: Input; output: unknown };
+export interface TGraphBase<Input, Output = unknown> {
+  [TYPES]: { input: Input; output: Output };
   [ROOT]: TRootStructure;
   [STRUCTURE]: TAllStructure;
   // This is a list of all leaf structures in the path.
@@ -133,4 +139,37 @@ export function graphMatch(base: TGraphBaseAny, item: TGraphBaseAny): boolean {
     return false;
   }
   return itemPathRereved.every((item, i) => basePathRereved[i] === item);
+}
+
+/**
+ * Resolve the response (return) structure of the endpoint at `path` in `graph`.
+ *
+ * The `path` is the same `string[]` the client produces and {@link TEngine.run}
+ * consumes: it starts at the graph entry (e.g. `["Graph", "users", "byId"]`).
+ * Navigation follows the graph's own ref / alias resolution, so generic
+ * wrappers (e.g. `Admin<Graph>` or `Admin<() => null>`) are traversed
+ * transparently.
+ *
+ * Returns `undefined` when the path does not resolve to a function endpoint —
+ * an empty path, an unknown prop, a non-function node, or a path that goes out
+ * of bounds — rather than throwing.
+ */
+export function getEndpointResponseStructure(
+  graph: TGraphBaseAny,
+  path: string[],
+): TStructure | undefined {
+  try {
+    if (!Array.isArray(path) || path.length === 0) {
+      return undefined;
+    }
+    let current = graph[GET](path[0]);
+    for (let i = 1; i < path.length; i++) {
+      current = current[GET](path[i]);
+    }
+    // A function's return node can never be a `root` or `arguments` structure,
+    // so the value satisfies `TStructure`.
+    return current[GET]("return")[STRUCTURE] as TStructure;
+  } catch {
+    return undefined;
+  }
 }

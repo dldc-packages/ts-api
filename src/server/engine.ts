@@ -22,6 +22,8 @@ export type TExtendsContext = (
  *
  * Created by {@link createEngine}. Calling `run` validates the query's entry
  * point, arguments and return value, and dispatches to the attached resolvers.
+ * Calling `runIterable` does the same but streams the result instead of
+ * returning a single value.
  */
 export interface TEngine {
   /** The graph the engine was created from. */
@@ -36,6 +38,36 @@ export interface TEngine {
    * @returns The validated return value of the targeted endpoint.
    */
   run: (query: TQueryRequest, extendsCtx?: TExtendsContext) => Promise<unknown>;
+  /**
+   * Executes a query against the engine and returns an async iterable of values
+   * instead of a single value.
+   *
+   * Accepts the same `{ path, args }` query (and optional `extendsCtx`) as
+   * {@link run}. The query's middlewares are executed with the exact same
+   * validation and resolution rules, then the result is streamed:
+   *
+   * - When the resolver returns an **async iterable** (e.g. an async generator
+   *   or an async iterator), each yielded item is emitted lazily — and, unless
+   *   `validateOutput` is `false`, validated against the endpoint's return
+   *   schema one item at a time.
+   * - Any other value (objects, arrays, sync generators, primitives, ...) is
+   *   yielded as a single item.
+   *
+   * This is the server-side primitive used by streaming transports (such as
+   * Server-Sent Events). It is lazy: nothing runs until the returned async
+   * iterable is consumed, and the stream stops as soon as the consumer stops
+   * iterating.
+   *
+   * @param query A `{ path, args }` object (as produced by the client's
+   *   `queryToObject`).
+   * @param extendsCtx An optional function that can extend the context before
+   *   resolvers run (e.g. to inject request-scoped data).
+   * @returns An async iterable of validated return values.
+   */
+  runIterable: (
+    query: TQueryRequest,
+    extendsCtx?: TExtendsContext,
+  ) => AsyncIterable<unknown>;
 }
 
 /** Options for {@link createEngine}. */
@@ -60,8 +92,8 @@ export interface TEngineOptions {
  * Create an engine used to run queries against a parsed graph.
  *
  * @param options See {@link TEngineOptions}.
- * @returns A {@link TEngine} exposing `run` (to execute queries) and the
- *   `graph` it was created from.
+ * @returns A {@link TEngine} exposing `run` (to execute queries), `runIterable`
+ *   (to stream results) and the `graph` it was created from.
  */
 export function createEngine(
   { graph, resolvers, entry, validateOutput = true }: TEngineOptions,
@@ -73,12 +105,26 @@ export function createEngine(
   return {
     graph,
     run,
+    runIterable,
   };
 
-  async function run(
+  /**
+   * Resolve and validate a query up to the point where the middlewares are
+   * ready to run. Shared by {@link run} (single result) and {@link runIterable}
+   * (streamed result) so both use exactly the same rules.
+   *
+   * @returns The queried node (for error messages), the resolved function node
+   *   (to build the return schema) and an executor that runs the middlewares
+   *   and returns the raw resolver result.
+   */
+  async function prepare(
     query: TQueryRequest,
     extendsCtx?: TExtendsContext,
-  ): Promise<unknown> {
+  ): Promise<{
+    queriedNode: TGraphBaseAny;
+    current: TGraphBaseAny;
+    execute: () => Promise<unknown>;
+  }> {
     if (typeof query !== "object" || query === null) {
       throw new Error("Query must be an object with path and args");
     }
@@ -170,7 +216,20 @@ export function createEngine(
     const mid = compose(...collected);
     const ctx = ApiContext.create(graph, validatedArgs);
     const extendedCtx = extendsCtx ? await extendsCtx(ctx) : ctx;
-    const result = await mid(extendedCtx, () => Promise.resolve(undefined));
+    return {
+      queriedNode,
+      current,
+      execute: () =>
+        Promise.resolve(mid(extendedCtx, () => Promise.resolve(undefined))),
+    };
+  }
+
+  async function run(
+    query: TQueryRequest,
+    extendsCtx?: TExtendsContext,
+  ): Promise<unknown> {
+    const { queriedNode, current, execute } = await prepare(query, extendsCtx);
+    const result = await execute();
 
     if (validateOutput === false) {
       return result;
@@ -185,6 +244,52 @@ export function createEngine(
 
     return returnParse.output;
   }
+
+  async function* runIterable(
+    query: TQueryRequest,
+    extendsCtx?: TExtendsContext,
+  ): AsyncIterable<unknown> {
+    const { queriedNode, current, execute } = await prepare(query, extendsCtx);
+    const result = await execute();
+
+    if (isAsyncIterable(result)) {
+      if (validateOutput === false) {
+        yield* result;
+        return;
+      }
+      const returnGraph = current[GET]("return");
+      const returnSchema = getStructureSchema(schemaContext, returnGraph);
+      for await (const item of result) {
+        const itemParse = v.safeParse(returnSchema, item);
+        if (itemParse.success === false) {
+          throw createInvalidResolvedValue(queriedNode, item, "valid value");
+        }
+        yield itemParse.output;
+      }
+      return;
+    }
+
+    if (validateOutput === false) {
+      yield result;
+      return;
+    }
+
+    const returnGraph = current[GET]("return");
+    const returnSchema = getStructureSchema(schemaContext, returnGraph);
+    const returnParse = v.safeParse(returnSchema, result);
+    if (returnParse.success === false) {
+      throw createInvalidResolvedValue(queriedNode, result, "valid value");
+    }
+    yield returnParse.output;
+  }
+}
+
+function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
+  return value !== null && typeof value === "object" &&
+    typeof (value as { [Symbol.asyncIterator]?: unknown })[
+        Symbol.asyncIterator
+      ] ===
+      "function";
 }
 
 function buildResolverMap(

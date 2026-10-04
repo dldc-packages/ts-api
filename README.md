@@ -1146,10 +1146,11 @@ client produces a `TQuery<R>` which you turn into a `{ path, args }` object with
 > limiting, and authentication at the transport layer (e.g., in your HTTP server
 > middleware) before calling `engine.run`.
 
-### When your API is 100% JSON-compatible
+### Sending queries yourself
 
-If you only use `string`, `number`, `boolean`, `null`, arrays, and plain
-objects, you can use `JSON.stringify` / `JSON.parse` directly:
+The wire format is a JSON object with two fields: `path` (the endpoint path as a
+`string[]`) and `args` (the arguments as an array). You can send it with plain
+`fetch` and no other dependency:
 
 ```ts
 // Client side
@@ -1172,7 +1173,193 @@ async function handler(req: Request): Promise<Response> {
 }
 ```
 
-### When you use non-JSON types (Date, Temporal, etc.)
+This works as long as every value is JSON-compatible (`string`, `number`,
+`boolean`, `null`, arrays, and plain objects). For other types, see
+[Encoding non-JSON values](#encoding-non-json-values-date-temporal-etc) below.
+
+### Bundled transports
+
+For the common JSON-over-HTTP case, the package ships thin transport subpaths
+(each split into a `client` and a `server` entry) so you don't have to write the
+fetch wiring yourself. They are independent of each other: use one, several, or
+none — the core never forces a transport on you.
+
+| Transport  | When to reach for it                                           | Client returns                     |
+| ---------- | -------------------------------------------------------------- | ---------------------------------- |
+| **`http`** | simple POST only request/response JSON                         | `Promise<R>`                       |
+| **`sse`**  | streaming endpoints (resolvers that are async generators)      | `AsyncIterable<R>`                 |
+| **`web`**  | a mix of queries, mutations _and_ streams, plus non-JSON types | `Promise<R>` or `AsyncIterable<R>` |
+
+The `http` transport is the minimal default and the `sse` transport streams
+every yielded value. The `web` transport is an **opinionated, optional**
+extension: it decides how each kind of endpoint is served (and enforces it on
+the server). Don't like its opinions? Stick to `http` / `sse` or hand-rolled —
+ts-api itself doesn't care.
+
+#### The `http` transport
+
+POST `{ path, args }`, get a JSON value back:
+
+```ts
+import { query } from "@dldc/ts-api/client";
+import { execQuery } from "@dldc/ts-api/transports/http/client";
+
+const client = query<{ Graph: Graph }>();
+const result = await execQuery(client.Graph.users.byId("1"), "https://api");
+```
+
+`execQuery(query, input, init?)` resolves to the endpoint's return value.
+`input` can be a URL, a string, or a `Request`.
+
+On the server, `handleQuery(engine, request)` parses and validates the body and
+runs the query, but returns the **result value** — you decide how to serialize
+it and which status codes to send:
+
+```ts
+import { handleQuery } from "@dldc/ts-api/transports/http/server";
+
+Deno.serve({ port: 8000 }, async (req) => {
+  return Response.json(await handleQuery(engine, req));
+});
+```
+
+`parseBody` is also exported if you want to validate the `{ path, args }`
+payload yourself. Because `handleQuery` relies on `request.json()`, requests
+must carry a JSON body (a body-less GET will fail).
+
+#### The `sse` transport
+
+Same `{ path, args }` POST, but the response is a `text/event-stream` that the
+server writes to incrementally. Reach for it when an endpoint's resolver returns
+an async generator:
+
+```ts
+import { query } from "@dldc/ts-api/client";
+import { execQuery } from "@dldc/ts-api/transports/sse/client";
+
+const client = query<{ Graph: Graph }>();
+for await (
+  const app of execQuery(client.Graph.apps.all(), "http://localhost:8000")
+) {
+  console.log(app);
+}
+```
+
+`execQuery(query, input, init?)` returns an `AsyncIterable<R>`: every `message`
+event is JSON-decoded and yielded, and a server `error` event is thrown as an
+`Error`.
+
+On the server, `handleQuery(engine, request)` runs the query with
+`engine.runIterable` and returns a ready-made `text/event-stream` `Response`:
+each yielded value is sent as an SSE `message` event, and an `error` event is
+sent if running the query throws.
+
+```ts
+import { handleQuery } from "@dldc/ts-api/transports/sse/server";
+
+Deno.serve({ port: 8000 }, (req) => handleQuery(engine, req));
+```
+
+Streaming is lazy: nothing runs until the client reads the stream, and the
+stream stops as soon as the client stops iterating.
+
+#### The `web` transport (opinionated, optional)
+
+The `web` transport is a higher-level, **opinionated** extension that mixes
+request/response calls and Server-Sent Events behind a single endpoint. It is
+fully optional: it only applies where your schema wraps endpoints in one of
+three marker types and you use its client / server functions.
+
+Its opinions:
+
+- each endpoint is wrapped in `QueryResult<T>`, `MutationResult<T>` or
+  `StreamResult<T>`;
+- `QueryResult` endpoints are served as **GET** — or **POST** when the args make
+  the URL too long;
+- `MutationResult` endpoints are **POST** only;
+- `StreamResult` endpoints are served as **Server-Sent Events** (POST with
+  `Accept: text/event-stream`).
+
+In exchange you get a typed client with one function per kind, and a server that
+**enforces** those rules rather than trusting the request: a GET sent to a
+mutation is rejected with `405`, a stream requested without the SSE `Accept`
+header with `406` — so a GET on a mutation can never run, which closes a CSRF
+vector — plus `extendsCtx` to inject request-scoped context, an integrated
+`codec` for non-JSON types, and typed resolver helpers (`queryResolver`,
+`mutationResolver` and `streamResolver` from
+`@dldc/ts-api/transports/web/resolvers`) that are `fn` underneath with the
+phantom wrappers unwrapped — each one is typed to a single endpoint kind, so
+wiring the wrong helper to an endpoint is a compile error.
+
+```ts
+// schema.ts — wrap every endpoint in one of the three marker types
+import type {
+  MutationResult,
+  QueryResult,
+  StreamResult,
+} from "@dldc/ts-api/transports/web/types";
+
+export interface Graph {
+  aQuery: (foo: string, bar: number) => QueryResult<string>;
+  aMutation: (id: string) => MutationResult<boolean>;
+  aStream: (topic: string) => StreamResult<number>;
+}
+```
+
+Parse with `webBuiltins`, then mount a single route that serves every kind:
+
+```ts
+import { resolve } from "@std/path";
+import { createBuiltins } from "@dldc/ts-api/server";
+import { parseFromFile } from "@dldc/ts-api/server/filesystem";
+import { webBuiltins } from "@dldc/ts-api/transports/web/builtins";
+import { handleWeb } from "@dldc/ts-api/transports/web/server";
+
+const graph = parseFromFile<{ Graph: Graph }>(resolve("./schema.ts"), {
+  builtins: createBuiltins({ ...webBuiltins }),
+});
+
+// One route handles GET, POST and SSE for /api/*
+Deno.serve({ port: 8000 }, (req) => {
+  const url = new URL(req.url);
+  if (!url.pathname.startsWith("/api/")) {
+    return new Response("Not found", { status: 404 });
+  }
+  return handleWeb(engine, req, { basePath: "/api" });
+});
+```
+
+Client side, pick the function matching the endpoint kind:
+
+```ts
+import { query } from "@dldc/ts-api/client";
+import {
+  execMutation,
+  execQuery,
+  execStream,
+} from "@dldc/ts-api/transports/web/client";
+import type { Graph } from "./schema.ts";
+
+const client = query<{ Graph: Graph }>();
+const baseUrl = "https://api.example.com/api";
+
+const queryResult = await execQuery(client.Graph.aQuery("foo", 123), baseUrl);
+const mutationResult = await execMutation(
+  client.Graph.aMutation("id"),
+  baseUrl,
+);
+
+const stream = execStream(client.Graph.aStream("topic"), baseUrl);
+for await (const value of stream) {
+  console.log(value);
+}
+```
+
+`handleWeb(engine, request, options)` takes `basePath` (the URL prefix to strip;
+omit it when mounted at the root), `extendsCtx` (forwarded to `engine.run` /
+`engine.runIterable`) and `codec` (see below).
+
+### Encoding non-JSON values (Date, Temporal, etc.)
 
 ts-api validates values at runtime (via valibot schemas), but it does not
 serialize them. If you use types like `Date` or `Temporal.PlainDate`, you must
@@ -1213,13 +1400,56 @@ With superjson, a `Date` value is transparently encoded as
 back to a `Date` instance on the other side. The valibot schemas generated by
 ts-api will then validate the decoded `Date` instance as expected.
 
+If you use the `web` transport, its `codec` option integrates this for you
+instead of hand-rolling: pass a `{ encode, decode }` pair to both the client
+functions and `handleWeb`, and every value (args and results) goes through it
+before being JsonURL- / JSON-serialized. The codec does not change the
+transport: `execQuery` still GETs short queries — with the encoded args
+JsonURL-encoded into the URL — and `handleWeb` applies the same codec when
+decoding them back:
+
+```ts
+import SuperJSON from "superjson";
+
+const codec = {
+  encode: (value) => SuperJSON.serialize(value),
+  decode: (value) => SuperJSON.deserialize(value),
+};
+
+// Client
+const result = await execMutation(
+  client.Graph.aMutation("id"),
+  baseUrl,
+  undefined,
+  codec,
+);
+
+// Server
+return handleWeb(engine, request, { basePath: "/api", codec });
+```
+
 ## Examples
 
-Look at the `examples/family-planner` directory for a complete example. You can
-run it with:
+Look at the `examples/` directory for complete examples.
+
+The `family-planner` example shows the core client/server loop. Run it with:
 
 ```sh
 deno task example:family-planner
+```
+
+The `pokedex` example shows the web transport with superjson: queries, mutations
+and SSE streams behind a single endpoint, with `Date` values surviving the wire
+on both sides (server and client are separate files). Run it with:
+
+```sh
+deno task example:pokedex
+```
+
+Just the pokedex server on its own:
+
+```sh
+deno task example:pokedex:server
 ```
 
 You can also look at the `tests` directory to see all supported features.

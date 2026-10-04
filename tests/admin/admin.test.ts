@@ -4,6 +4,7 @@ import { query, queryToObject, type TQuery } from "../../src/client/mod.ts";
 import {
   createEngine,
   fn,
+  getEndpointResponseStructure,
   parse,
   resolver,
   STRUCTURE,
@@ -42,6 +43,33 @@ Deno.test("graph.Admin is the generic alias root.Admin", () => {
   // registered on `graph.Admin` matches every `Admin<...>` property.
   const resolved = graph.Graph.users.admin[GET](REF);
   assertEquals(resolved[STRUCTURE].key, "root.Admin");
+});
+
+Deno.test("getEndpointResponseStructure traverses ref/alias wrappers", () => {
+  // `files.admin` is `Admin<() => null>` and `files.rename` is
+  // `Admin<(id, name) => null>`: the response structure is resolved through
+  // the generic alias on both.
+  assertEquals(
+    getEndpointResponseStructure(graph, ["Graph", "files", "admin"]),
+    {
+      kind: "literal",
+      key: "root.Graph.files.admin.params.0.returns",
+      type: null,
+    },
+  );
+  assertEquals(
+    getEndpointResponseStructure(graph, ["Graph", "files", "rename"]),
+    {
+      kind: "literal",
+      key: "root.Graph.files.rename.params.0.returns",
+      type: null,
+    },
+  );
+  // A plain endpoint nested in a namespace (no wrapper).
+  assertEquals(
+    getEndpointResponseStructure(graph, ["Graph", "status"]),
+    { kind: "primitive", key: "root.Graph.status.returns", type: "string" },
+  );
 });
 
 Deno.test("admin guard runs before every Admin endpoint", async () => {

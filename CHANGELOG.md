@@ -6,6 +6,44 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-10-05
+
+### Added
+
+- **HTTP transport** — `@dldc/ts-api/transports/http/client` and `/server`.
+  `execQuery` POSTs a `{ path, args }` JSON body and returns the parsed
+  response; on the server, `parseBody` validates that body and `handleQuery`
+  runs it through an engine.
+- **SSE transport** — `@dldc/ts-api/transports/sse/client` and `/server`. Same
+  `{ path, args }` request, but the response is streamed over Server-Sent
+  Events: `execQuery` returns an async iterable of the streamed values (`error`
+  events are thrown), and `readSSE` / `encodeSSEEvent` expose the raw parsing
+  and framing.
+- **`runIterable` on `TEngine`** — a server-side streaming primitive. Like
+  `run`, but returns a lazy async iterable: a resolver that returns an async
+  iterable is yielded one item at a time (each validated against the return
+  schema), any other value as a single item.
+- **Web transport** — `@dldc/ts-api/transports/web/*`, an opinionated transport
+  bundling HTTP + SSE with the transport contract enforced. Mark every endpoint
+  with `QueryResult<T>` / `MutationResult<T>` / `StreamResult<T>`
+  (`webBuiltins`), then:
+  - `handleWeb(engine, request, { basePath, extendsCtx, codec })` on the server
+    enforces the transport kind — queries accept GET (or POST when the JsonURL
+    query is too long), mutations are POST-only, streams are POST with
+    `Accept: text/event-stream` — answering `405` / `406` on violations.
+  - One client function per kind: `execQuery`, `execMutation`, `execStream`.
+  - Typed resolver helpers `queryResolver` / `mutationResolver` /
+    `streamResolver` (`.../web/resolvers`) that call `fn` underneath with the
+    phantom wrappers unwrapped, each typed to a single endpoint kind.
+  - A `TWebCodec` (`encode` / `decode`) to carry non-JSON values such as `Date`s
+    (e.g. superjson) without changing the transport.
+- **`getEndpointResponseStructure(graph, path)`** — a public server API that
+  resolves an endpoint's response structure (navigating generic wrappers such as
+  `Admin<Graph>` transparently). `TGraphBase` also gained a defaulted `Output`
+  type parameter, plus the `TGraphBaseOutput<Output>` helper.
+- **`examples/pokedex/`** — a runnable full-stack example of the web transport
+  - superjson, split into `server/` and `client/` folders.
+
 ## [3.0.0] - 2026-10-04
 
 ### Breaking
