@@ -41,7 +41,7 @@ Deno.test("Properly parse schema", () => {
 Deno.test("Resolve enum", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.role, () => "admin" as const),
     ],
@@ -56,7 +56,7 @@ Deno.test("Resolve enum", async () => {
 Deno.test("Fail with invalid value", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.role, () => "yolo" as any),
     ],

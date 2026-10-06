@@ -2,72 +2,73 @@ export const snapshot = {};
 
 snapshot[`extractApi: snapshot basic 1`] = `
 {
-  entry: "Graph",
-  root: {
-    children: [
-      {
-        arguments: [],
-        comment: undefined,
-        kind: "endpoint",
-        name: "group",
-        path: [
-          "Graph",
-          "group",
-        ],
-        returns: {
-          kind: "ref",
-          name: "Group",
-          params: [],
-        },
-      },
-      {
-        arguments: [],
-        comment: undefined,
-        kind: "endpoint",
-        name: "user",
-        path: [
-          "Graph",
-          "user",
-        ],
-        returns: {
-          kind: "ref",
-          name: "User",
-          params: [],
-        },
-      },
-      {
-        arguments: [],
-        comment: undefined,
-        kind: "endpoint",
-        name: "randomItem",
-        path: [
-          "Graph",
-          "randomItem",
-        ],
-        returns: {
-          kind: "union",
-          types: [
-            {
-              kind: "ref",
-              name: "User",
-              params: [],
-            },
-            {
-              kind: "ref",
-              name: "Group",
-              params: [],
-            },
+  entries: [
+    {
+      children: [
+        {
+          arguments: [],
+          comment: undefined,
+          kind: "endpoint",
+          name: "group",
+          path: [
+            "Graph",
+            "group",
           ],
+          returns: {
+            kind: "ref",
+            name: "Group",
+            params: [],
+          },
         },
-      },
-    ],
-    comment: undefined,
-    kind: "namespace",
-    name: "Graph",
-    path: [
-      "Graph",
-    ],
-  },
+        {
+          arguments: [],
+          comment: undefined,
+          kind: "endpoint",
+          name: "user",
+          path: [
+            "Graph",
+            "user",
+          ],
+          returns: {
+            kind: "ref",
+            name: "User",
+            params: [],
+          },
+        },
+        {
+          arguments: [],
+          comment: undefined,
+          kind: "endpoint",
+          name: "randomItem",
+          path: [
+            "Graph",
+            "randomItem",
+          ],
+          returns: {
+            kind: "union",
+            types: [
+              {
+                kind: "ref",
+                name: "User",
+                params: [],
+              },
+              {
+                kind: "ref",
+                name: "Group",
+                params: [],
+              },
+            ],
+          },
+        },
+      ],
+      comment: undefined,
+      kind: "namespace",
+      name: "Graph",
+      path: [
+        "Graph",
+      ],
+    },
+  ],
   types: [
     {
       comment: undefined,
@@ -235,189 +236,190 @@ snapshot[`extractApi: snapshot basic 1`] = `
 
 snapshot[`extractApi: snapshot todolist 1`] = `
 {
-  entry: "Graph",
-  root: {
-    children: [
-      {
-        arguments: [],
-        comment: undefined,
-        kind: "endpoint",
-        name: "auth",
-        path: [
-          "Graph",
-          "auth",
-        ],
-        returns: {
-          kind: "nullable",
-          type: {
-            kind: "object",
-            properties: [
-              {
-                comment: undefined,
-                name: "user",
-                optional: false,
-                type: {
-                  kind: "ref",
-                  name: "User",
-                  params: [],
+  entries: [
+    {
+      children: [
+        {
+          arguments: [],
+          comment: undefined,
+          kind: "endpoint",
+          name: "auth",
+          path: [
+            "Graph",
+            "auth",
+          ],
+          returns: {
+            kind: "nullable",
+            type: {
+              kind: "object",
+              properties: [
+                {
+                  comment: undefined,
+                  name: "user",
+                  optional: false,
+                  type: {
+                    kind: "ref",
+                    name: "User",
+                    params: [],
+                  },
                 },
-              },
-            ],
-          },
-        },
-      },
-      {
-        children: [
-          {
-            arguments: [
-              {
-                comment: undefined,
-                name: "id",
-                optional: false,
-                type: {
-                  kind: "primitive",
-                  type: "string",
-                },
-              },
-            ],
-            comment: undefined,
-            kind: "endpoint",
-            name: "byId",
-            path: [
-              "Graph",
-              "users",
-              "byId",
-            ],
-            returns: {
-              kind: "ref",
-              name: "User",
-              params: [],
+              ],
             },
           },
-        ],
-        comment: undefined,
-        kind: "namespace",
-        name: "users",
-        path: [
-          "Graph",
-          "users",
-        ],
-      },
-      {
-        children: [
-          {
-            arguments: [
-              {
-                comment: undefined,
-                name: "pagination",
-                optional: true,
-                type: {
+        },
+        {
+          children: [
+            {
+              arguments: [
+                {
+                  comment: undefined,
+                  name: "id",
+                  optional: false,
+                  type: {
+                    kind: "primitive",
+                    type: "string",
+                  },
+                },
+              ],
+              comment: undefined,
+              kind: "endpoint",
+              name: "byId",
+              path: [
+                "Graph",
+                "users",
+                "byId",
+              ],
+              returns: {
+                kind: "ref",
+                name: "User",
+                params: [],
+              },
+            },
+          ],
+          comment: undefined,
+          kind: "namespace",
+          name: "users",
+          path: [
+            "Graph",
+            "users",
+          ],
+        },
+        {
+          children: [
+            {
+              arguments: [
+                {
+                  comment: undefined,
+                  name: "pagination",
+                  optional: true,
+                  type: {
+                    kind: "ref",
+                    name: "PaginationParams",
+                    params: [],
+                  },
+                },
+              ],
+              comment: undefined,
+              kind: "endpoint",
+              name: "all",
+              path: [
+                "Graph",
+                "apps",
+                "all",
+              ],
+              returns: {
+                items: {
                   kind: "ref",
-                  name: "PaginationParams",
+                  name: "App",
                   params: [],
                 },
+                kind: "array",
               },
-            ],
-            comment: undefined,
-            kind: "endpoint",
-            name: "all",
-            path: [
-              "Graph",
-              "apps",
-              "all",
-            ],
-            returns: {
-              items: {
+            },
+            {
+              arguments: [
+                {
+                  comment: undefined,
+                  name: "id",
+                  optional: false,
+                  type: {
+                    kind: "primitive",
+                    type: "string",
+                  },
+                },
+              ],
+              comment: undefined,
+              kind: "endpoint",
+              name: "byId",
+              path: [
+                "Graph",
+                "apps",
+                "byId",
+              ],
+              returns: {
                 kind: "ref",
                 name: "App",
                 params: [],
               },
-              kind: "array",
-            },
-          },
-          {
-            arguments: [
-              {
-                comment: undefined,
-                name: "id",
-                optional: false,
-                type: {
-                  kind: "primitive",
-                  type: "string",
-                },
-              },
-            ],
-            comment: undefined,
-            kind: "endpoint",
-            name: "byId",
-            path: [
-              "Graph",
-              "apps",
-              "byId",
-            ],
-            returns: {
-              kind: "ref",
-              name: "App",
-              params: [],
-            },
-          },
-        ],
-        comment: undefined,
-        kind: "namespace",
-        name: "apps",
-        path: [
-          "Graph",
-          "apps",
-        ],
-      },
-      {
-        arguments: [],
-        comment: undefined,
-        kind: "endpoint",
-        name: "flip",
-        path: [
-          "Graph",
-          "flip",
-        ],
-        returns: {
-          kind: "union",
-          types: [
-            {
-              kind: "ref",
-              name: "CoinHeads",
-              params: [],
-            },
-            {
-              kind: "ref",
-              name: "CoinTails",
-              params: [],
             },
           ],
+          comment: undefined,
+          kind: "namespace",
+          name: "apps",
+          path: [
+            "Graph",
+            "apps",
+          ],
         },
-      },
-      {
-        arguments: [],
-        comment: undefined,
-        kind: "endpoint",
-        name: "config",
-        path: [
-          "Graph",
-          "config",
-        ],
-        returns: {
-          kind: "ref",
-          name: "Config",
-          params: [],
+        {
+          arguments: [],
+          comment: undefined,
+          kind: "endpoint",
+          name: "flip",
+          path: [
+            "Graph",
+            "flip",
+          ],
+          returns: {
+            kind: "union",
+            types: [
+              {
+                kind: "ref",
+                name: "CoinHeads",
+                params: [],
+              },
+              {
+                kind: "ref",
+                name: "CoinTails",
+                params: [],
+              },
+            ],
+          },
         },
-      },
-    ],
-    comment: undefined,
-    kind: "namespace",
-    name: "Graph",
-    path: [
-      "Graph",
-    ],
-  },
+        {
+          arguments: [],
+          comment: undefined,
+          kind: "endpoint",
+          name: "config",
+          path: [
+            "Graph",
+            "config",
+          ],
+          returns: {
+            kind: "ref",
+            name: "Config",
+            params: [],
+          },
+        },
+      ],
+      comment: undefined,
+      kind: "namespace",
+      name: "Graph",
+      path: [
+        "Graph",
+      ],
+    },
+  ],
   types: [
     {
       comment: undefined,

@@ -145,7 +145,7 @@ export function graphMatch(base: TGraphBaseAny, item: TGraphBaseAny): boolean {
  * Resolve the response (return) structure of the endpoint at `path` in `graph`.
  *
  * The `path` is the same `string[]` the client produces and {@link TEngine.run}
- * consumes: it starts at the graph entry (e.g. `["Graph", "users", "byId"]`).
+ * consumes: it starts at one of the graph's entries (e.g. `["Graph", "users", "byId"]`).
  * Navigation follows the graph's own ref / alias resolution, so generic
  * wrappers (e.g. `Admin<Graph>` or `Admin<() => null>`) are traversed
  * transparently.

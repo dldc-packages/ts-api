@@ -8,8 +8,8 @@ import {
   parse,
   resolver,
 } from "../src/server/mod.ts";
-import { loadSchema } from "./utils/loadSchema.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
+import { loadSchema } from "./utils/loadSchema.ts";
 
 const client = query<TodoListTypes>();
 
@@ -26,7 +26,7 @@ const AuthKey = createKey<AuthUser | null>("auth");
 
 const engine = createEngine({
   graph,
-  entry: "Graph",
+  entries: ["Graph"],
   resolvers: [
     fn(graph.Graph.auth, (ctx) => {
       const user = ctx.getOrFail(AuthKey.Consumer);

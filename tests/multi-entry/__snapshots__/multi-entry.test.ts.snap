@@ -1,0 +1,359 @@
+export const snapshot = {};
+
+snapshot[`extractApi: snapshot multi-entry 1`] = `
+{
+  entries: [
+    {
+      children: [
+        {
+          arguments: [],
+          comment: "The server version.",
+          kind: "endpoint",
+          name: "version",
+          path: [
+            "Public",
+            "version",
+          ],
+          returns: {
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          arguments: [],
+          comment: "The current user's own profile.",
+          kind: "endpoint",
+          name: "me",
+          path: [
+            "Public",
+            "me",
+          ],
+          returns: {
+            kind: "ref",
+            name: "User",
+            params: [],
+          },
+        },
+        {
+          arguments: [
+            {
+              comment: undefined,
+              name: "q",
+              optional: false,
+              type: {
+                kind: "primitive",
+                type: "string",
+              },
+            },
+          ],
+          comment: "Search the catalog.",
+          kind: "endpoint",
+          name: "search",
+          path: [
+            "Public",
+            "search",
+          ],
+          returns: {
+            kind: "ref",
+            name: "Results",
+            params: [],
+          },
+        },
+      ],
+      comment: "The public API tree. One of the schema's entries.",
+      kind: "namespace",
+      name: "Public",
+      path: [
+        "Public",
+      ],
+    },
+    {
+      children: [
+        {
+          children: [
+            {
+              arguments: [],
+              comment: "List all users.",
+              kind: "endpoint",
+              name: "list",
+              path: [
+                "Admin",
+                "users",
+                "list",
+              ],
+              returns: {
+                items: {
+                  kind: "ref",
+                  name: "User",
+                  params: [],
+                },
+                kind: "array",
+              },
+            },
+            {
+              arguments: [
+                {
+                  comment: undefined,
+                  name: "id",
+                  optional: false,
+                  type: {
+                    kind: "primitive",
+                    type: "string",
+                  },
+                },
+              ],
+              comment: "Fetch a single user by id.",
+              kind: "endpoint",
+              name: "byId",
+              path: [
+                "Admin",
+                "users",
+                "byId",
+              ],
+              returns: {
+                kind: "ref",
+                name: "User",
+                params: [],
+              },
+            },
+          ],
+          comment: undefined,
+          kind: "namespace",
+          name: "users",
+          path: [
+            "Admin",
+            "users",
+          ],
+        },
+        {
+          arguments: [],
+          comment: "Aggregate statistics.",
+          kind: "endpoint",
+          name: "stats",
+          path: [
+            "Admin",
+            "stats",
+          ],
+          returns: {
+            kind: "ref",
+            name: "Stats",
+            params: [],
+          },
+        },
+      ],
+      comment: "The admin API tree. A second entry, served alongside \`Public\`.",
+      kind: "namespace",
+      name: "Admin",
+      path: [
+        "Admin",
+      ],
+    },
+  ],
+  types: [
+    {
+      comment: "The public API tree. One of the schema's entries.",
+      kind: "interface",
+      name: "Public",
+      parameters: [],
+      properties: [
+        {
+          comment: "The server version.",
+          name: "version",
+          optional: false,
+          type: {
+            arguments: [],
+            kind: "function",
+            returns: {
+              kind: "primitive",
+              type: "string",
+            },
+          },
+        },
+        {
+          comment: "The current user's own profile.",
+          name: "me",
+          optional: false,
+          type: {
+            arguments: [],
+            kind: "function",
+            returns: {
+              kind: "ref",
+              name: "User",
+              params: [],
+            },
+          },
+        },
+        {
+          comment: "Search the catalog.",
+          name: "search",
+          optional: false,
+          type: {
+            arguments: [
+              {
+                comment: undefined,
+                name: "q",
+                optional: false,
+                type: {
+                  kind: "primitive",
+                  type: "string",
+                },
+              },
+            ],
+            kind: "function",
+            returns: {
+              kind: "ref",
+              name: "Results",
+              params: [],
+            },
+          },
+        },
+      ],
+    },
+    {
+      comment: "The admin API tree. A second entry, served alongside \`Public\`.",
+      kind: "interface",
+      name: "Admin",
+      parameters: [],
+      properties: [
+        {
+          comment: undefined,
+          name: "users",
+          optional: false,
+          type: {
+            kind: "object",
+            properties: [
+              {
+                comment: "List all users.",
+                name: "list",
+                optional: false,
+                type: {
+                  arguments: [],
+                  kind: "function",
+                  returns: {
+                    items: {
+                      kind: "ref",
+                      name: "User",
+                      params: [],
+                    },
+                    kind: "array",
+                  },
+                },
+              },
+              {
+                comment: "Fetch a single user by id.",
+                name: "byId",
+                optional: false,
+                type: {
+                  arguments: [
+                    {
+                      comment: undefined,
+                      name: "id",
+                      optional: false,
+                      type: {
+                        kind: "primitive",
+                        type: "string",
+                      },
+                    },
+                  ],
+                  kind: "function",
+                  returns: {
+                    kind: "ref",
+                    name: "User",
+                    params: [],
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          comment: "Aggregate statistics.",
+          name: "stats",
+          optional: false,
+          type: {
+            arguments: [],
+            kind: "function",
+            returns: {
+              kind: "ref",
+              name: "Stats",
+              params: [],
+            },
+          },
+        },
+      ],
+    },
+    {
+      comment: undefined,
+      kind: "interface",
+      name: "User",
+      parameters: [],
+      properties: [
+        {
+          comment: undefined,
+          name: "id",
+          optional: false,
+          type: {
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          comment: undefined,
+          name: "name",
+          optional: false,
+          type: {
+            kind: "primitive",
+            type: "string",
+          },
+        },
+      ],
+    },
+    {
+      comment: undefined,
+      kind: "interface",
+      name: "Results",
+      parameters: [],
+      properties: [
+        {
+          comment: undefined,
+          name: "total",
+          optional: false,
+          type: {
+            kind: "primitive",
+            type: "number",
+          },
+        },
+        {
+          comment: undefined,
+          name: "items",
+          optional: false,
+          type: {
+            items: {
+              kind: "primitive",
+              type: "string",
+            },
+            kind: "array",
+          },
+        },
+      ],
+    },
+    {
+      comment: undefined,
+      kind: "interface",
+      name: "Stats",
+      parameters: [],
+      properties: [
+        {
+          comment: undefined,
+          name: "count",
+          optional: false,
+          type: {
+            kind: "primitive",
+            type: "number",
+          },
+        },
+      ],
+    },
+  ],
+}
+`;

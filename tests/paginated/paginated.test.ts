@@ -28,7 +28,7 @@ const client = query<AllTypes>();
 Deno.test("Resolve paginated", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.sub.listStuff, (_ctx, [search, pageConfig]) => {
         assertEquals(search, "hello");
@@ -50,7 +50,7 @@ Deno.test("Resolve paginated", async () => {
 Deno.test("Resolve paginated with no args", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.sub.listStuff, () => ({
         data: [],

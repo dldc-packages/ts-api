@@ -119,22 +119,22 @@ Deno.test("comments: a dangling comment does not leak to the next declaration", 
 });
 
 Deno.test("comments: exposed via extractApi", () => {
-  const api = extractApi(graph, "Graph");
+  const api = extractApi(graph, ["Graph"]);
 
   // root namespace comment comes from the entry declaration
-  assertEquals(api.root.kind, "namespace");
-  assertEquals(api.root.name, "Graph");
-  assertEquals(api.root.comment, "Main Graph entry");
+  assertEquals(api.entries[0].kind, "namespace");
+  assertEquals(api.entries[0].name, "Graph");
+  assertEquals(api.entries[0].comment, "Main Graph entry");
 
   const endpoint = (name: string) => {
-    const node = api.root.children.find((c) => c.name === name);
+    const node = api.entries[0].children.find((c) => c.name === name);
     if (!node || node.kind !== "endpoint") {
       throw new Error(`no endpoint ${name}`);
     }
     return node;
   };
   const namespace = (name: string) => {
-    const node = api.root.children.find((c) => c.name === name);
+    const node = api.entries[0].children.find((c) => c.name === name);
     if (!node || node.kind !== "namespace") {
       throw new Error(`no namespace ${name}`);
     }

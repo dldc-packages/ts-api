@@ -1,11 +1,11 @@
+import { execQuery } from "@dldc/ts-api/transports/sse/client";
+import { handleQuery } from "@dldc/ts-api/transports/sse/server";
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject, type TQuery } from "../../src/client/mod.ts";
 import { createEngine, fn, parse, resolver } from "../../src/server/mod.ts";
-import { execQuery } from "@dldc/ts-api/transports/sse/client";
-import { handleQuery } from "@dldc/ts-api/transports/sse/server";
-import { loadSchema } from "../utils/loadSchema.ts";
 import type { TodoListTypes } from "../schemas/todolist.types.ts";
+import { loadSchema } from "../utils/loadSchema.ts";
 
 const client = query<TodoListTypes>();
 
@@ -15,7 +15,7 @@ const graph = parse<TodoListTypes>(
 
 const engine = createEngine({
   graph,
-  entry: "Graph",
+  entries: ["Graph"],
   resolvers: [
     // Streams two `Config` values through an async generator; each item is
     // validated against the `Config` return schema by `runIterable`.
@@ -106,7 +106,7 @@ Deno.test("sse: invalid arguments are delivered as an error event", async () => 
 Deno.test("sse: a failing resolver is delivered as an error event", async () => {
   const failingEngine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.config, () => {
         throw new Error("boom");

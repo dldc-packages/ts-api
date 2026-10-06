@@ -103,7 +103,7 @@ const graph = parseFromFile<{ Graph: Graph }>(resolve("./api/schema.ts"));
 
 export const engine = createEngine({
   graph,
-  entry: "Graph", // the root interface name in your schema file
+  entries: ["Graph"], // the root interface name(s) in your schema file
   resolvers: [
     fn(graph.Graph.users.list, () => {
       return [
@@ -150,17 +150,23 @@ const user = await executeQuery(q.Graph.users.byId("1")); // User
 ### The schema file
 
 A ts-api schema is a TypeScript file containing only `interface` and `type`
-declarations. One interface (the "entry") serves as the root of your API tree.
-The leaves of the tree are functions — each function is an RPC endpoint.
+declarations. One or more interfaces (the **entries**) serve as the root(s) of
+your API tree. The leaves of the tree are functions — each function is an RPC
+endpoint.
 
 ```
-Graph (interface, the entry)
+Graph (interface, an entry)
 ├── users (interface — a namespace)
 │   ├── list: () => User[]        ← endpoint
 │   ├── byId: (id) => User         ← endpoint
 │   └── create: (name) => User     ← endpoint
 └── version: () => string          ← endpoint
 ```
+
+You can declare as many entry interfaces as you like — each one becomes an
+independent root of the API tree. The engine is created with the `entries`
+option listing them all, and every query path must start with one of those names
+(see [The engine](#the-engine)).
 
 **Rules:**
 
@@ -330,10 +336,10 @@ const graph = parseFromFile<{ Graph: Graph; Admin: Admin<any> }>(
 
 ### Type maps (advanced)
 
-By default you pass the entry type to `parse` and `query` directly, as
-`{ Graph: Graph }` above. Everything reachable from the entry is typed
+By default you pass the entry type(s) to `parse` and `query` directly, as
+`{ Graph: Graph }` above. Everything reachable from the entries is typed
 structurally, so the resolvers and the client get full type safety from the
-entry alone — you never have to list every type of your schema.
+entries alone — you never have to list every type of your schema.
 
 You only need a bigger type map when a resolver references a **top-level** type
 directly, outside of the `Graph` namespace. For example
@@ -370,7 +376,8 @@ send them to the server.
 `createEngine` takes:
 
 - `graph` — the result of `parse`
-- `entry` — the name of the root interface (e.g. `"Graph"`)
+- `entries` — the names of the root interfaces (e.g. `["Graph"]`) that queries
+  may start from
 - `resolvers` — an array of resolvers
 - `validateOutput` (optional, default `true`) — whether to validate the returned
   value of endpoints against their schema. Set to `false` to skip this
@@ -383,7 +390,7 @@ It returns an engine exposing:
 
 When `engine.run({ path, args })` is called:
 
-1. It validates that `path[0]` matches the entry.
+1. It validates that `path[0]` matches one of the configured entries.
 2. It navigates the graph along `path`, collecting resolvers attached to each
    node.
 3. It validates `args` against the function's argument types (via valibot).
@@ -517,7 +524,7 @@ const AuthKey = createKey<{ id: string; name: string }>("auth");
 
 const engine = createEngine({
   graph,
-  entry: "Graph",
+  entries: ["Graph"],
   resolvers: [
     // Guard: reject unauthenticated requests on the `users` namespace
     resolver(graph.Graph.users, (ctx, next) => {
@@ -903,7 +910,7 @@ Creates an engine to run queries.
 ```ts
 const engine = createEngine({
   graph,
-  entry: "Graph",
+  entries: ["Graph"],
   resolvers: [...],
 });
 ```
@@ -911,7 +918,8 @@ const engine = createEngine({
 Options:
 
 - `graph` — the graph returned by `parse`.
-- `entry` — the name of the root interface (e.g. `"Graph"`).
+- `entries` — the names of the root interfaces (e.g. `["Graph"]`) that queries
+  may start from.
 - `resolvers` — an array of resolvers.
 - `validateOutput` (optional, default `true`) — when `false`, skips the schema
   validation of endpoint return values and returns them as-is.
@@ -1036,13 +1044,14 @@ Returns a `TRootStructure` with:
 - `builtins` — array of `TBuiltinStructure`
 - `mode` — `"graph"` for a parsed schema, `"builtins"` for a builtins graph
 
-#### `extractApi(graph, entry)`
+#### `extractApi(graph, entries)`
 
 Extracts a serializable API tree from a parsed graph. Walks the graph from the
-given entry interface and returns a clean tree of namespaces and endpoints, plus
-a flat list of all type declarations. The result is fully JSON-serializable (no
-symbols, no circular references) — suitable for documentation generation,
-introspection, or any tooling that needs to understand the API structure.
+given entry interfaces and returns one clean tree of namespaces and endpoints
+per entry (in the same order as `entries`), plus a flat list of all type
+declarations. The result is fully JSON-serializable (no symbols, no circular
+references) — suitable for documentation generation, introspection, or any
+tooling that needs to understand the API structure.
 
 ```ts
 import { extractApi } from "@dldc/ts-api/server";
@@ -1050,7 +1059,7 @@ import { parseFromFile } from "@dldc/ts-api/server/filesystem";
 import type { ApiNode } from "@dldc/ts-api/server";
 
 const graph = parseFromFile<{ Graph: Graph }>(resolve("./api/schema.ts"));
-const api = extractApi(graph, "Graph");
+const api = extractApi(graph, ["Graph"]);
 
 // Walk all endpoints
 function visit(node: ApiNode) {
@@ -1060,7 +1069,7 @@ function visit(node: ApiNode) {
     node.children.forEach(visit);
   }
 }
-visit(api.root);
+api.entries.forEach(visit);
 // Graph.version [] { kind: "primitive", type: "string" }
 // Graph.users.list [] { kind: "array", items: { kind: "ref", name: "User", ... } }
 // Graph.users.byId [{ name: "id", ... }] { kind: "ref", name: "User", ... }
@@ -1068,9 +1077,8 @@ visit(api.root);
 
 Returns an `ApiTree` with:
 
-- `entry` — the name of the root interface (the `entry` argument)
-- `root` — an `ApiNamespace` containing nested `ApiNamespace` and `ApiEndpoint`
-  nodes
+- `entries` — array of `ApiNamespace`s (one per `entries` argument, in order),
+  each containing nested `ApiNamespace` and `ApiEndpoint` nodes
 - `types` — array of `ApiTypeDeclaration` (all interfaces and type aliases from
   the schema)
 
@@ -1082,8 +1090,8 @@ otherwise.
 Each `ApiNamespace` and `ApiEndpoint` has:
 
 - `name`, `path`
-- `comment` — the doc comment attached where the node is referenced (for the
-  root namespace, the entry declaration's comment)
+- `comment` — the doc comment attached where the node is referenced (for each
+  root namespace, its entry declaration's comment)
 - namespaces additionally have `children`; endpoints have `arguments` and
   `returns` (see below)
 
@@ -1112,7 +1120,7 @@ ts-api uses `@dldc/erreur` for error handling. Errors are categorized:
 - **Client errors** (`GraphClientErreur`) — caused by the query, safe to send
   back to the client:
   - `ArgsValidationFailed` — arguments didn't match the schema.
-  - `InvalidEntry` — the query didn't start from the entry point.
+  - `InvalidEntry` — the query didn't start from one of the configured entries.
 - **Server errors** (`GraphServerErreur`) — caused by the server implementation,
   should be logged:
   - `InvalidResolvedValue` — a resolver returned a value that didn't match the
@@ -1126,9 +1134,10 @@ import { GraphClientErreur } from "@dldc/ts-api/server";
 try {
   await engine.run({ path, args });
 } catch (err) {
-  const data = GraphClientErreur.read(err);
+  const data = GraphClientErreur.get(err);
   if (data?.kind === "ArgsValidationFailed") {
     // data.issues — valibot issues
+    // data.kind === "InvalidEntry" → data.entries, data.requested
   }
 }
 ```

@@ -1,6 +1,7 @@
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject, type TQuery } from "../../src/client/mod.ts";
+import { GET, REF } from "../../src/server/constants.ts";
 import {
   createEngine,
   fn,
@@ -11,7 +12,6 @@ import {
   type TGraphBaseAny,
 } from "../../src/server/mod.ts";
 import { loadSchema } from "../utils/loadSchema.ts";
-import { GET, REF } from "../../src/server/constants.ts";
 import type { Admin, Graph } from "./graph.ts";
 
 export interface AllTypes {
@@ -77,7 +77,7 @@ Deno.test("admin guard runs before every Admin endpoint", async () => {
 
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       resolver(
         graph.Admin,
@@ -118,7 +118,7 @@ Deno.test("admin guard can block the endpoint", async () => {
 
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       resolver(
         graph.Admin,
@@ -146,7 +146,7 @@ Deno.test("non-admin endpoints are NOT guarded", async () => {
 
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       resolver(
         graph.Admin,
@@ -183,7 +183,7 @@ Deno.test("admin guard composes with a namespace resolver", async () => {
 
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       resolver(
         graph.Graph.users,
@@ -216,7 +216,7 @@ Deno.test("Admin<() => null>: function as the generic endpoint", async () => {
 
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       resolver(
         graph.Admin,
@@ -241,7 +241,7 @@ Deno.test("Admin<(id, name) => null>: args flow through the generic", async () =
 
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       resolver(
         graph.Admin,
@@ -264,7 +264,7 @@ Deno.test("Admin<(id, name) => null>: args flow through the generic", async () =
 Deno.test("Admin<() => null>: guard blocks and args validation uses the user-facing path", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       resolver(
         graph.Admin,
@@ -286,7 +286,7 @@ Deno.test("Admin<() => null>: guard blocks and args validation uses the user-fac
   // Args validation error references the queried path, not an internal key
   const engine2 = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.files.rename, () => null),
     ],

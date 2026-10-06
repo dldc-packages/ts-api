@@ -1,7 +1,8 @@
 import * as v from "@valibot/valibot";
+import type { TQueryRequest } from "../client/query.types.ts";
+import { compose } from "./compose.ts";
 import { GET, REF, ROOT, STRUCTURE } from "./constants.ts";
 import { ApiContext } from "./context.ts";
-import { compose } from "./compose.ts";
 import {
   createArgsValidationFailed,
   createInvalidEntry,
@@ -11,7 +12,6 @@ import type { TGraphBaseAny } from "./graph.ts";
 import type { TResolver } from "./resolver.ts";
 import { createSchemaContext, getStructureSchema } from "./schema.ts";
 import type { TMiddleware } from "./types.ts";
-import type { TQueryRequest } from "../client/query.types.ts";
 
 export type TExtendsContext = (
   ctx: ApiContext,
@@ -76,8 +76,11 @@ export interface TEngineOptions {
   graph: TGraphBaseAny;
   /** The resolvers to attach to graph nodes. */
   resolvers: TResolver[];
-  /** The name of the root interface in the graph (e.g. `"Graph"`). */
-  entry: string;
+  /**
+   * The names of the root interfaces in the graph that queries may start from
+   * (e.g. `["Graph"]`).
+   */
+  entries: string[];
   /**
    * Whether to validate the returned value of endpoints against their schema.
    *
@@ -96,7 +99,7 @@ export interface TEngineOptions {
  *   (to stream results) and the `graph` it was created from.
  */
 export function createEngine(
-  { graph, resolvers, entry, validateOutput = true }: TEngineOptions,
+  { graph, resolvers, entries, validateOutput = true }: TEngineOptions,
 ): TEngine {
   const rootStructure = graph[ROOT];
   const schemaContext = createSchemaContext(rootStructure);
@@ -136,8 +139,8 @@ export function createEngine(
     if (typeof path[0] !== "string") {
       throw new Error("Query path must start with a string");
     }
-    if (path[0] !== entry) {
-      throw createInvalidEntry(graph, [entry], path[0]);
+    if (!entries.includes(path[0])) {
+      throw createInvalidEntry(graph, entries, path[0]);
     }
     if (!Array.isArray(args)) {
       throw new Error("Query args must be an array");
@@ -165,7 +168,7 @@ export function createEngine(
       throw new Error("Too many levels of ref/alias resolution");
     };
 
-    let current = graph[GET](entry);
+    let current = graph;
     let queriedNode = current;
     {
       const resolvers = resolverMap.get(current[STRUCTURE].key);
@@ -175,7 +178,7 @@ export function createEngine(
       current = resolveNode(current);
     }
 
-    for (let i = 1; i < path.length; i++) {
+    for (let i = 0; i < path.length; i++) {
       const prop = path[i];
       if (typeof prop !== "string") {
         throw new Error(`Query path element at index ${i} must be a string`);

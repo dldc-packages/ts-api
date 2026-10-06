@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-10-07
+
+### Breaking
+
+- **`createEngine` now takes `entries`, not `entry`.** The `entry` option (a
+  single string) was replaced by `entries` — an array of the root interface
+  names queries may start from (e.g. `["Graph"]`). A query whose `path[0]`
+  matches none of them is rejected with an `InvalidEntry` error that lists the
+  accepted entries (e.g. `one of ["Public","Admin"]`).
+- **`extractApi` now takes `entries`, not `entry`.** It accepts an array of
+  entry interface names and returns an `ApiTree` with an `entries` field — an
+  array of `ApiNamespace`, one per entry in the given order — replacing the
+  previous `entry` field and single `root` namespace.
+
+### Added
+
+- **Multiple entry points.** A schema can declare any number of root interfaces,
+  each exposed as an independent API tree from the same engine and the same
+  client type map, while sharing data types across them. A public and an admin
+  API can now live in one schema with their own endpoints and resolvers:
+  `createEngine({ graph, entries: ["Public", "Admin"], ... })`.
+- Multi-entry test coverage (`tests/multi-entry/`): dispatching from any entry,
+  `InvalidEntry` errors (message and erreur data), and one `extractApi` tree per
+  entry.
+
 ## [3.1.0] - 2026-10-05
 
 ### Added

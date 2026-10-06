@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
+import * as v from "@valibot/valibot";
 import { query, queryToObject } from "../../src/client/mod.ts";
 import {
   builtin,
@@ -9,12 +10,11 @@ import {
   parse,
 } from "../../src/server/mod.ts";
 import { loadSchema } from "../utils/loadSchema.ts";
-import * as v from "@valibot/valibot";
 import type { Graph as ImportedDataGraph } from "./imported-data.ts";
 import type { Graph as ImportedNamespaceGraph } from "./imported-namespace.ts";
+import type { Settings, Token, UsersNamespace } from "./imported-types.ts";
 import type { Graph as IndexedGraph } from "./indexed.ts";
 import type { Graph as MappedGraph } from "./mapped.ts";
-import type { Settings, Token, UsersNamespace } from "./imported-types.ts";
 
 const client = query<{ Graph: ImportedDataGraph }>();
 
@@ -90,7 +90,7 @@ Deno.test("imported types used as data are allowed", async () => {
 
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.get, () => ({
         settings: { theme: "dark" },

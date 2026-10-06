@@ -2,8 +2,8 @@ import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject } from "../src/client/mod.ts";
 import { createEngine, fn, parse } from "../src/server/mod.ts";
-import { loadSchema } from "./utils/loadSchema.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
+import { loadSchema } from "./utils/loadSchema.ts";
 
 const client = query<TodoListTypes>();
 
@@ -13,7 +13,7 @@ const graph = parse<TodoListTypes>(
 
 const engine = createEngine({
   graph,
-  entry: "Graph",
+  entries: ["Graph"],
   resolvers: [
     fn(
       graph.Graph.config,

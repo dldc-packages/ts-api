@@ -44,7 +44,7 @@ function parseGraph2(config: TMissingBuiltinActionConfig) {
 function makeEngine(graph: ReturnType<typeof parseWith>) {
   return createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.get, () => "hello"),
       fn(graph.Graph.echo, (_ctx, [value]) => value),
@@ -78,9 +78,9 @@ Deno.test("parse with 'ignore' auto-registers missing types as builtins", () => 
 });
 
 Deno.test("extractApi resolves auto-registered builtins as builtin", () => {
-  const api = extractApi(parseWith("ignore"), "Graph");
+  const api = extractApi(parseWith("ignore"), ["Graph"]);
   // The `get` endpoint returns the imported type, auto-registered as a builtin.
-  const get = api.root.children.find(
+  const get = api.entries[0].children.find(
     (c) => c.kind === "endpoint" && c.name === "get",
   );
   assertNotEquals(get, undefined);

@@ -43,7 +43,7 @@ const db = {
 Deno.test("Resolve basic list", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.members,
@@ -92,7 +92,7 @@ Deno.test("Resolve basic list", async () => {
 Deno.test("Resolve single member", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.member,
@@ -125,7 +125,7 @@ Deno.test("Resolve single member", async () => {
 Deno.test("Resolve family", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.family,

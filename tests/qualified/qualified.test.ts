@@ -39,7 +39,7 @@ const client = query<AllTypes>();
 Deno.test("Qualified builtin as output", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.birthday, () => {
         return Temporal.PlainDate.from("2024-01-15");
@@ -56,7 +56,7 @@ Deno.test("Qualified builtin as output", async () => {
 Deno.test("Qualified builtin as input", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.daysBetween, (_ctx, [from, to]) => {
         return from.until(to).total("days");
@@ -75,7 +75,7 @@ Deno.test("Qualified builtin as input", async () => {
 Deno.test("Qualified builtin rejects invalid output", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.birthday, () => {
         return "not-a-plain-date" as any;
@@ -95,7 +95,7 @@ Deno.test("Qualified builtin rejects invalid output", async () => {
 Deno.test("Qualified builtin rejects invalid input", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.daysBetween, (_ctx, [from, to]) => {
         return from.until(to).total("days");

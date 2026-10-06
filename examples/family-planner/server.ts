@@ -5,7 +5,7 @@ import { resolvers } from "./resolvers.ts";
 
 export const graphEngine = createEngine({
   graph,
-  entry: "Graph",
+  entries: ["Graph"],
   resolvers,
 });
 

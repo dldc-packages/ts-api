@@ -50,7 +50,7 @@ const client = query<AllTypes>();
 function engine(resolvers: Parameters<typeof createEngine>[0]["resolvers"]) {
   return createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers,
   });
 }
@@ -208,7 +208,7 @@ Deno.test("generic builtin with wrong number of type arguments fails", async () 
   );
   const engine = createEngine({
     graph: g as any,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [],
   });
   const err = await assertRejects(() =>

@@ -2,8 +2,8 @@ import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject } from "../src/client/mod.ts";
 import { createEngine, fn, parse, resolver } from "../src/server/mod.ts";
-import { loadSchema } from "./utils/loadSchema.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
+import { loadSchema } from "./utils/loadSchema.ts";
 
 const client = query<TodoListTypes>();
 
@@ -16,7 +16,7 @@ Deno.test("Resolver order on same node", async () => {
 
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       resolver(
         graph.Graph.config,
@@ -49,7 +49,7 @@ Deno.test("Namespace resolver wraps function resolver", async () => {
 
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       resolver(
         graph.Graph,

@@ -28,7 +28,7 @@ const client = query<AllTypes>();
 Deno.test("Nullable input", async (t) => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.sub.execWithParams, (_ctx, [params]) => {
         return JSON.stringify([

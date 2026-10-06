@@ -20,7 +20,7 @@ const client = query<AllTypes>();
 Deno.test("Fails if no resolver", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [],
   });
 
@@ -40,7 +40,7 @@ Deno.test("get function results", async () => {
 
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.sub.doStuff,

@@ -108,7 +108,7 @@ Deno.test("Mixed literals (string, number, boolean, null) are supported", () => 
 Deno.test("Resolve numeric literal", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.numericLiterals, () => 42 as const),
     ],
@@ -123,7 +123,7 @@ Deno.test("Resolve numeric literal", async () => {
 Deno.test("Fail with invalid numeric literal", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.numericLiterals, () => 99 as any),
     ],
@@ -143,7 +143,7 @@ Deno.test("Fail with invalid numeric literal", async () => {
 Deno.test("Resolve string with escape sequences", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.stringWithEscapes, () => "hello\nworld" as const),
     ],
@@ -158,7 +158,7 @@ Deno.test("Resolve string with escape sequences", async () => {
 Deno.test("Resolve mixed literal (null)", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.mixedLiterals, () => null),
     ],
@@ -173,7 +173,7 @@ Deno.test("Resolve mixed literal (null)", async () => {
 Deno.test("Resolve mixed literal (number)", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.mixedLiterals, () => 200 as const),
     ],

@@ -101,30 +101,25 @@ Deno.test("getStructure: aliases have type and parameters", () => {
 });
 
 Deno.test("extractApi: snapshot basic", async (test) => {
-  const api = extractApi(basicGraph, "Graph");
+  const api = extractApi(basicGraph, ["Graph"]);
   await test.assertSnapshot(api);
 });
 
 Deno.test("extractApi: snapshot todolist", async (test) => {
-  const api = extractApi(todolistGraph, "Graph");
+  const api = extractApi(todolistGraph, ["Graph"]);
   await test.assertSnapshot(api);
 });
 
-Deno.test("extractApi: returns entry name", () => {
-  const api = extractApi(basicGraph, "Graph");
-  assertEquals(api.entry, "Graph");
-});
-
 Deno.test("extractApi: root namespace has correct name and path", () => {
-  const api = extractApi(basicGraph, "Graph");
-  assertEquals(api.root.kind, "namespace");
-  assertEquals(api.root.name, "Graph");
-  assertEquals(api.root.path, ["Graph"]);
+  const api = extractApi(basicGraph, ["Graph"]);
+  assertEquals(api.entries[0].kind, "namespace");
+  assertEquals(api.entries[0].name, "Graph");
+  assertEquals(api.entries[0].path, ["Graph"]);
 });
 
 Deno.test("extractApi: endpoints and namespaces are separated", () => {
-  const api = extractApi(todolistGraph, "Graph");
-  const children = api.root.children;
+  const api = extractApi(todolistGraph, ["Graph"]);
+  const children = api.entries[0].children;
 
   assertEquals(children.map((c) => c.kind), [
     "endpoint",
@@ -143,8 +138,8 @@ Deno.test("extractApi: endpoints and namespaces are separated", () => {
 });
 
 Deno.test("extractApi: endpoint has arguments and returns", () => {
-  const api = extractApi(todolistGraph, "Graph");
-  const users = findNamespace(api.root.children, "users");
+  const api = extractApi(todolistGraph, ["Graph"]);
+  const users = findNamespace(api.entries[0].children, "users");
   const byId = findEndpoint(users.children, "byId");
 
   assertEquals(byId.path, ["Graph", "users", "byId"]);
@@ -164,16 +159,16 @@ Deno.test("extractApi: endpoint has arguments and returns", () => {
 });
 
 Deno.test("extractApi: endpoint with no args", () => {
-  const api = extractApi(basicGraph, "Graph");
-  const group = findEndpoint(api.root.children, "group");
+  const api = extractApi(basicGraph, ["Graph"]);
+  const group = findEndpoint(api.entries[0].children, "group");
 
   assertEquals(group.arguments, []);
   assertEquals(group.returns, { kind: "ref", name: "Group", params: [] });
 });
 
 Deno.test("extractApi: nested namespace paths", () => {
-  const api = extractApi(todolistGraph, "Graph");
-  const apps = findNamespace(api.root.children, "apps");
+  const api = extractApi(todolistGraph, ["Graph"]);
+  const apps = findNamespace(api.entries[0].children, "apps");
 
   assertEquals(apps.path, ["Graph", "apps"]);
   assertEquals(apps.children.map((c) => c.name), ["all", "byId"]);
@@ -195,8 +190,8 @@ Deno.test("extractApi: nested namespace paths", () => {
 });
 
 Deno.test("extractApi: union return type", () => {
-  const api = extractApi(basicGraph, "Graph");
-  const randomItem = findEndpoint(api.root.children, "randomItem");
+  const api = extractApi(basicGraph, ["Graph"]);
+  const randomItem = findEndpoint(api.entries[0].children, "randomItem");
 
   assertEquals(randomItem.returns, {
     kind: "union",
@@ -208,8 +203,8 @@ Deno.test("extractApi: union return type", () => {
 });
 
 Deno.test("extractApi: nullable return type", () => {
-  const api = extractApi(todolistGraph, "Graph");
-  const auth = findEndpoint(api.root.children, "auth");
+  const api = extractApi(todolistGraph, ["Graph"]);
+  const auth = findEndpoint(api.entries[0].children, "auth");
 
   assertEquals(auth.returns, {
     kind: "nullable",
@@ -228,8 +223,8 @@ Deno.test("extractApi: nullable return type", () => {
 });
 
 Deno.test("extractApi: inline object return type", () => {
-  const api = extractApi(todolistGraph, "Graph");
-  const config = findEndpoint(api.root.children, "config");
+  const api = extractApi(todolistGraph, ["Graph"]);
+  const config = findEndpoint(api.entries[0].children, "config");
 
   assertEquals(config.returns, { kind: "ref", name: "Config", params: [] });
 
@@ -268,7 +263,7 @@ Deno.test("extractApi: inline object return type", () => {
 });
 
 Deno.test("extractApi: types array contains all declarations", () => {
-  const api = extractApi(basicGraph, "Graph");
+  const api = extractApi(basicGraph, ["Graph"]);
 
   assertEquals(api.types.map((t) => t.name), [
     "Role",
@@ -285,7 +280,7 @@ Deno.test("extractApi: types array contains all declarations", () => {
 });
 
 Deno.test("extractApi: interface type declaration has properties", () => {
-  const api = extractApi(basicGraph, "Graph");
+  const api = extractApi(basicGraph, ["Graph"]);
   const user = findType(api.types, "User");
 
   assertEquals(user.kind, "interface");
@@ -326,7 +321,7 @@ Deno.test("extractApi: interface type declaration has properties", () => {
 });
 
 Deno.test("extractApi: alias type declaration has type", () => {
-  const api = extractApi(basicGraph, "Graph");
+  const api = extractApi(basicGraph, ["Graph"]);
   const role = findType(api.types, "Role");
 
   assertEquals(role.kind, "alias");
@@ -341,7 +336,7 @@ Deno.test("extractApi: alias type declaration has type", () => {
 });
 
 Deno.test("extractApi: Graph interface has function properties", () => {
-  const api = extractApi(basicGraph, "Graph");
+  const api = extractApi(basicGraph, ["Graph"]);
   const graphType = findType(api.types, "Graph");
 
   assertEquals(graphType.kind, "interface");
@@ -362,7 +357,7 @@ Deno.test("extractApi: Graph interface has function properties", () => {
 
 Deno.test("extractApi: throws on unknown entry", () => {
   assertThrows(
-    () => extractApi(basicGraph, "NonExistent"),
+    () => extractApi(basicGraph, ["NonExistent"]),
     Error,
     'Entry type "NonExistent" not found',
   );
@@ -370,9 +365,9 @@ Deno.test("extractApi: throws on unknown entry", () => {
 
 Deno.test("extractApi: builtin types appear as builtin", () => {
   const dateGraph = parse(loadSchema(resolve("./tests/date/graph.ts")));
-  const api = extractApi(dateGraph, "Graph");
+  const api = extractApi(dateGraph, ["Graph"]);
 
-  const sub = findNamespace(api.root.children, "sub");
+  const sub = findNamespace(api.entries[0].children, "sub");
 
   const now = findEndpoint(sub.children, "now");
   assertEquals(now.returns, { kind: "builtin", name: "Date" });

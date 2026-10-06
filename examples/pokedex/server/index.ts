@@ -14,7 +14,7 @@ import { resolvers } from "./resolvers.ts";
 
 const engine = createEngine({
   graph,
-  entry: "Graph",
+  entries: ["Graph"],
   resolvers,
 });
 

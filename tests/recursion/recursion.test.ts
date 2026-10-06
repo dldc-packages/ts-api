@@ -92,7 +92,7 @@ Deno.test("a non-recursive schema still parses and runs", async () => {
   `);
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [fn(graph.Graph.todos, () => [{ name: "a" }])],
   });
   const res = await engine.run({ path: ["Graph", "todos"], args: [] });

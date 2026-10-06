@@ -1,11 +1,11 @@
+import { execQuery } from "@dldc/ts-api/transports/http/client";
+import { handleQuery, parseBody } from "@dldc/ts-api/transports/http/server";
 import { assertEquals, assertRejects, assertThrows } from "@std/assert";
 import { resolve } from "@std/path";
 import { query } from "../../src/client/mod.ts";
 import { createEngine, fn, parse } from "../../src/server/mod.ts";
-import { execQuery } from "@dldc/ts-api/transports/http/client";
-import { handleQuery, parseBody } from "@dldc/ts-api/transports/http/server";
-import { loadSchema } from "../utils/loadSchema.ts";
 import type { TodoListTypes } from "../schemas/todolist.types.ts";
+import { loadSchema } from "../utils/loadSchema.ts";
 
 const client = query<TodoListTypes>();
 
@@ -15,7 +15,7 @@ const graph = parse<TodoListTypes>(
 
 const engine = createEngine({
   graph,
-  entry: "Graph",
+  entries: ["Graph"],
   resolvers: [
     fn(graph.Graph.config, () => ({
       env: { version: "1.0.0", num: 42, str: "hello", bool: true },
@@ -188,7 +188,7 @@ Deno.test("http: handleQuery rejects when the body is not valid JSON", async () 
 Deno.test("http: handleQuery rejects when a resolver throws", async () => {
   const failingEngine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.config, () => {
         throw new Error("boom");

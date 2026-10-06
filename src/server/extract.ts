@@ -114,10 +114,11 @@ export interface ApiTypeDeclaration {
  * The full API tree extracted from a schema by {@link extractApi}.
  */
 export interface ApiTree {
-  /** The name of the root interface (the `entry` passed to `extractApi`). */
-  entry: string;
-  /** The root namespace containing all endpoints and sub-namespaces. */
-  root: ApiNamespace;
+  /**
+   * The root namespaces (one per `entries` argument, in order), each
+   * containing all its endpoints and sub-namespaces.
+   */
+  entries: ApiNamespace[];
   /** All top-level type declarations from the schema file. */
   types: ApiTypeDeclaration[];
 }
@@ -125,11 +126,12 @@ export interface ApiTree {
 /**
  * Extract a serializable API tree from a parsed graph.
  *
- * Walks the graph from the given entry interface and returns a clean tree
- * of namespaces and endpoints, plus a flat list of all type declarations.
- * The result is fully JSON-serializable (no symbols, no circular references)
- * and is suitable for documentation generation, introspection, or any
- * tooling that needs to understand the API structure.
+ * Walks the graph from the given entry interfaces and returns one clean tree
+ * of namespaces and endpoints per entry (in the same order as `entries`),
+ * plus a flat list of all type declarations. The result is fully
+ * JSON-serializable (no symbols, no circular references) and is suitable for
+ * documentation generation, introspection, or any tooling that needs to
+ * understand the API structure.
  *
  * Refs are preserved as `{ kind: "ref", name, params }` so that types like
  * `Paginated<TodoItem>` can be cross-referenced via the `types` array.
@@ -137,13 +139,14 @@ export interface ApiTree {
  * Circular interface references are handled by returning an empty namespace.
  *
  * @param graph The graph object returned by `parse`.
- * @param entry The name of the root interface to walk from (e.g. `"Graph"`).
+ * @param entries The names of the root interfaces to walk from (e.g. `["Graph"]`).
+ *   One root namespace is produced per entry, in the given order.
  * @returns The extracted API tree.
  *
  * @example
  * ```ts
  * const graph = parse<AllTypes>(resolve("./api/graph.ts"));
- * const api = extractApi(graph, "Graph");
+ * const api = extractApi(graph, ["Graph"]);
  *
  * // Walk all endpoints
  * function visit(node: ApiNode) {
@@ -153,37 +156,40 @@ export interface ApiTree {
  *     node.children.forEach(visit);
  *   }
  * }
- * visit(api.root);
+ * api.entries.forEach(visit);
  * ```
  */
 export function extractApi(
   graph: TGraphBaseAny,
-  entry: string,
+  entries: string[],
 ): ApiTree {
   const rootStructure = graph[ROOT];
-  const entryType = rootStructure.types.find((t) => t.name === entry);
-  if (!entryType) {
-    throw new Error(`Entry type "${entry}" not found`);
-  }
 
-  const root = walkNamespace(
-    rootStructure,
-    {},
-    entryType.kind === "alias" ? entryType.type : entryType,
-    [entry],
-    new Set<string>(),
-    entryType.comment,
-  );
+  const entriesNamespaces = entries.map((entry) => {
+    const entryType = rootStructure.types.find((t) => t.name === entry);
+    if (!entryType) {
+      throw new Error(`Entry type "${entry}" not found`);
+    }
 
-  if (!root) {
-    throw new Error(`Entry type "${entry}" is not a namespace`);
-  }
+    const root = walkNamespace(
+      rootStructure,
+      {},
+      entryType.kind === "alias" ? entryType.type : entryType,
+      [entry],
+      new Set<string>(),
+      entryType.comment,
+    );
 
-  const types = rootStructure.types.map((t) =>
-    convertTopLevel(rootStructure, t)
-  );
+    if (!root) {
+      throw new Error(`Entry type "${entry}" is not a namespace`);
+    }
 
-  return { entry, root, types };
+    return root;
+  });
+  return {
+    entries: entriesNamespaces,
+    types: rootStructure.types.map((t) => convertTopLevel(rootStructure, t)),
+  };
 }
 
 function walkNamespace(

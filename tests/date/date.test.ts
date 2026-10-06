@@ -3,8 +3,8 @@ import { resolve } from "@std/path";
 import type { IsExact } from "@std/testing/types";
 import { query, queryToObject, type TQuery } from "../../src/client/mod.ts";
 import { createEngine, fn, parse } from "../../src/server/mod.ts";
-import { loadSchema } from "../utils/loadSchema.ts";
 import { assertType } from "../utils/assertType.ts";
+import { loadSchema } from "../utils/loadSchema.ts";
 import type { Graph, Namespace } from "./graph.ts";
 
 interface AllTypes {
@@ -21,7 +21,7 @@ const client = query<AllTypes>();
 Deno.test("Properly parse Date", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.sub.now, () => new Date("2021-01-01T00:00:00.000Z")),
     ],
@@ -37,7 +37,7 @@ Deno.test("Properly parse Date", async () => {
 Deno.test("Fail if output is not a date", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.sub.now, () => 42 as any),
     ],
@@ -58,7 +58,7 @@ Deno.test("Fail if output is not a date", async () => {
 Deno.test("Date input", async (t) => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.sub.doStuff, (_ctx, [date]) => {
         return date.toISOString();

@@ -1,13 +1,4 @@
-import { assertEquals, assertRejects, assertStringIncludes } from "@std/assert";
-import { resolve } from "@std/path";
 import { createKey } from "@dldc/stack";
-import { query, type TQuery } from "../../src/client/mod.ts";
-import {
-  createBuiltins,
-  createEngine,
-  parse,
-  resolver,
-} from "../../src/server/mod.ts";
 import { webBuiltins } from "@dldc/ts-api/transports/web/builtins";
 import {
   execMutation,
@@ -20,11 +11,20 @@ import {
   streamResolver,
 } from "@dldc/ts-api/transports/web/resolvers";
 import { handleWeb } from "@dldc/ts-api/transports/web/server";
-import { readSSE } from "../../src/transports/sse/client.ts";
 import type {
   StreamResult,
   TWebCodec,
 } from "@dldc/ts-api/transports/web/types";
+import { assertEquals, assertRejects, assertStringIncludes } from "@std/assert";
+import { resolve } from "@std/path";
+import { query, type TQuery } from "../../src/client/mod.ts";
+import {
+  createBuiltins,
+  createEngine,
+  parse,
+  resolver,
+} from "../../src/server/mod.ts";
+import { readSSE } from "../../src/transports/sse/client.ts";
 import { stringifyJsonURL } from "../../src/transports/web/utils.ts";
 import { loadSchema } from "../utils/loadSchema.ts";
 import type { WebTypes } from "./web.types.ts";
@@ -38,7 +38,7 @@ const graph = parse<WebTypes>(
 
 const engine = createEngine({
   graph,
-  entry: "Graph",
+  entries: ["Graph"],
   resolvers: [
     // The web transport's endpoints are wrapped in `QueryResult<T>` /
     // `MutationResult<T>` / `StreamResult<T>`, which are phantom markers: the
@@ -301,7 +301,7 @@ Deno.test("web: execStream throws when invalid args are delivered as an error ev
 Deno.test("web: execStream throws when a failing resolver is delivered as an error event", async () => {
   const failingEngine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       resolver(graph.Graph.aStream, () => {
         throw new Error("boom-stream");
@@ -374,7 +374,7 @@ Deno.test("web: handleWeb returns 400 for invalid arguments (client error)", asy
 Deno.test("web: handleWeb returns 500 for a failing resolver (server error)", async () => {
   const failingEngine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       resolver(graph.Graph.aMutation, () => {
         throw new Error("boom-json");
@@ -432,7 +432,7 @@ Deno.test("web: handleWeb passes extendsCtx to engine.run", async () => {
   const FlagKey = createKey<string>("web-flag");
   const extEngine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       resolver(
         graph.Graph.aMutation,
@@ -462,7 +462,7 @@ Deno.test("web: handleWeb passes extendsCtx to engine.runIterable", async () => 
   const FlagKey = createKey<string>("web-flag-stream");
   const extEngine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       resolver(graph.Graph.aStream, (ctx) => {
         const ok = ctx.getOrFail(FlagKey.Consumer) === "stream-on";
@@ -728,7 +728,7 @@ Deno.test("web: queryResolver / mutationResolver / streamResolver", async () => 
   // the phantom wrappers unwrapped and the args passed as the second argument.
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       queryResolver(graph.Graph.aQuery, (_ctx, [foo, bar]) => ({
         todoName: foo,

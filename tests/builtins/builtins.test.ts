@@ -40,7 +40,7 @@ const client = query<AllTypes>();
 Deno.test("Properly parse MyBuiltin", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.now, () => "Hello"),
     ],
@@ -55,7 +55,7 @@ Deno.test("Properly parse MyBuiltin", async () => {
 Deno.test("Fail if output is not a string", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.now, () => 42 as any),
     ],
@@ -75,7 +75,7 @@ Deno.test("Fail if output is not a string", async () => {
 Deno.test("validateOutput: false skips return value validation", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     validateOutput: false,
     resolvers: [
       fn(graph.Graph.now, () => 42 as any),
@@ -92,7 +92,7 @@ Deno.test("validateOutput: false skips return value validation", async () => {
 Deno.test("MyBuiltin input", async (t) => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(graph.Graph.doStuff, (_ctx, [builtin]) => {
         return builtin;

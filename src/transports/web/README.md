@@ -65,7 +65,7 @@ import {
 
 const engine = createEngine({
   graph,
-  entry: "Graph",
+  entries: ["Graph"],
   resolvers: [
     queryResolver(graph.Graph.aQuery, (_ctx, [foo, bar]) => {
       // `foo` is string, `bar` is number; returns the plain value.
@@ -174,10 +174,13 @@ import {
 const client = query<{ Graph: Graph }>();
 const baseUrl = "https://example.com/api";
 
-const queryResult = await execQuery(client.aQuery("foo", 123), baseUrl);
-const mutationResult = await execMutation(client.aMutation("id"), baseUrl);
+const queryResult = await execQuery(client.Graph.aQuery("foo", 123), baseUrl);
+const mutationResult = await execMutation(
+  client.Graph.aMutation("id"),
+  baseUrl,
+);
 
-const stream = execStream(client.aStream("topic"), baseUrl);
+const stream = execStream(client.Graph.aStream("topic"), baseUrl);
 for await (const value of stream) {
   console.log(value);
 }
@@ -200,7 +203,7 @@ const codec = {
   decode: (value) => SuperJSON.deserialize(value),
 };
 const mutationResult = await execMutation(
-  client.aMutation("id"),
+  client.Graph.aMutation("id"),
   baseUrl,
   undefined,
   codec,

@@ -21,7 +21,7 @@ const graph = parse<AllTypes>(
 Deno.test("Fails if no resolver", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [],
   });
 
@@ -39,7 +39,7 @@ Deno.test("Fails if no resolver", async () => {
 Deno.test("get generic results", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.todos,
@@ -63,7 +63,7 @@ Deno.test("get generic results", async () => {
 Deno.test("Resolver in generic", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.todos,
@@ -87,7 +87,7 @@ Deno.test("Resolver in generic", async () => {
 Deno.test("Fails if a property is missing", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.todos,
@@ -112,7 +112,7 @@ Deno.test("Fails if a property is missing", async () => {
 Deno.test("nested function with generic", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.nested,
@@ -133,7 +133,7 @@ Deno.test("nested function with generic", async () => {
 Deno.test("generic as input: createMany receives Paginated<TodoItem>", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.createMany,
@@ -162,7 +162,7 @@ Deno.test("generic as input: createMany receives Paginated<TodoItem>", async () 
 Deno.test("generic as input: search receives ListParams<string>", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.search,
@@ -182,7 +182,7 @@ Deno.test("generic as input: search receives ListParams<string>", async () => {
 Deno.test("generic as input: search with optional filter omitted", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.search,
@@ -202,7 +202,7 @@ Deno.test("generic as input: search with optional filter omitted", async () => {
 Deno.test("generic input validation: createMany rejects invalid data", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.createMany,
@@ -232,7 +232,7 @@ Deno.test("generic input validation: createMany rejects invalid data", async () 
 Deno.test("nested declared generic: Paginated<Paginated<TodoItem>> resolves", async () => {
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.nestedPaginated,
@@ -258,7 +258,7 @@ Deno.test("nested declared generic output is validated deeply", async () => {
   // the resolver returning a string must be rejected.
   const engine = createEngine({
     graph,
-    entry: "Graph",
+    entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.nestedPaginated,
