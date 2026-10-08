@@ -265,20 +265,42 @@ function parseParameterizedType(
     );
   }
   const argsList = childByName(node, "TypeArgList");
-  const params = argsList
+  const paramNodes = argsList
     ? children(argsList)
       .filter((c) =>
         c.type.name !== "<" && c.type.name !== ">" && c.type.name !== ","
       )
-      .map((param, index) =>
-        parseNode(
-          commentsMap,
-          param,
-          `${parentKey}.params.${index}`,
-          sourceText,
-        )
-      )
     : [];
+
+  // `Array<Foo>` is the generic form of the `Foo[]` array syntax. Parse it as a
+  // native array rather than a ref to the global `Array` type, which is neither
+  // declared in the schema nor registered as a builtin.
+  if (refName === "Array") {
+    if (paramNodes.length !== 1) {
+      throw new Error(
+        `Array<T> must have exactly one type argument, got ${paramNodes.length}`,
+      );
+    }
+    return {
+      kind: "array",
+      key: parentKey,
+      items: parseNode(
+        commentsMap,
+        paramNodes[0],
+        `${parentKey}.items`,
+        sourceText,
+      ),
+    };
+  }
+
+  const params = paramNodes.map((param, index) =>
+    parseNode(
+      commentsMap,
+      param,
+      `${parentKey}.params.${index}`,
+      sourceText,
+    )
+  );
   return { kind: "ref", key: parentKey, ref: refName, params };
 }
 

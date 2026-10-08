@@ -1,0 +1,117 @@
+export const snapshot = {};
+
+snapshot[`Snapshot structure 1`] = `
+{
+  builtins: [
+    {
+      getSchema: [Function: getSchema],
+      key: "builtin.Date",
+      kind: "builtin",
+      name: "Date",
+      parameters: [],
+    },
+  ],
+  key: "root",
+  kind: "root",
+  mode: "graph",
+  types: [
+    {
+      comment: undefined,
+      key: "root.Foo",
+      kind: "interface",
+      name: "Foo",
+      parameters: [],
+      properties: [
+        {
+          comment: undefined,
+          name: "name",
+          optional: false,
+          structure: {
+            key: "root.Foo.name",
+            kind: "primitive",
+            type: "string",
+          },
+        },
+        {
+          comment: undefined,
+          name: "done",
+          optional: false,
+          structure: {
+            key: "root.Foo.done",
+            kind: "primitive",
+            type: "boolean",
+          },
+        },
+      ],
+    },
+    {
+      comment: undefined,
+      key: "root.Graph",
+      kind: "interface",
+      name: "Graph",
+      parameters: [],
+      properties: [
+        {
+          comment: "\`Array<Foo>\` used as a response (return) type.",
+          name: "list",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [],
+              key: "root.Graph.list.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.list",
+            kind: "function",
+            returns: {
+              items: {
+                key: "root.Graph.list.returns.items",
+                kind: "ref",
+                params: [],
+                ref: "Foo",
+              },
+              key: "root.Graph.list.returns",
+              kind: "array",
+            },
+          },
+        },
+        {
+          comment: "\`Array<Foo>\` used as a request (argument) type.",
+          name: "count",
+          optional: false,
+          structure: {
+            arguments: {
+              arguments: [
+                {
+                  comment: undefined,
+                  name: "items",
+                  optional: false,
+                  structure: {
+                    items: {
+                      key: "root.Graph.count.arguments.items.items",
+                      kind: "ref",
+                      params: [],
+                      ref: "Foo",
+                    },
+                    key: "root.Graph.count.arguments.items",
+                    kind: "array",
+                  },
+                },
+              ],
+              key: "root.Graph.count.arguments",
+              kind: "arguments",
+            },
+            key: "root.Graph.count",
+            kind: "function",
+            returns: {
+              key: "root.Graph.count.returns",
+              kind: "primitive",
+              type: "number",
+            },
+          },
+        },
+      ],
+    },
+  ],
+}
+`;
