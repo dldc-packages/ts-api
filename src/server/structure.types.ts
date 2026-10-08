@@ -119,6 +119,12 @@ export interface TBuiltinStructure {
    * interfaces and aliases. An empty array marks a non-generic builtin.
    */
   parameters: string[];
+  /**
+   * True when the builtin was auto-registered by `handleMissingBuiltins`
+   * (missingBuiltinAction `"warn"` / `"ignore"`). Such builtins are opaque
+   * `unknown` leaves, so any type arguments they are used with are ignored.
+   */
+  autoRegistered?: boolean;
   getSchema: TBuiltinGetSchema;
 }
 

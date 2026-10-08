@@ -304,9 +304,12 @@ function resolveRef(
   }
   // Both top-level declarations (`root`) and builtins declare a `parameters`
   // list, so the ref's type arguments are bound into `localTypes` the exact
-  // same way for either target.
+  // same way for either target. Auto-registered builtins are the exception:
+  // they are opaque `unknown` leaves, so any type arguments they are used
+  // with are ignored rather than validated against declared parameters.
   if (
     resolvedStructure.kind === "builtin" &&
+    !resolvedStructure.structure.autoRegistered &&
     resolvedStructure.structure.parameters.length !== structure.params.length
   ) {
     throw new Error(

@@ -13,6 +13,7 @@ import {
 import { loadSchema } from "../utils/loadSchema.ts";
 import type { Graph } from "./graph.ts";
 import type { Graph2 } from "./graph2.ts";
+import type { Graph3 } from "./graph3.ts";
 
 interface AllTypes {
   Graph: Graph;
@@ -22,7 +23,12 @@ interface AllTypes2 {
   Graph2: Graph2;
 }
 
+interface AllTypes3 {
+  Graph3: Graph3;
+}
+
 const client = query<AllTypes>();
+const client3 = query<AllTypes3>();
 
 // The type is imported and used in the graph, but never declared as a builtin.
 function parseWith(
@@ -38,6 +44,13 @@ function parseGraph2(config: TMissingBuiltinActionConfig) {
   return parse<AllTypes2>(
     loadSchema(resolve("./tests/undeclared-ref/graph2.ts")),
     { missingBuiltinAction: config },
+  );
+}
+
+function parseGraph3(action: TMissingBuiltinAction) {
+  return parse<AllTypes3>(
+    loadSchema(resolve("./tests/undeclared-ref/graph3.ts")),
+    { missingBuiltinAction: action },
   );
 }
 
@@ -98,6 +111,55 @@ Deno.test("engine runs with an auto-registered builtin", async () => {
   const { path, args } = queryToObject(q);
   const result = await engine.run({ path, args });
   assertEquals(result, "hello");
+});
+
+Deno.test("auto-registered generic builtin is registered as a non-generic builtin", () => {
+  const graph = parseGraph3("ignore");
+  const root = getStructure(graph);
+
+  // `ImportedGeneric<Foo>` is undeclared, so it is auto-registered as a builtin
+  // (with an `unknown` schema) — but with no declared type parameters.
+  assertEquals(
+    root.builtins.map((b) => b.name),
+    ["Date", "ImportedGeneric"],
+  );
+  const builtin = root.builtins.find((b) => b.name === "ImportedGeneric");
+  assertEquals(builtin?.parameters, []);
+});
+
+Deno.test("auto-registered generic builtin works as a response type", async () => {
+  // Confirms the issue: the auto-registered builtin has no `parameters` declared,
+  // yet `ImportedGeneric<Foo>` supplies a type argument, so schema resolution
+  // currently throws "Invalid type arguments: expected 0 parameter(s) ... got 1".
+  const graph = parseGraph3("ignore");
+  const engine = createEngine({
+    graph,
+    entries: ["Graph3"],
+    resolvers: [
+      fn(graph.Graph3.list, () => [{ name: "a" }, { name: "b" }]),
+    ],
+  });
+
+  const q = client3.Graph3.list();
+  const { path, args } = queryToObject(q);
+  const result = await engine.run({ path, args });
+  assertEquals(result, [{ name: "a" }, { name: "b" }]);
+});
+
+Deno.test("auto-registered generic builtin works as a request type", async () => {
+  const graph = parseGraph3("ignore");
+  const engine = createEngine({
+    graph,
+    entries: ["Graph3"],
+    resolvers: [
+      fn(graph.Graph3.count, (_ctx, [items]) => items.length),
+    ],
+  });
+
+  const q = client3.Graph3.count([{ name: "a" }, { name: "b" }]);
+  const { path, args } = queryToObject(q);
+  const result = await engine.run({ path, args });
+  assertEquals(result, 2);
 });
 
 Deno.test("parse with 'warn' auto-registers and logs a warning", () => {
