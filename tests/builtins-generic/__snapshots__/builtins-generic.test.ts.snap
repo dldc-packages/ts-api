@@ -8,16 +8,12 @@ snapshot[`Snapshot structure 1`] = `
       key: "builtin.Date",
       kind: "builtin",
       name: "Date",
-      parameters: [],
     },
     {
       getSchema: [Function: getSchema],
       key: "builtin.Page",
       kind: "builtin",
       name: "Page",
-      parameters: [
-        "T",
-      ],
     },
   ],
   key: "root",

@@ -7,11 +7,12 @@ import type { TBuiltinsFromConfig, TGraphBuiltins } from "./types.ts";
 /**
  * Builds the valibot schema validating a builtin's values.
  *
- * When the builtin declares generic type parameters (e.g. `parameters: ["T"]`
- * for `Page<T>`) and is used with type arguments (e.g. `Page<string>`),
- * `params` holds the valibot schemas of those arguments (here: the schema of
- * `string`), so the returned schema can depend on the generic instantiation. A
- * non-generic builtin (no `parameters`) receives an empty array.
+ * `params` holds the valibot schemas of the builtin's type arguments, in the
+ * order they appear in the schema (e.g. for `Page<string>` the schema of
+ * `string`). A builtin used with no type arguments receives an empty array.
+ * Whether an exact arity is required — and whether type parameters may be
+ * omitted (e.g. defaults) — is the builtin's own responsibility: `getSchema`
+ * should validate `params.length` when it cares.
  */
 export type TBuiltinGetSchema = (
   params: v.BaseSchema<any, any, any>[],
@@ -20,11 +21,6 @@ export type TBuiltinGetSchema = (
 export interface TBuiltinConfig<T> {
   [TYPES]: T;
   getSchema: TBuiltinGetSchema;
-  /**
-   * Names of the generic type parameters this builtin can be used with
-   * (e.g. `["T"]` for a `Page<T>` builtin). Omit for a non-generic builtin.
-   */
-  parameters?: string[];
 }
 
 export type TBuiltinTypesConfig = Record<
@@ -44,12 +40,11 @@ export function createBuiltins<Conf extends TBuiltinTypesConfig>(
   const builtins: TBuiltinStructure[] = [];
   for (const [name, config] of Object.entries(configResolved)) {
     if (config) {
-      const { getSchema, parameters = [] } = config;
+      const { getSchema } = config;
       builtins.push({
         kind: "builtin",
         key: `builtin.${name}`,
         name,
-        parameters,
         getSchema,
       });
     }

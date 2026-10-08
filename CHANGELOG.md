@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to
 [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Breaking
+
+- **Builtins no longer declare `parameters`.** `TBuiltinConfig.parameters` is
+  removed. A builtin's `getSchema` now always receives the valibot schemas of
+  the type arguments it was used with, in order (an empty array if none) — and
+  is itself responsible for validating the count when one is required. This
+  allows builtins with optional/omittable type parameters, and removes the
+  "Invalid type arguments: expected N parameter(s)" error raised at schema
+  resolution time.
+- **`Array<T>` is a native array type.** Previously `Array<Foo>` parsed to a ref
+  to the global `Array` and failed with "Missing builtin type: Array". It now
+  behaves exactly like `Foo[]` in the graph (request and response).
+
+### Changed
+
+- The web transport builtins (`QueryResult` / `MutationResult` / `StreamResult`)
+  now enforce their single type argument from `getSchema` instead of the removed
+  `parameters` declaration — the error message wording changes.
+
 ## [4.0.0] - 2026-10-07
 
 ### Breaking

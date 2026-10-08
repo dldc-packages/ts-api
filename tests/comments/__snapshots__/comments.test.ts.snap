@@ -8,7 +8,6 @@ snapshot[`Parse schema with comments 1`] = `
       key: "builtin.Date",
       kind: "builtin",
       name: "Date",
-      parameters: [],
     },
   ],
   key: "root",

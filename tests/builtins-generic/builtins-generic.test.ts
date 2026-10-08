@@ -25,7 +25,6 @@ const paramCounts: number[] = [];
 
 const builtins = createBuiltins({
   Page: builtin<Page<any>>({
-    parameters: ["T"],
     getSchema: (params) => {
       paramCounts.push(params.length);
       seenParamTypes.push(
@@ -188,9 +187,10 @@ Deno.test("generic builtin param can be another generic declared type", async ()
   assertEquals(seenParamTypes, [["nullable"]]);
 });
 
-Deno.test("generic builtin with wrong number of type arguments fails", async () => {
-  // Using a generic builtin without its type argument is a resolution error
-  // (surfaced when the schema is built, not by the TypeScript grammar).
+Deno.test("builtin getSchema enforces the number of type arguments", async () => {
+  // Arity validation is the builtin's own responsibility: a builtin used
+  // without the type arguments it requires must reject at schema-build time
+  // (surfaced by getSchema when the endpoint's schema is built).
   const g = parse(
     `
     interface Graph {
@@ -200,8 +200,17 @@ Deno.test("generic builtin with wrong number of type arguments fails", async () 
     {
       builtins: createBuiltins({
         Page: builtin<Page<any>>({
-          parameters: ["T"],
-          getSchema: () => v.object({ items: v.unknown(), cursor: v.string() }),
+          getSchema: (params) => {
+            if (params.length !== 1) {
+              throw new Error(
+                `Invalid type arguments: Page expects exactly 1 type argument, got ${params.length}`,
+              );
+            }
+            return v.object({
+              items: v.array(params[0]),
+              cursor: v.string(),
+            });
+          },
         }),
       }),
     },
@@ -216,7 +225,7 @@ Deno.test("generic builtin with wrong number of type arguments fails", async () 
   );
   assertEquals(
     (err as Error).message,
-    'Invalid type arguments: expected 1 parameter(s) for builtin "Page", got 0',
+    "Invalid type arguments: Page expects exactly 1 type argument, got 0",
   );
 });
 

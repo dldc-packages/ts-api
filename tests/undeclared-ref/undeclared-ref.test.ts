@@ -113,24 +113,21 @@ Deno.test("engine runs with an auto-registered builtin", async () => {
   assertEquals(result, "hello");
 });
 
-Deno.test("auto-registered generic builtin is registered as a non-generic builtin", () => {
+Deno.test("auto-registered generic builtin is registered and used with type arguments", () => {
   const graph = parseGraph3("ignore");
   const root = getStructure(graph);
 
   // `ImportedGeneric<Foo>` is undeclared, so it is auto-registered as a builtin
-  // (with an `unknown` schema) — but with no declared type parameters.
+  // (with an `unknown` schema) that accepts any number of type arguments.
   assertEquals(
     root.builtins.map((b) => b.name),
     ["Date", "ImportedGeneric"],
   );
-  const builtin = root.builtins.find((b) => b.name === "ImportedGeneric");
-  assertEquals(builtin?.parameters, []);
 });
 
 Deno.test("auto-registered generic builtin works as a response type", async () => {
-  // Confirms the issue: the auto-registered builtin has no `parameters` declared,
-  // yet `ImportedGeneric<Foo>` supplies a type argument, so schema resolution
-  // currently throws "Invalid type arguments: expected 0 parameter(s) ... got 1".
+  // Auto-registered builtins are opaque `unknown` leaves, so the type argument
+  // supplied by `ImportedGeneric<Foo>` is simply ignored.
   const graph = parseGraph3("ignore");
   const engine = createEngine({
     graph,

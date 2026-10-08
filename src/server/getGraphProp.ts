@@ -248,11 +248,12 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
     if (typeof prop !== "string") {
       throw new Error("Invalid path: expected string");
     }
-    // A builtin's generic type arguments are navigable by their declared
-    // parameter names — the same way a body walks its fields. The bound
-    // structure comes from `localTypes`, which `resolveRef` populates exactly
-    // like it does for declared generics.
-    if (!structure.parameters.includes(prop)) {
+    // A builtin's type arguments are navigable positionally (index 0, 1, ...).
+    // Their structures live in `localTypes`, which `resolveRef` populates.
+    // Whether an exact arity is required — and whether arguments may be
+    // omitted — is up to the builtin's getSchema, not to the graph navigator.
+    const index = Number(prop);
+    if (!Number.isInteger(index) || index < 0) {
       throw new Error(
         `Invalid path: ${prop} not found in builtin ${structure.name}`,
       );
@@ -260,7 +261,7 @@ const GET_STRUCTURE_PROP: TGetPropByStructureKind = {
     const paramStructure = localTypes[prop];
     if (!paramStructure) {
       throw new Error(
-        `Invalid path: no type argument bound for "${prop}" of builtin ${structure.name}`,
+        `Invalid path: no type argument at index ${index} for builtin ${structure.name}`,
       );
     }
     return graphInternal({
@@ -302,28 +303,24 @@ function resolveRef(
       path: pushTail(path, resolvedStructure.structure),
     });
   }
-  // Both top-level declarations (`root`) and builtins declare a `parameters`
-  // list, so the ref's type arguments are bound into `localTypes` the exact
-  // same way for either target. Auto-registered builtins are the exception:
-  // they are opaque `unknown` leaves, so any type arguments they are used
-  // with are ignored rather than validated against declared parameters.
-  if (
-    resolvedStructure.kind === "builtin" &&
-    !resolvedStructure.structure.autoRegistered &&
-    resolvedStructure.structure.parameters.length !== structure.params.length
-  ) {
-    throw new Error(
-      `Invalid type arguments: expected ${resolvedStructure.structure.parameters.length} parameter(s) for builtin "${resolvedStructure.structure.name}", got ${structure.params.length}`,
-    );
-  }
   const nextLocalTypes: TLocalTypes = {};
-  // Keep the raw type arguments: a ref that carries its own `params` (e.g. the
-  // inner `Page<number>` of `Page<Page<number>>`) is re-resolved later through
-  // the normal machinery instead of being flattened, so nested generics bind
-  // correctly.
-  resolvedStructure.structure.parameters.forEach((name, index) => {
-    nextLocalTypes[name] = structure.params[index];
-  });
+  if (resolvedStructure.kind === "builtin") {
+    // A builtin declares no parameter names, so its type arguments are bound
+    // positionally into `localTypes` and handed to `getSchema` in order. How
+    // many are expected (or whether they may be omitted) is getSchema's
+    // responsibility.
+    structure.params.forEach((param, index) => {
+      nextLocalTypes[String(index)] = param;
+    });
+  } else {
+    // Declared generics bind by parameter name. Keep the raw type arguments: a
+    // ref that carries its own `params` (e.g. the inner `Page<number>` of
+    // `Page<Page<number>>`) is re-resolved later through the normal machinery
+    // instead of being flattened, so nested generics bind correctly.
+    resolvedStructure.structure.parameters.forEach((name, index) => {
+      nextLocalTypes[name] = structure.params[index];
+    });
+  }
   return graphInternal({
     rootStructure,
     localTypes: nextLocalTypes,

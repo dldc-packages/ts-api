@@ -125,13 +125,21 @@ const SCHEMA_BY_STRUCTURE: TByStructureKind = {
     if (structure.kind !== "builtin") {
       throw new Error("Invalid structure kind");
     }
-    // Resolve each declared generic type parameter (e.g. the `string` in
-    // `Wrapper<string>`) through the same graph navigation a body uses to read
-    // its fields — the arguments were bound into `localTypes` by `resolveRef`.
-    // A builtin used without type arguments receives an empty array.
-    const paramSchemas = structure.parameters.map((name) =>
-      getStructureSchema(context, graph[GET](name))
-    );
+    // Resolve each supplied type argument through the same graph navigation a
+    // body uses to read its fields — `resolveRef` bound them positionally into
+    // `localTypes`. A builtin used with no type arguments receives an empty
+    // array; enforcing an exact arity (or allowing omitted ones) is up to the
+    // builtin's getSchema.
+    const paramSchemas: v.BaseSchema<any, any, any>[] = [];
+    for (let index = 0;; index += 1) {
+      let paramGraph: TGraphBaseAny;
+      try {
+        paramGraph = graph[GET](String(index));
+      } catch {
+        break; // no type argument at this index
+      }
+      paramSchemas.push(getStructureSchema(context, paramGraph));
+    }
     return structure.getSchema(paramSchemas);
   },
 };

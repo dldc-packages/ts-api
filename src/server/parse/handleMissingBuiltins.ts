@@ -79,11 +79,8 @@ function createAutoBuiltin(name: string): TBuiltinStructure {
     kind: "builtin",
     key: `builtin.${name}`,
     name,
-    parameters: [],
     // Auto-registered builtins are opaque `unknown` leaves: their type
-    // arguments (if any) must be ignored, not validated against declared
-    // parameters (which they don't have).
-    autoRegistered: true,
+    // arguments (if any) are ignored, so any number of them is accepted.
     getSchema: () => v.unknown(),
   };
 }

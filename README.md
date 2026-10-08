@@ -667,14 +667,16 @@ import * as v from "@valibot/valibot";
 export type Page<T> = { items: T[]; cursor: string };
 
 export const PageBuiltin = builtin<Page<unknown>>({
-  // declare the generic type parameter of `Page<T>` (optional for non-generic builtins)
-  parameters: ["T"],
   // params are the valibot schemas of the type arguments (here: the schema of T)
-  getSchema: (params) =>
-    v.object({
+  getSchema: (params) => {
+    if (params.length !== 1) {
+      throw new Error("Page expects exactly one type argument");
+    }
+    return v.object({
       items: v.array(params[0]), // schema of `Page<string>` items, schema of `Page<Todo>` items, ...
       cursor: v.string(),
-    }),
+    });
+  },
 });
 ```
 
@@ -715,11 +717,12 @@ export interface Graph {
 
 Details to keep in mind:
 
-- The builtin declares its generic type parameters with `parameters` (e.g.
-  `["T"]` for a `Page<T>` builtin), mirroring the generic interfaces/aliases of
-  the schema. A non-generic builtin (no `parameters`) receives an empty array
-  (`getSchema([])`); using a generic builtin with the wrong number of type
-  arguments throws a clear error.
+- `getSchema` receives the valibot schemas of the builtin's type arguments, in
+  order — e.g. `Page<string>` gets the schema of `string`. A builtin used with
+  no type arguments receives an empty array (`getSchema([])`). Enforcing an
+  exact number of type arguments — or allowing them to be omitted — is the
+  builtin's own responsibility: check `params.length` in `getSchema` when it
+  matters (see the `PageBuiltin` example above).
 - The type arguments can be any supported type: primitives, declared
   interfaces/aliases, unions, arrays, or even other generic builtins
   (`Page<Page<number>>`). Each is resolved to its schema before being handed to
@@ -998,20 +1001,24 @@ const builtins = createBuiltins({
 #### `builtin<T>(config)`
 
 Helper to define a builtin type. `getSchema` receives the valibot schemas of the
-builtin's generic type arguments (an empty array for a non-generic builtin), so
-you can build a schema that depends on the concrete generic instantiation.
-Generic builtins declare their type parameters with `parameters`:
+builtin's type arguments, in order (an empty array when the builtin is used with
+no type arguments), so you can build a schema that depends on the concrete
+generic instantiation. Enforcing how many type arguments a builtin expects — or
+whether they may be omitted — is `getSchema`'s job, not the library's:
 
 ```ts
-builtin<Date>({ getSchema: () => v.date() }); // non-generic: no parameters
+builtin<Date>({ getSchema: () => v.date() }); // non-generic: never called with arguments
 
 builtin<Page<unknown>>({
-  parameters: ["T"], // `Page<T>` has one generic type parameter
-  getSchema: (params) =>
-    v.object({
+  getSchema: (params) => {
+    if (params.length !== 1) {
+      throw new Error("Page expects exactly one type argument");
+    }
+    return v.object({
       items: v.array(params[0]), // the schema of the `Page<T>` type argument
       cursor: v.string(),
-    }),
+    });
+  },
 });
 ```
 

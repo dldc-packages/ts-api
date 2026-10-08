@@ -8,7 +8,6 @@ snapshot[`Snapshot structure 1`] = `
       key: "builtin.Date",
       kind: "builtin",
       name: "Date",
-      parameters: [],
     },
   ],
   key: "root",
