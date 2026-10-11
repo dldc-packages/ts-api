@@ -12,11 +12,7 @@
  * the server and the client use the same superjson `codec` (see `codec.ts`).
  */
 
-import type {
-  MutationResult,
-  QueryResult,
-  StreamResult,
-} from "../../src/transports/web/types.ts";
+import type { MutationResult, QueryResult, StreamResult } from "../../src/transports/web/types.ts";
 
 export type PokemonType = "electric" | "fire" | "grass" | "water" | "normal";
 

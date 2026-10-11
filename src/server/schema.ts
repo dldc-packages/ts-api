@@ -1,4 +1,4 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 import { GET, REF, STRUCTURE } from "./constants.ts";
 import type { TGraphBaseAny } from "./graph.ts";
 import type { TRootStructure, TStructureKind } from "./structure.types.ts";
@@ -11,9 +11,7 @@ export interface TSchemaContext {
   cache: WeakMap<TGraphBaseAny, v.BaseSchema<any, any, any>>;
 }
 
-export function createSchemaContext(
-  rootStructure: TRootStructure,
-): TSchemaContext {
+export function createSchemaContext(rootStructure: TRootStructure): TSchemaContext {
   return {
     rootStructure,
     cache: new WeakMap(),
@@ -29,24 +27,16 @@ type TByStructureKind = {
   [K in TStructureKind]: TStructureGetSchema;
 };
 
-function objectLikeSchema(
-  context: TSchemaContext,
-  graph: TGraphBaseAny,
-) {
+function objectLikeSchema(context: TSchemaContext, graph: TGraphBaseAny) {
   const structure = graph[STRUCTURE];
   if (structure.kind !== "interface" && structure.kind !== "object") {
     throw new Error("Invalid structure kind");
   }
-  const properties = structure.properties.map(
-    ({ name, optional }) => {
-      const subGraph = graph[GET](name);
-      const propSchema = getStructureSchema(context, subGraph);
-      return [
-        name,
-        optional ? v.optional(propSchema) : propSchema,
-      ] as const;
-    },
-  );
+  const properties = structure.properties.map(({ name, optional }) => {
+    const subGraph = graph[GET](name);
+    const propSchema = getStructureSchema(context, subGraph);
+    return [name, optional ? v.optional(propSchema) : propSchema] as const;
+  });
   return v.strictObject(Object.fromEntries(properties));
 }
 
@@ -131,7 +121,7 @@ const SCHEMA_BY_STRUCTURE: TByStructureKind = {
     // array; enforcing an exact arity (or allowing omitted ones) is up to the
     // builtin's getSchema.
     const paramSchemas: v.BaseSchema<any, any, any>[] = [];
-    for (let index = 0;; index += 1) {
+    for (let index = 0; ; index += 1) {
       let paramGraph: TGraphBaseAny;
       try {
         paramGraph = graph[GET](String(index));

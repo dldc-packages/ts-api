@@ -1,3 +1,4 @@
+import { test } from "vite-plus/test";
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
 import { loadSchema } from "../utils/loadSchema.ts";
@@ -12,38 +13,40 @@ export interface AllTypes {
   BaseFn: BaseFn<any>;
 }
 
-const graph = parse<AllTypes>(
-  loadSchema(resolve("./tests/generics/graph.ts")),
-);
+const graph = parse<AllTypes>(loadSchema(resolve("./tests/generics/graph.ts")));
 
-Deno.test("Simple Generic", () => {
+test("Simple Generic", () => {
   const p1 = graph.Graph.todos;
-  assertEquals(p1[PATH].map((p) => `${p.key}(${p.kind})`), [
-    "root.Graph.todos(function)",
-  ]);
+  assertEquals(
+    p1[PATH].map((p) => `${p.key}(${p.kind})`),
+    ["root.Graph.todos(function)"],
+  );
   const p2 = p1.return;
-  assertEquals(p2[PATH].map((p) => `${p.key}(${p.kind})`), [
-    "root.Graph.todos.returns(ref)",
-  ]);
+  assertEquals(
+    p2[PATH].map((p) => `${p.key}(${p.kind})`),
+    ["root.Graph.todos.returns(ref)"],
+  );
   const p3 = p2[GET](REF);
-  assertEquals(p3[PATH].map((p) => `${p.key}(${p.kind})`), [
-    "root.Graph.todos.returns(ref)",
-    "root.Paginated(interface)",
-  ]);
+  assertEquals(
+    p3[PATH].map((p) => `${p.key}(${p.kind})`),
+    ["root.Graph.todos.returns(ref)", "root.Paginated(interface)"],
+  );
 });
 
-Deno.test("Nested generic", () => {
+test("Nested generic", () => {
   const p1 = graph.Graph.nested;
-  assertEquals(p1[PATH].map((p) => `${p.key}(${p.kind})`), [
-    "root.Graph.nested(function)",
-  ]);
+  assertEquals(
+    p1[PATH].map((p) => `${p.key}(${p.kind})`),
+    ["root.Graph.nested(function)"],
+  );
   const p2 = p1.return;
-  assertEquals(p2[PATH].map((p) => `${p.key}(${p.kind})`), [
-    "root.Graph.nested.returns(ref)",
-  ]);
+  assertEquals(
+    p2[PATH].map((p) => `${p.key}(${p.kind})`),
+    ["root.Graph.nested.returns(ref)"],
+  );
   const p3 = p2[GET](REF);
-  assertEquals(p3[PATH].map((p) => `${p.key}(${p.kind})`), [
-    "root.Graph.nested.returns(ref)",
-    "root.TodoItem(interface)",
-  ]);
+  assertEquals(
+    p3[PATH].map((p) => `${p.key}(${p.kind})`),
+    ["root.Graph.nested.returns(ref)", "root.TodoItem(interface)"],
+  );
 });

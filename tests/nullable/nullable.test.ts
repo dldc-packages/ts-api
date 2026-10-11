@@ -1,15 +1,10 @@
+import { describe, test } from "vite-plus/test";
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject } from "../../src/client/mod.ts";
 import { createEngine, fn, parse } from "../../src/server/mod.ts";
 import { loadSchema } from "../utils/loadSchema.ts";
-import type {
-  Graph,
-  Namespace,
-  ParamsWithNull,
-  SimpleObj,
-  SimpleParams,
-} from "./graph.ts";
+import type { Graph, Namespace, ParamsWithNull, SimpleObj, SimpleParams } from "./graph.ts";
 
 interface AllTypes {
   Graph: Graph;
@@ -19,13 +14,11 @@ interface AllTypes {
   SimpleParams: SimpleParams;
 }
 
-const graph = parse<AllTypes>(
-  loadSchema(resolve("./tests/nullable/graph.ts")),
-);
+const graph = parse<AllTypes>(loadSchema(resolve("./tests/nullable/graph.ts")));
 
 const client = query<AllTypes>();
 
-Deno.test("Nullable input", async (t) => {
+describe("Nullable input", () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
@@ -35,24 +28,24 @@ Deno.test("Nullable input", async (t) => {
           params.nullable === null
             ? "null"
             : params.nullable === undefined
-            ? "undefined"
-            : typeof params.nullable,
+              ? "undefined"
+              : typeof params.nullable,
           params.optionalNull === null
             ? "null"
             : params.optionalNull === undefined
-            ? "undefined"
-            : typeof params.optionalNull,
+              ? "undefined"
+              : typeof params.optionalNull,
           params.optionalString === null
             ? "null"
             : params.optionalString === undefined
-            ? "undefined"
-            : typeof params.optionalString,
+              ? "undefined"
+              : typeof params.optionalString,
         ]);
       }),
     ],
   });
 
-  await t.step("all provided", async () => {
+  test("all provided", async () => {
     const q = client.Graph.sub.execWithParams({
       nullable: "nullable",
       optionalNull: "optionalNull",
@@ -63,7 +56,7 @@ Deno.test("Nullable input", async (t) => {
     assertEquals(res, `["string","string","string"]`);
   });
 
-  await t.step("null provided", async () => {
+  test("null provided", async () => {
     const q = client.Graph.sub.execWithParams({
       nullable: null,
       optionalNull: null,
@@ -73,7 +66,7 @@ Deno.test("Nullable input", async (t) => {
     assertEquals(res, `["null","null","undefined"]`);
   });
 
-  await t.step("omit optional nullable", async () => {
+  test("omit optional nullable", async () => {
     const q = client.Graph.sub.execWithParams({
       nullable: "nullable",
     });

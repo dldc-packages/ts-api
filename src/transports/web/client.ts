@@ -1,12 +1,7 @@
 import { queryToObject } from "../../client/query.ts";
 import type { TQuery } from "../../client/query.types.ts";
 import { readSSE } from "../sse/client.ts";
-import type {
-  MutationResult,
-  QueryResult,
-  StreamResult,
-  TWebCodec,
-} from "./types.ts";
+import type { MutationResult, QueryResult, StreamResult, TWebCodec } from "./types.ts";
 import { encodePath, stringifyJsonURL } from "./utils.ts";
 
 const MAX_URL_LENGTH = 2000;

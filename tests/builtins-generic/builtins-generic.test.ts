@@ -1,15 +1,9 @@
+import { expect, test } from "vite-plus/test";
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 import { query, queryToObject } from "../../src/client/mod.ts";
-import {
-  builtin,
-  createBuiltins,
-  createEngine,
-  fn,
-  parse,
-  ROOT,
-} from "../../src/server/mod.ts";
+import { builtin, createBuiltins, createEngine, fn, parse, ROOT } from "../../src/server/mod.ts";
 import { loadSchema } from "../utils/loadSchema.ts";
 import type { Page } from "./builtins.ts";
 import type { Graph } from "./graph.ts";
@@ -27,9 +21,7 @@ const builtins = createBuiltins({
   Page: builtin<Page<any>>({
     getSchema: (params) => {
       paramCounts.push(params.length);
-      seenParamTypes.push(
-        params.map((p) => (p as { type?: string }).type ?? "?"),
-      );
+      seenParamTypes.push(params.map((p) => (p as { type?: string }).type ?? "?"));
       const [itemSchema] = params;
       return v.object({
         items: itemSchema ? v.array(itemSchema) : v.unknown(),
@@ -39,10 +31,9 @@ const builtins = createBuiltins({
   }),
 });
 
-const graph = parse<AllTypes>(
-  loadSchema(resolve("./tests/builtins-generic/graph.ts")),
-  { builtins },
-);
+const graph = parse<AllTypes>(loadSchema(resolve("./tests/builtins-generic/graph.ts")), {
+  builtins,
+});
 
 const client = query<AllTypes>();
 
@@ -54,11 +45,11 @@ function engine(resolvers: Parameters<typeof createEngine>[0]["resolvers"]) {
   });
 }
 
-Deno.test("Snapshot structure", async (test) => {
-  await test.assertSnapshot(graph[ROOT]);
+test("Snapshot structure", async () => {
+  expect(graph[ROOT]).toMatchSnapshot();
 });
 
-Deno.test("getSchema receives the schema of the generic param (output)", async () => {
+test("getSchema receives the schema of the generic param (output)", async () => {
   seenParamTypes.length = 0;
   paramCounts.length = 0;
   const e = engine([
@@ -82,33 +73,32 @@ Deno.test("getSchema receives the schema of the generic param (output)", async (
   assertEquals(seenParamTypes, [["strict_object"]]);
 });
 
-Deno.test("generic builtin output is validated against its param schema", async () => {
+test("generic builtin output is validated against its param schema", async () => {
   // `Todo` requires `title: string` and `done: boolean` — missing `done`.
   const e = engine([
-    fn(graph.Graph.todos, () =>
-      ({
-        cursor: "c1",
-        items: [{ title: "Buy milk" }],
-      }) as any),
+    fn(
+      graph.Graph.todos,
+      () =>
+        ({
+          cursor: "c1",
+          items: [{ title: "Buy milk" }],
+        }) as any,
+    ),
   ]);
 
   const q = client.Graph.todos();
   const { path, args } = queryToObject(q);
   const err = await assertRejects(() => e.run({ path, args }));
   assertEquals(
-    (err as Error).message.startsWith(
-      "Invalid resolved value for root.Graph.todos",
-    ),
+    (err as Error).message.startsWith("Invalid resolved value for root.Graph.todos"),
     true,
   );
 });
 
-Deno.test("getSchema receives the schema of the generic param (input)", async () => {
+test("getSchema receives the schema of the generic param (input)", async () => {
   seenParamTypes.length = 0;
   paramCounts.length = 0;
-  const e = engine([
-    fn(graph.Graph.pageOfStrings, (_ctx, [page]) => page.items.length),
-  ]);
+  const e = engine([fn(graph.Graph.pageOfStrings, (_ctx, [page]) => page.items.length)]);
 
   const q = client.Graph.pageOfStrings({
     cursor: "c2",
@@ -123,24 +113,17 @@ Deno.test("getSchema receives the schema of the generic param (input)", async ()
   assertEquals(seenParamTypes, [["string"]]);
 });
 
-Deno.test("generic builtin input is validated against its param schema", async () => {
-  const e = engine([
-    fn(graph.Graph.pageOfStrings, (_ctx, [page]) => page.items.length),
-  ]);
+test("generic builtin input is validated against its param schema", async () => {
+  const e = engine([fn(graph.Graph.pageOfStrings, (_ctx, [page]) => page.items.length)]);
 
   // items must be strings — a number should be rejected.
-  const q = client.Graph.pageOfStrings(
-    { cursor: "c2", items: ["a", 42] } as any,
-  );
+  const q = client.Graph.pageOfStrings({ cursor: "c2", items: ["a", 42] } as any);
   const { path, args } = queryToObject(q);
   const err = await assertRejects(() => e.run({ path, args }));
-  assertEquals(
-    (err as Error).message,
-    "Invalid arguments passed to root.Graph.pageOfStrings",
-  );
+  assertEquals((err as Error).message, "Invalid arguments passed to root.Graph.pageOfStrings");
 });
 
-Deno.test("nested generic builtin", async () => {
+test("nested generic builtin", async () => {
   seenParamTypes.length = 0;
   paramCounts.length = 0;
   const e = engine([
@@ -164,7 +147,7 @@ Deno.test("nested generic builtin", async () => {
   assertEquals(seenParamTypes, [["number"], ["object"]]);
 });
 
-Deno.test("generic builtin param can be another generic declared type", async () => {
+test("generic builtin param can be another generic declared type", async () => {
   seenParamTypes.length = 0;
   paramCounts.length = 0;
   // `Page<Todo | null>` — the single param is the nullable Todo schema.
@@ -187,7 +170,7 @@ Deno.test("generic builtin param can be another generic declared type", async ()
   assertEquals(seenParamTypes, [["nullable"]]);
 });
 
-Deno.test("builtin getSchema enforces the number of type arguments", async () => {
+test("builtin getSchema enforces the number of type arguments", async () => {
   // Arity validation is the builtin's own responsibility: a builtin used
   // without the type arguments it requires must reject at schema-build time
   // (surfaced by getSchema when the endpoint's schema is built).
@@ -220,16 +203,14 @@ Deno.test("builtin getSchema enforces the number of type arguments", async () =>
     entries: ["Graph"],
     resolvers: [],
   });
-  const err = await assertRejects(() =>
-    engine.run({ path: ["Graph", "bad"], args: [] })
-  );
+  const err = await assertRejects(() => engine.run({ path: ["Graph", "bad"], args: [] }));
   assertEquals(
     (err as Error).message,
     "Invalid type arguments: Page expects exactly 1 type argument, got 0",
   );
 });
 
-Deno.test("nested declared generic (Box<Box<Todo>>)", async () => {
+test("nested declared generic (Box<Box<Todo>>)", async () => {
   seenParamTypes.length = 0;
   paramCounts.length = 0;
   const e = engine([
@@ -251,7 +232,7 @@ Deno.test("nested declared generic (Box<Box<Todo>>)", async () => {
   assertEquals(paramCounts, []);
 });
 
-Deno.test("mixed: generic builtin nested in a declared generic", async () => {
+test("mixed: generic builtin nested in a declared generic", async () => {
   seenParamTypes.length = 0;
   paramCounts.length = 0;
   // `Box<Page<Todo>>` — building the `Box` schema requires the schema of
@@ -276,7 +257,7 @@ Deno.test("mixed: generic builtin nested in a declared generic", async () => {
   assertEquals(seenParamTypes, [["strict_object"]]);
 });
 
-Deno.test("mixed: declared generic nested in a generic builtin", async () => {
+test("mixed: declared generic nested in a generic builtin", async () => {
   seenParamTypes.length = 0;
   paramCounts.length = 0;
   // `Page<Box<Todo>>` — the builtin's only type argument is the declared
@@ -300,27 +281,28 @@ Deno.test("mixed: declared generic nested in a generic builtin", async () => {
   assertEquals(seenParamTypes, [["strict_object"]]);
 });
 
-Deno.test("mixed output is validated deeply through the builtin schema", async () => {
+test("mixed output is validated deeply through the builtin schema", async () => {
   // `Box<Page<Todo>>` validates the nested `Page<Todo>`: `done` is a boolean,
   // so a resolver returning a string must be rejected.
   const e = engine([
-    fn(graph.Graph.boxOfPage, () =>
-      ({
-        label: "outer",
-        value: {
-          cursor: "c3",
-          items: [{ title: "Buy milk", done: "yes" }],
-        },
-      }) as any),
+    fn(
+      graph.Graph.boxOfPage,
+      () =>
+        ({
+          label: "outer",
+          value: {
+            cursor: "c3",
+            items: [{ title: "Buy milk", done: "yes" }],
+          },
+        }) as any,
+    ),
   ]);
 
   const q = client.Graph.boxOfPage();
   const { path, args } = queryToObject(q);
   const err = await assertRejects(() => e.run({ path, args }));
   assertEquals(
-    (err as Error).message.startsWith(
-      "Invalid resolved value for root.Graph.boxOfPage",
-    ),
+    (err as Error).message.startsWith("Invalid resolved value for root.Graph.boxOfPage"),
     true,
   );
 });

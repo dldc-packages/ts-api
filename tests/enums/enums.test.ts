@@ -1,3 +1,4 @@
+import { test } from "vite-plus/test";
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject } from "../../src/client/mod.ts";
@@ -11,40 +12,36 @@ interface AllTypes {
   UserRole: UserRole;
 }
 
-const graph = parse<AllTypes>(
-  loadSchema(resolve("./tests/enums/graph.ts")),
-);
+const graph = parse<AllTypes>(loadSchema(resolve("./tests/enums/graph.ts")));
 
 const client = query<AllTypes>();
 
-Deno.test("Properly parse schema", () => {
+test("Properly parse schema", () => {
   const roleStruct = graph[ROOT].types.find((s) => s.name === "UserRole");
 
   assertEquals(roleStruct, {
-    "kind": "alias",
-    "key": "root.UserRole",
-    "name": "UserRole",
+    kind: "alias",
+    key: "root.UserRole",
+    name: "UserRole",
     comment: undefined,
-    "type": {
-      "kind": "union",
-      "key": "root.UserRole.type",
-      "types": [
-        { "kind": "literal", "key": "root.UserRole.type.0", "type": "admin" },
-        { "kind": "literal", "key": "root.UserRole.type.1", "type": "user" },
-        { "kind": "literal", "key": "root.UserRole.type.2", "type": "guest" },
+    type: {
+      kind: "union",
+      key: "root.UserRole.type",
+      types: [
+        { kind: "literal", key: "root.UserRole.type.0", type: "admin" },
+        { kind: "literal", key: "root.UserRole.type.1", type: "user" },
+        { kind: "literal", key: "root.UserRole.type.2", type: "guest" },
       ],
     },
-    "parameters": [],
+    parameters: [],
   });
 });
 
-Deno.test("Resolve enum", async () => {
+test("Resolve enum", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
-    resolvers: [
-      fn(graph.Graph.role, () => "admin" as const),
-    ],
+    resolvers: [fn(graph.Graph.role, () => "admin" as const)],
   });
 
   const q = client.Graph.role();
@@ -53,20 +50,16 @@ Deno.test("Resolve enum", async () => {
   assertEquals(result, "admin");
 });
 
-Deno.test("Fail with invalid value", async () => {
+test("Fail with invalid value", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
-    resolvers: [
-      fn(graph.Graph.role, () => "yolo" as any),
-    ],
+    resolvers: [fn(graph.Graph.role, () => "yolo" as any)],
   });
 
   const q = client.Graph.role();
   const { path: queryDef, args: variables } = queryToObject(q);
-  const err = await assertRejects(() =>
-    engine.run({ path: queryDef, args: variables })
-  );
+  const err = await assertRejects(() => engine.run({ path: queryDef, args: variables }));
   assertEquals(
     (err as Error).message,
     'Invalid resolved value for root.Graph.role (expected: valid value, received: "yolo")',

@@ -20,12 +20,7 @@ import { findType } from "./utils.ts";
 export function validateNoRecursiveTypes(rootStructure: TRootStructure): void {
   const path = new Set<string>();
   for (const type of rootStructure.types) {
-    walkNoRecursiveTypes(
-      rootStructure,
-      type,
-      path,
-      new Set(type.parameters),
-    );
+    walkNoRecursiveTypes(rootStructure, type, path, new Set(type.parameters));
   }
 }
 
@@ -59,15 +54,13 @@ function walkNoRecursiveTypes(
         path.delete(resolved.key);
       }
       // The ref's type arguments may reference recursive types.
-      structure.params.forEach((param) =>
-        walkNoRecursiveTypes(rootStructure, param, path, locals)
-      );
+      structure.params.forEach((param) => walkNoRecursiveTypes(rootStructure, param, path, locals));
       break;
     }
     case "interface":
     case "object":
       structure.properties.forEach((prop) =>
-        walkNoRecursiveTypes(rootStructure, prop.structure, path, locals)
+        walkNoRecursiveTypes(rootStructure, prop.structure, path, locals),
       );
       break;
     case "alias":
@@ -80,13 +73,11 @@ function walkNoRecursiveTypes(
       walkNoRecursiveTypes(rootStructure, structure.type, path, locals);
       break;
     case "union":
-      structure.types.forEach((t) =>
-        walkNoRecursiveTypes(rootStructure, t, path, locals)
-      );
+      structure.types.forEach((t) => walkNoRecursiveTypes(rootStructure, t, path, locals));
       break;
     case "function":
       structure.arguments.arguments.forEach((a) =>
-        walkNoRecursiveTypes(rootStructure, a.structure, path, locals)
+        walkNoRecursiveTypes(rootStructure, a.structure, path, locals),
       );
       walkNoRecursiveTypes(rootStructure, structure.returns, path, locals);
       break;

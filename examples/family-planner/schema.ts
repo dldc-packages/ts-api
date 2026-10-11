@@ -61,10 +61,7 @@ export interface PaginatedResult<ResultItem> {
 }
 
 export interface EventsNamespace {
-  list: (
-    params?: ListEventsParams,
-    page?: PageConfig,
-  ) => PaginatedResult<Event>;
+  list: (params?: ListEventsParams, page?: PageConfig) => PaginatedResult<Event>;
   create: (title: string, memberId: string) => Event;
   createMany: (events: CreateMenyEventsParams[]) => Event[];
   rename: (id: string, title: string) => Event;

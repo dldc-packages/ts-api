@@ -11,10 +11,7 @@ export class ApiContext extends Stack {
   static readonly ArgsKey = ArgsKey;
 
   static create(graph: TGraphBaseAny, args: unknown[]): ApiContext {
-    return new ApiContext().with(
-      GraphKey.Provider(graph),
-      ArgsKey.Provider(args),
-    );
+    return new ApiContext().with(GraphKey.Provider(graph), ArgsKey.Provider(args));
   }
 
   static empty(): ApiContext {
@@ -29,9 +26,7 @@ export class ApiContext extends Stack {
     return this.getOrFail(GraphKey.Consumer);
   }
 
-  getInputOrFail<G extends TGraphBaseAny>(
-    _graph: G,
-  ): G[typeof TYPES]["input"] {
+  getInputOrFail<G extends TGraphBaseAny>(_graph: G): G[typeof TYPES]["input"] {
     return this.getOrFail(ArgsKey.Consumer) as any;
   }
 

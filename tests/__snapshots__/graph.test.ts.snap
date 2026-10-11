@@ -1,450 +1,210 @@
-export const snapshot = {};
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-snapshot[`todolist snapshot structure 1`] = `
+exports[`snapshot structure 1`] = `
 {
-  builtins: [
+  "builtins": [
     {
-      getSchema: [Function: getSchema],
-      key: "builtin.Date",
-      kind: "builtin",
-      name: "Date",
+      "getSchema": [Function],
+      "key": "builtin.Date",
+      "kind": "builtin",
+      "name": "Date",
     },
   ],
-  key: "root",
-  kind: "root",
-  mode: "graph",
-  types: [
+  "key": "root",
+  "kind": "root",
+  "mode": "graph",
+  "types": [
     {
-      comment: undefined,
-      key: "root.PaginationParams",
-      kind: "interface",
-      name: "PaginationParams",
-      parameters: [],
-      properties: [
-        {
-          comment: undefined,
-          name: "page",
-          optional: true,
-          structure: {
-            key: "root.PaginationParams.page",
-            kind: "primitive",
-            type: "number",
+      "comment": undefined,
+      "key": "root.Role",
+      "kind": "alias",
+      "name": "Role",
+      "parameters": [],
+      "type": {
+        "key": "root.Role.type",
+        "kind": "union",
+        "types": [
+          {
+            "key": "root.Role.type.0",
+            "kind": "literal",
+            "type": "admin",
           },
-        },
-        {
-          comment: undefined,
-          name: "limit",
-          optional: true,
-          structure: {
-            key: "root.PaginationParams.limit",
-            kind: "primitive",
-            type: "number",
+          {
+            "key": "root.Role.type.1",
+            "kind": "literal",
+            "type": "user",
           },
-        },
-      ],
+        ],
+      },
     },
     {
-      comment: undefined,
-      key: "root.User",
-      kind: "interface",
-      name: "User",
-      parameters: [],
-      properties: [
+      "comment": undefined,
+      "key": "root.User",
+      "kind": "interface",
+      "name": "User",
+      "parameters": [],
+      "properties": [
         {
-          comment: undefined,
-          name: "userName",
-          optional: false,
-          structure: {
-            key: "root.User.userName",
-            kind: "primitive",
-            type: "string",
+          "comment": undefined,
+          "name": "name",
+          "optional": false,
+          "structure": {
+            "key": "root.User.name",
+            "kind": "primitive",
+            "type": "string",
           },
         },
         {
-          comment: undefined,
-          name: "app",
-          optional: false,
-          structure: {
-            key: "root.User.app",
-            kind: "ref",
-            params: [],
-            ref: "App",
-          },
-        },
-      ],
-    },
-    {
-      comment: undefined,
-      key: "root.App",
-      kind: "interface",
-      name: "App",
-      parameters: [],
-      properties: [
-        {
-          comment: undefined,
-          name: "appName",
-          optional: false,
-          structure: {
-            key: "root.App.appName",
-            kind: "primitive",
-            type: "string",
-          },
-        },
-        {
-          comment: undefined,
-          name: "todos",
-          optional: false,
-          structure: {
-            items: {
-              key: "root.App.todos.items",
-              kind: "ref",
-              params: [],
-              ref: "Todo",
-            },
-            key: "root.App.todos",
-            kind: "array",
-          },
-        },
-      ],
-    },
-    {
-      comment: undefined,
-      key: "root.Todo",
-      kind: "interface",
-      name: "Todo",
-      parameters: [],
-      properties: [
-        {
-          comment: undefined,
-          name: "todoName",
-          optional: false,
-          structure: {
-            key: "root.Todo.todoName",
-            kind: "primitive",
-            type: "string",
-          },
-        },
-        {
-          comment: undefined,
-          name: "done",
-          optional: false,
-          structure: {
-            key: "root.Todo.done",
-            kind: "primitive",
-            type: "boolean",
-          },
-        },
-      ],
-    },
-    {
-      comment: undefined,
-      key: "root.CoinHeads",
-      kind: "interface",
-      name: "CoinHeads",
-      parameters: [],
-      properties: [
-        {
-          comment: undefined,
-          name: "foo",
-          optional: false,
-          structure: {
-            key: "root.CoinHeads.foo",
-            kind: "primitive",
-            type: "string",
-          },
-        },
-      ],
-    },
-    {
-      comment: undefined,
-      key: "root.CoinTails",
-      kind: "interface",
-      name: "CoinTails",
-      parameters: [],
-      properties: [
-        {
-          comment: undefined,
-          name: "bar",
-          optional: false,
-          structure: {
-            key: "root.CoinTails.bar",
-            kind: "primitive",
-            type: "string",
-          },
-        },
-      ],
-    },
-    {
-      comment: undefined,
-      key: "root.Config",
-      kind: "interface",
-      name: "Config",
-      parameters: [],
-      properties: [
-        {
-          comment: undefined,
-          name: "env",
-          optional: false,
-          structure: {
-            key: "root.Config.env",
-            kind: "object",
-            properties: [
-              {
-                comment: undefined,
-                name: "version",
-                optional: false,
-                structure: {
-                  key: "root.Config.env.version",
-                  kind: "primitive",
-                  type: "string",
-                },
-              },
-              {
-                comment: undefined,
-                name: "num",
-                optional: false,
-                structure: {
-                  key: "root.Config.env.num",
-                  kind: "primitive",
-                  type: "number",
-                },
-              },
-              {
-                comment: undefined,
-                name: "str",
-                optional: false,
-                structure: {
-                  key: "root.Config.env.str",
-                  kind: "primitive",
-                  type: "string",
-                },
-              },
-              {
-                comment: undefined,
-                name: "bool",
-                optional: false,
-                structure: {
-                  key: "root.Config.env.bool",
-                  kind: "primitive",
-                  type: "boolean",
-                },
-              },
-            ],
-          },
-        },
-      ],
-    },
-    {
-      comment: undefined,
-      key: "root.Graph",
-      kind: "interface",
-      name: "Graph",
-      parameters: [],
-      properties: [
-        {
-          comment: undefined,
-          name: "auth",
-          optional: false,
-          structure: {
-            arguments: {
-              arguments: [],
-              key: "root.Graph.auth.arguments",
-              kind: "arguments",
-            },
-            key: "root.Graph.auth",
-            kind: "function",
-            returns: {
-              key: "root.Graph.auth.returns",
-              kind: "nullable",
-              type: {
-                key: "root.Graph.auth.returns.type",
-                kind: "object",
-                properties: [
-                  {
-                    comment: undefined,
-                    name: "user",
-                    optional: false,
-                    structure: {
-                      key: "root.Graph.auth.returns.type.user",
-                      kind: "ref",
-                      params: [],
-                      ref: "User",
-                    },
-                  },
-                ],
-              },
+          "comment": undefined,
+          "name": "age",
+          "optional": false,
+          "structure": {
+            "key": "root.User.age",
+            "kind": "nullable",
+            "type": {
+              "key": "root.User.age.type",
+              "kind": "primitive",
+              "type": "number",
             },
           },
         },
         {
-          comment: undefined,
-          name: "users",
-          optional: false,
-          structure: {
-            key: "root.Graph.users",
-            kind: "object",
-            properties: [
-              {
-                comment: undefined,
-                name: "byId",
-                optional: false,
-                structure: {
-                  arguments: {
-                    arguments: [
-                      {
-                        comment: undefined,
-                        name: "id",
-                        optional: false,
-                        structure: {
-                          key: "root.Graph.users.byId.arguments.id",
-                          kind: "primitive",
-                          type: "string",
-                        },
-                      },
-                    ],
-                    key: "root.Graph.users.byId.arguments",
-                    kind: "arguments",
-                  },
-                  key: "root.Graph.users.byId",
-                  kind: "function",
-                  returns: {
-                    key: "root.Graph.users.byId.returns",
-                    kind: "ref",
-                    params: [],
-                    ref: "User",
-                  },
-                },
-              },
-            ],
+          "comment": undefined,
+          "name": "group",
+          "optional": false,
+          "structure": {
+            "key": "root.User.group",
+            "kind": "ref",
+            "params": [],
+            "ref": "Group",
           },
         },
         {
-          comment: undefined,
-          name: "apps",
-          optional: false,
-          structure: {
-            key: "root.Graph.apps",
-            kind: "object",
-            properties: [
-              {
-                comment: undefined,
-                name: "all",
-                optional: false,
-                structure: {
-                  arguments: {
-                    arguments: [
-                      {
-                        comment: undefined,
-                        name: "pagination",
-                        optional: true,
-                        structure: {
-                          key: "root.Graph.apps.all.arguments.pagination",
-                          kind: "ref",
-                          params: [],
-                          ref: "PaginationParams",
-                        },
-                      },
-                    ],
-                    key: "root.Graph.apps.all.arguments",
-                    kind: "arguments",
-                  },
-                  key: "root.Graph.apps.all",
-                  kind: "function",
-                  returns: {
-                    items: {
-                      key: "root.Graph.apps.all.returns.items",
-                      kind: "ref",
-                      params: [],
-                      ref: "App",
-                    },
-                    key: "root.Graph.apps.all.returns",
-                    kind: "array",
-                  },
-                },
-              },
-              {
-                comment: undefined,
-                name: "byId",
-                optional: false,
-                structure: {
-                  arguments: {
-                    arguments: [
-                      {
-                        comment: undefined,
-                        name: "id",
-                        optional: false,
-                        structure: {
-                          key: "root.Graph.apps.byId.arguments.id",
-                          kind: "primitive",
-                          type: "string",
-                        },
-                      },
-                    ],
-                    key: "root.Graph.apps.byId.arguments",
-                    kind: "arguments",
-                  },
-                  key: "root.Graph.apps.byId",
-                  kind: "function",
-                  returns: {
-                    key: "root.Graph.apps.byId.returns",
-                    kind: "ref",
-                    params: [],
-                    ref: "App",
-                  },
-                },
-              },
-            ],
-          },
-        },
-        {
-          comment: undefined,
-          name: "flip",
-          optional: false,
-          structure: {
-            arguments: {
-              arguments: [],
-              key: "root.Graph.flip.arguments",
-              kind: "arguments",
+          "comment": undefined,
+          "name": "maybeGroup",
+          "optional": false,
+          "structure": {
+            "key": "root.User.maybeGroup",
+            "kind": "nullable",
+            "type": {
+              "key": "root.User.maybeGroup.type",
+              "kind": "ref",
+              "params": [],
+              "ref": "Group",
             },
-            key: "root.Graph.flip",
-            kind: "function",
-            returns: {
-              key: "root.Graph.flip.returns",
-              kind: "union",
-              types: [
+          },
+        },
+      ],
+    },
+    {
+      "comment": undefined,
+      "key": "root.Group",
+      "kind": "interface",
+      "name": "Group",
+      "parameters": [],
+      "properties": [
+        {
+          "comment": undefined,
+          "name": "name",
+          "optional": false,
+          "structure": {
+            "key": "root.Group.name",
+            "kind": "primitive",
+            "type": "string",
+          },
+        },
+        {
+          "comment": undefined,
+          "name": "users",
+          "optional": false,
+          "structure": {
+            "items": {
+              "key": "root.Group.users.items",
+              "kind": "primitive",
+              "type": "string",
+            },
+            "key": "root.Group.users",
+            "kind": "array",
+          },
+        },
+      ],
+    },
+    {
+      "comment": undefined,
+      "key": "root.Graph",
+      "kind": "interface",
+      "name": "Graph",
+      "parameters": [],
+      "properties": [
+        {
+          "comment": undefined,
+          "name": "group",
+          "optional": false,
+          "structure": {
+            "arguments": {
+              "arguments": [],
+              "key": "root.Graph.group.arguments",
+              "kind": "arguments",
+            },
+            "key": "root.Graph.group",
+            "kind": "function",
+            "returns": {
+              "key": "root.Graph.group.returns",
+              "kind": "ref",
+              "params": [],
+              "ref": "Group",
+            },
+          },
+        },
+        {
+          "comment": undefined,
+          "name": "user",
+          "optional": false,
+          "structure": {
+            "arguments": {
+              "arguments": [],
+              "key": "root.Graph.user.arguments",
+              "kind": "arguments",
+            },
+            "key": "root.Graph.user",
+            "kind": "function",
+            "returns": {
+              "key": "root.Graph.user.returns",
+              "kind": "ref",
+              "params": [],
+              "ref": "User",
+            },
+          },
+        },
+        {
+          "comment": undefined,
+          "name": "randomItem",
+          "optional": false,
+          "structure": {
+            "arguments": {
+              "arguments": [],
+              "key": "root.Graph.randomItem.arguments",
+              "kind": "arguments",
+            },
+            "key": "root.Graph.randomItem",
+            "kind": "function",
+            "returns": {
+              "key": "root.Graph.randomItem.returns",
+              "kind": "union",
+              "types": [
                 {
-                  key: "root.Graph.flip.returns.0",
-                  kind: "ref",
-                  params: [],
-                  ref: "CoinHeads",
+                  "key": "root.Graph.randomItem.returns.0",
+                  "kind": "ref",
+                  "params": [],
+                  "ref": "User",
                 },
                 {
-                  key: "root.Graph.flip.returns.1",
-                  kind: "ref",
-                  params: [],
-                  ref: "CoinTails",
+                  "key": "root.Graph.randomItem.returns.1",
+                  "kind": "ref",
+                  "params": [],
+                  "ref": "Group",
                 },
               ],
-            },
-          },
-        },
-        {
-          comment: undefined,
-          name: "config",
-          optional: false,
-          structure: {
-            arguments: {
-              arguments: [],
-              key: "root.Graph.config.arguments",
-              kind: "arguments",
-            },
-            key: "root.Graph.config",
-            kind: "function",
-            returns: {
-              key: "root.Graph.config.returns",
-              kind: "ref",
-              params: [],
-              ref: "Config",
             },
           },
         },
@@ -454,211 +214,451 @@ snapshot[`todolist snapshot structure 1`] = `
 }
 `;
 
-snapshot[`snapshot structure 1`] = `
+exports[`todolist snapshot structure 1`] = `
 {
-  builtins: [
+  "builtins": [
     {
-      getSchema: [Function: getSchema],
-      key: "builtin.Date",
-      kind: "builtin",
-      name: "Date",
+      "getSchema": [Function],
+      "key": "builtin.Date",
+      "kind": "builtin",
+      "name": "Date",
     },
   ],
-  key: "root",
-  kind: "root",
-  mode: "graph",
-  types: [
+  "key": "root",
+  "kind": "root",
+  "mode": "graph",
+  "types": [
     {
-      comment: undefined,
-      key: "root.Role",
-      kind: "alias",
-      name: "Role",
-      parameters: [],
-      type: {
-        key: "root.Role.type",
-        kind: "union",
-        types: [
-          {
-            key: "root.Role.type.0",
-            kind: "literal",
-            type: "admin",
-          },
-          {
-            key: "root.Role.type.1",
-            kind: "literal",
-            type: "user",
-          },
-        ],
-      },
-    },
-    {
-      comment: undefined,
-      key: "root.User",
-      kind: "interface",
-      name: "User",
-      parameters: [],
-      properties: [
+      "comment": undefined,
+      "key": "root.PaginationParams",
+      "kind": "interface",
+      "name": "PaginationParams",
+      "parameters": [],
+      "properties": [
         {
-          comment: undefined,
-          name: "name",
-          optional: false,
-          structure: {
-            key: "root.User.name",
-            kind: "primitive",
-            type: "string",
+          "comment": undefined,
+          "name": "page",
+          "optional": true,
+          "structure": {
+            "key": "root.PaginationParams.page",
+            "kind": "primitive",
+            "type": "number",
           },
         },
         {
-          comment: undefined,
-          name: "age",
-          optional: false,
-          structure: {
-            key: "root.User.age",
-            kind: "nullable",
-            type: {
-              key: "root.User.age.type",
-              kind: "primitive",
-              type: "number",
-            },
-          },
-        },
-        {
-          comment: undefined,
-          name: "group",
-          optional: false,
-          structure: {
-            key: "root.User.group",
-            kind: "ref",
-            params: [],
-            ref: "Group",
-          },
-        },
-        {
-          comment: undefined,
-          name: "maybeGroup",
-          optional: false,
-          structure: {
-            key: "root.User.maybeGroup",
-            kind: "nullable",
-            type: {
-              key: "root.User.maybeGroup.type",
-              kind: "ref",
-              params: [],
-              ref: "Group",
-            },
+          "comment": undefined,
+          "name": "limit",
+          "optional": true,
+          "structure": {
+            "key": "root.PaginationParams.limit",
+            "kind": "primitive",
+            "type": "number",
           },
         },
       ],
     },
     {
-      comment: undefined,
-      key: "root.Group",
-      kind: "interface",
-      name: "Group",
-      parameters: [],
-      properties: [
+      "comment": undefined,
+      "key": "root.User",
+      "kind": "interface",
+      "name": "User",
+      "parameters": [],
+      "properties": [
         {
-          comment: undefined,
-          name: "name",
-          optional: false,
-          structure: {
-            key: "root.Group.name",
-            kind: "primitive",
-            type: "string",
+          "comment": undefined,
+          "name": "userName",
+          "optional": false,
+          "structure": {
+            "key": "root.User.userName",
+            "kind": "primitive",
+            "type": "string",
           },
         },
         {
-          comment: undefined,
-          name: "users",
-          optional: false,
-          structure: {
-            items: {
-              key: "root.Group.users.items",
-              kind: "primitive",
-              type: "string",
-            },
-            key: "root.Group.users",
-            kind: "array",
+          "comment": undefined,
+          "name": "app",
+          "optional": false,
+          "structure": {
+            "key": "root.User.app",
+            "kind": "ref",
+            "params": [],
+            "ref": "App",
           },
         },
       ],
     },
     {
-      comment: undefined,
-      key: "root.Graph",
-      kind: "interface",
-      name: "Graph",
-      parameters: [],
-      properties: [
+      "comment": undefined,
+      "key": "root.App",
+      "kind": "interface",
+      "name": "App",
+      "parameters": [],
+      "properties": [
         {
-          comment: undefined,
-          name: "group",
-          optional: false,
-          structure: {
-            arguments: {
-              arguments: [],
-              key: "root.Graph.group.arguments",
-              kind: "arguments",
+          "comment": undefined,
+          "name": "appName",
+          "optional": false,
+          "structure": {
+            "key": "root.App.appName",
+            "kind": "primitive",
+            "type": "string",
+          },
+        },
+        {
+          "comment": undefined,
+          "name": "todos",
+          "optional": false,
+          "structure": {
+            "items": {
+              "key": "root.App.todos.items",
+              "kind": "ref",
+              "params": [],
+              "ref": "Todo",
             },
-            key: "root.Graph.group",
-            kind: "function",
-            returns: {
-              key: "root.Graph.group.returns",
-              kind: "ref",
-              params: [],
-              ref: "Group",
+            "key": "root.App.todos",
+            "kind": "array",
+          },
+        },
+      ],
+    },
+    {
+      "comment": undefined,
+      "key": "root.Todo",
+      "kind": "interface",
+      "name": "Todo",
+      "parameters": [],
+      "properties": [
+        {
+          "comment": undefined,
+          "name": "todoName",
+          "optional": false,
+          "structure": {
+            "key": "root.Todo.todoName",
+            "kind": "primitive",
+            "type": "string",
+          },
+        },
+        {
+          "comment": undefined,
+          "name": "done",
+          "optional": false,
+          "structure": {
+            "key": "root.Todo.done",
+            "kind": "primitive",
+            "type": "boolean",
+          },
+        },
+      ],
+    },
+    {
+      "comment": undefined,
+      "key": "root.CoinHeads",
+      "kind": "interface",
+      "name": "CoinHeads",
+      "parameters": [],
+      "properties": [
+        {
+          "comment": undefined,
+          "name": "foo",
+          "optional": false,
+          "structure": {
+            "key": "root.CoinHeads.foo",
+            "kind": "primitive",
+            "type": "string",
+          },
+        },
+      ],
+    },
+    {
+      "comment": undefined,
+      "key": "root.CoinTails",
+      "kind": "interface",
+      "name": "CoinTails",
+      "parameters": [],
+      "properties": [
+        {
+          "comment": undefined,
+          "name": "bar",
+          "optional": false,
+          "structure": {
+            "key": "root.CoinTails.bar",
+            "kind": "primitive",
+            "type": "string",
+          },
+        },
+      ],
+    },
+    {
+      "comment": undefined,
+      "key": "root.Config",
+      "kind": "interface",
+      "name": "Config",
+      "parameters": [],
+      "properties": [
+        {
+          "comment": undefined,
+          "name": "env",
+          "optional": false,
+          "structure": {
+            "key": "root.Config.env",
+            "kind": "object",
+            "properties": [
+              {
+                "comment": undefined,
+                "name": "version",
+                "optional": false,
+                "structure": {
+                  "key": "root.Config.env.version",
+                  "kind": "primitive",
+                  "type": "string",
+                },
+              },
+              {
+                "comment": undefined,
+                "name": "num",
+                "optional": false,
+                "structure": {
+                  "key": "root.Config.env.num",
+                  "kind": "primitive",
+                  "type": "number",
+                },
+              },
+              {
+                "comment": undefined,
+                "name": "str",
+                "optional": false,
+                "structure": {
+                  "key": "root.Config.env.str",
+                  "kind": "primitive",
+                  "type": "string",
+                },
+              },
+              {
+                "comment": undefined,
+                "name": "bool",
+                "optional": false,
+                "structure": {
+                  "key": "root.Config.env.bool",
+                  "kind": "primitive",
+                  "type": "boolean",
+                },
+              },
+            ],
+          },
+        },
+      ],
+    },
+    {
+      "comment": undefined,
+      "key": "root.Graph",
+      "kind": "interface",
+      "name": "Graph",
+      "parameters": [],
+      "properties": [
+        {
+          "comment": undefined,
+          "name": "auth",
+          "optional": false,
+          "structure": {
+            "arguments": {
+              "arguments": [],
+              "key": "root.Graph.auth.arguments",
+              "kind": "arguments",
+            },
+            "key": "root.Graph.auth",
+            "kind": "function",
+            "returns": {
+              "key": "root.Graph.auth.returns",
+              "kind": "nullable",
+              "type": {
+                "key": "root.Graph.auth.returns.type",
+                "kind": "object",
+                "properties": [
+                  {
+                    "comment": undefined,
+                    "name": "user",
+                    "optional": false,
+                    "structure": {
+                      "key": "root.Graph.auth.returns.type.user",
+                      "kind": "ref",
+                      "params": [],
+                      "ref": "User",
+                    },
+                  },
+                ],
+              },
             },
           },
         },
         {
-          comment: undefined,
-          name: "user",
-          optional: false,
-          structure: {
-            arguments: {
-              arguments: [],
-              key: "root.Graph.user.arguments",
-              kind: "arguments",
-            },
-            key: "root.Graph.user",
-            kind: "function",
-            returns: {
-              key: "root.Graph.user.returns",
-              kind: "ref",
-              params: [],
-              ref: "User",
-            },
+          "comment": undefined,
+          "name": "users",
+          "optional": false,
+          "structure": {
+            "key": "root.Graph.users",
+            "kind": "object",
+            "properties": [
+              {
+                "comment": undefined,
+                "name": "byId",
+                "optional": false,
+                "structure": {
+                  "arguments": {
+                    "arguments": [
+                      {
+                        "comment": undefined,
+                        "name": "id",
+                        "optional": false,
+                        "structure": {
+                          "key": "root.Graph.users.byId.arguments.id",
+                          "kind": "primitive",
+                          "type": "string",
+                        },
+                      },
+                    ],
+                    "key": "root.Graph.users.byId.arguments",
+                    "kind": "arguments",
+                  },
+                  "key": "root.Graph.users.byId",
+                  "kind": "function",
+                  "returns": {
+                    "key": "root.Graph.users.byId.returns",
+                    "kind": "ref",
+                    "params": [],
+                    "ref": "User",
+                  },
+                },
+              },
+            ],
           },
         },
         {
-          comment: undefined,
-          name: "randomItem",
-          optional: false,
-          structure: {
-            arguments: {
-              arguments: [],
-              key: "root.Graph.randomItem.arguments",
-              kind: "arguments",
+          "comment": undefined,
+          "name": "apps",
+          "optional": false,
+          "structure": {
+            "key": "root.Graph.apps",
+            "kind": "object",
+            "properties": [
+              {
+                "comment": undefined,
+                "name": "all",
+                "optional": false,
+                "structure": {
+                  "arguments": {
+                    "arguments": [
+                      {
+                        "comment": undefined,
+                        "name": "pagination",
+                        "optional": true,
+                        "structure": {
+                          "key": "root.Graph.apps.all.arguments.pagination",
+                          "kind": "ref",
+                          "params": [],
+                          "ref": "PaginationParams",
+                        },
+                      },
+                    ],
+                    "key": "root.Graph.apps.all.arguments",
+                    "kind": "arguments",
+                  },
+                  "key": "root.Graph.apps.all",
+                  "kind": "function",
+                  "returns": {
+                    "items": {
+                      "key": "root.Graph.apps.all.returns.items",
+                      "kind": "ref",
+                      "params": [],
+                      "ref": "App",
+                    },
+                    "key": "root.Graph.apps.all.returns",
+                    "kind": "array",
+                  },
+                },
+              },
+              {
+                "comment": undefined,
+                "name": "byId",
+                "optional": false,
+                "structure": {
+                  "arguments": {
+                    "arguments": [
+                      {
+                        "comment": undefined,
+                        "name": "id",
+                        "optional": false,
+                        "structure": {
+                          "key": "root.Graph.apps.byId.arguments.id",
+                          "kind": "primitive",
+                          "type": "string",
+                        },
+                      },
+                    ],
+                    "key": "root.Graph.apps.byId.arguments",
+                    "kind": "arguments",
+                  },
+                  "key": "root.Graph.apps.byId",
+                  "kind": "function",
+                  "returns": {
+                    "key": "root.Graph.apps.byId.returns",
+                    "kind": "ref",
+                    "params": [],
+                    "ref": "App",
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          "comment": undefined,
+          "name": "flip",
+          "optional": false,
+          "structure": {
+            "arguments": {
+              "arguments": [],
+              "key": "root.Graph.flip.arguments",
+              "kind": "arguments",
             },
-            key: "root.Graph.randomItem",
-            kind: "function",
-            returns: {
-              key: "root.Graph.randomItem.returns",
-              kind: "union",
-              types: [
+            "key": "root.Graph.flip",
+            "kind": "function",
+            "returns": {
+              "key": "root.Graph.flip.returns",
+              "kind": "union",
+              "types": [
                 {
-                  key: "root.Graph.randomItem.returns.0",
-                  kind: "ref",
-                  params: [],
-                  ref: "User",
+                  "key": "root.Graph.flip.returns.0",
+                  "kind": "ref",
+                  "params": [],
+                  "ref": "CoinHeads",
                 },
                 {
-                  key: "root.Graph.randomItem.returns.1",
-                  kind: "ref",
-                  params: [],
-                  ref: "Group",
+                  "key": "root.Graph.flip.returns.1",
+                  "kind": "ref",
+                  "params": [],
+                  "ref": "CoinTails",
                 },
               ],
+            },
+          },
+        },
+        {
+          "comment": undefined,
+          "name": "config",
+          "optional": false,
+          "structure": {
+            "arguments": {
+              "arguments": [],
+              "key": "root.Graph.config.arguments",
+              "kind": "arguments",
+            },
+            "key": "root.Graph.config",
+            "kind": "function",
+            "returns": {
+              "key": "root.Graph.config.returns",
+              "kind": "ref",
+              "params": [],
+              "ref": "Config",
             },
           },
         },

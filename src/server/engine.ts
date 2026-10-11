@@ -1,4 +1,4 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 import type { TQueryRequest } from "../client/query.types.ts";
 import { compose } from "./compose.ts";
 import { GET, REF, ROOT, STRUCTURE } from "./constants.ts";
@@ -13,9 +13,7 @@ import type { TResolver } from "./resolver.ts";
 import { createSchemaContext, getStructureSchema } from "./schema.ts";
 import type { TMiddleware } from "./types.ts";
 
-export type TExtendsContext = (
-  ctx: ApiContext,
-) => ApiContext | Promise<ApiContext>;
+export type TExtendsContext = (ctx: ApiContext) => ApiContext | Promise<ApiContext>;
 
 /**
  * An engine used to run queries against a parsed graph.
@@ -64,10 +62,7 @@ export interface TEngine {
    *   resolvers run (e.g. to inject request-scoped data).
    * @returns An async iterable of validated return values.
    */
-  runIterable: (
-    query: TQueryRequest,
-    extendsCtx?: TExtendsContext,
-  ) => AsyncIterable<unknown>;
+  runIterable: (query: TQueryRequest, extendsCtx?: TExtendsContext) => AsyncIterable<unknown>;
 }
 
 /** Options for {@link createEngine}. */
@@ -98,9 +93,12 @@ export interface TEngineOptions {
  * @returns A {@link TEngine} exposing `run` (to execute queries), `runIterable`
  *   (to stream results) and the `graph` it was created from.
  */
-export function createEngine(
-  { graph, resolvers, entries, validateOutput = true }: TEngineOptions,
-): TEngine {
+export function createEngine({
+  graph,
+  resolvers,
+  entries,
+  validateOutput = true,
+}: TEngineOptions): TEngine {
   const rootStructure = graph[ROOT];
   const schemaContext = createSchemaContext(rootStructure);
   const resolverMap = buildResolverMap(resolvers);
@@ -202,9 +200,7 @@ export function createEngine(
     const fnStructure = current[STRUCTURE];
     if (fnStructure.kind !== "function") {
       throw new Error(
-        `Query must target a function, got: ${fnStructure.kind} at ${
-          queriedNode[STRUCTURE].key
-        }`,
+        `Query must target a function, got: ${fnStructure.kind} at ${queriedNode[STRUCTURE].key}`,
       );
     }
 
@@ -222,15 +218,11 @@ export function createEngine(
     return {
       queriedNode,
       current,
-      execute: () =>
-        Promise.resolve(mid(extendedCtx, () => Promise.resolve(undefined))),
+      execute: () => Promise.resolve(mid(extendedCtx, () => Promise.resolve(undefined))),
     };
   }
 
-  async function run(
-    query: TQueryRequest,
-    extendsCtx?: TExtendsContext,
-  ): Promise<unknown> {
+  async function run(query: TQueryRequest, extendsCtx?: TExtendsContext): Promise<unknown> {
     const { queriedNode, current, execute } = await prepare(query, extendsCtx);
     const result = await execute();
 
@@ -288,16 +280,14 @@ export function createEngine(
 }
 
 function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
-  return value !== null && typeof value === "object" &&
-    typeof (value as { [Symbol.asyncIterator]?: unknown })[
-        Symbol.asyncIterator
-      ] ===
-      "function";
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    typeof (value as { [Symbol.asyncIterator]?: unknown })[Symbol.asyncIterator] === "function"
+  );
 }
 
-function buildResolverMap(
-  resolvers: TResolver[],
-): Map<string, TMiddleware[]> {
+function buildResolverMap(resolvers: TResolver[]): Map<string, TMiddleware[]> {
   const map = new Map<string, TMiddleware[]>();
   for (const { path: graph, middlewares } of resolvers) {
     const key = graph[STRUCTURE].key;

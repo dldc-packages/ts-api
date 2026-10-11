@@ -1,16 +1,9 @@
 import type { TQueryRequest } from "../../client/query.types.ts";
 import type { TEngine, TExtendsContext } from "../../server/engine.ts";
 import { GraphClientErreur } from "../../server/erreur.ts";
-import {
-  getEndpointResponseStructure,
-  type TGraphBaseAny,
-} from "../../server/mod.ts";
+import { getEndpointResponseStructure, type TGraphBaseAny } from "../../server/mod.ts";
 import { encodeSSEEvent } from "../sse/server.ts";
-import {
-  type TWebCodec,
-  type TWebEndpointKind,
-  webKindFromStructure,
-} from "./types.ts";
+import { type TWebCodec, type TWebEndpointKind, webKindFromStructure } from "./types.ts";
 import { decodePath, parseJsonURL } from "./utils.ts";
 
 const defaultCodec: TWebCodec = {
@@ -95,11 +88,7 @@ export async function handleWeb(
   const kind = resolveEndpointKind(engine.graph, path);
   const violation = checkTransport(kind, request.method, streaming);
   if (violation) {
-    return jsonErrorResponse(
-      new Error(violation.message),
-      violation.status,
-      codec.encode,
-    );
+    return jsonErrorResponse(new Error(violation.message), violation.status, codec.encode);
   }
 
   let args: unknown[];
@@ -157,10 +146,7 @@ function normalizeBasePath(basePath?: string): string {
  * web transport types (nothing to enforce then) or whose response structure
  * cannot be resolved.
  */
-function resolveEndpointKind(
-  graph: TGraphBaseAny,
-  path: string[],
-): TWebEndpointKind | undefined {
+function resolveEndpointKind(graph: TGraphBaseAny, path: string[]): TWebEndpointKind | undefined {
   return webKindFromStructure(getEndpointResponseStructure(graph, path));
 }
 
@@ -221,8 +207,7 @@ function checkTransport(
       if (!streaming) {
         return {
           status: 406,
-          message:
-            "StreamResult endpoints must be called with Accept: text/event-stream",
+          message: "StreamResult endpoints must be called with Accept: text/event-stream",
         };
       }
       return undefined;
@@ -280,11 +265,7 @@ async function jsonResponse(
   } catch (error) {
     // Client-caused validation failures (e.g. invalid arguments) are "safe" to
     // send back; anything else is a server-side error.
-    return jsonErrorResponse(
-      error,
-      GraphClientErreur.has(error) ? 400 : 500,
-      encode,
-    );
+    return jsonErrorResponse(error, GraphClientErreur.has(error) ? 400 : 500, encode);
   }
 }
 
@@ -302,12 +283,7 @@ function streamResponse(
           controller.enqueue(encodeSSEEvent("message", json(encode(value))));
         }
       } catch (error) {
-        controller.enqueue(
-          encodeSSEEvent(
-            "error",
-            json(encode({ message: errorMessage(error) })),
-          ),
-        );
+        controller.enqueue(encodeSSEEvent("error", json(encode({ message: errorMessage(error) }))));
       }
       controller.close();
     },
@@ -334,10 +310,7 @@ function jsonErrorResponse(
   return Response.json(encode({ message: errorMessage(error) }), { status });
 }
 
-function sseErrorResponse(
-  message: string,
-  encode: (value: unknown) => unknown,
-): Response {
+function sseErrorResponse(message: string, encode: (value: unknown) => unknown): Response {
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       controller.enqueue(encodeSSEEvent("error", json(encode({ message }))));

@@ -1,3 +1,4 @@
+import { test } from "vite-plus/test";
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject } from "../../src/client/mod.ts";
@@ -11,9 +12,7 @@ interface AllTypes {
   Member: Member;
 }
 
-const graph = parse<AllTypes>(
-  loadSchema(resolve("./tests/nested/graph.ts")),
-);
+const graph = parse<AllTypes>(loadSchema(resolve("./tests/nested/graph.ts")));
 
 const client = query<AllTypes>();
 
@@ -30,34 +29,31 @@ interface TFamilyDbItem {
 
 const db = {
   families: {
-    "f1": { id: "f1", name: "Smith" },
-    "f2": { id: "f2", name: "Doe" },
+    f1: { id: "f1", name: "Smith" },
+    f2: { id: "f2", name: "Doe" },
   } as Record<string, TFamilyDbItem>,
   members: {
-    "m1": { id: "m1", name: "John", familyId: "f1" },
-    "m2": { id: "m2", name: "Jane", familyId: "f2" },
-    "m3": { id: "m3", name: "Alice", familyId: "f1" },
+    m1: { id: "m1", name: "John", familyId: "f1" },
+    m2: { id: "m2", name: "Jane", familyId: "f2" },
+    m3: { id: "m3", name: "Alice", familyId: "f1" },
   } as Record<string, TMemberDbItem>,
 };
 
-Deno.test("Resolve basic list", async () => {
+test("Resolve basic list", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      fn(
-        graph.Graph.members,
-        () => {
-          const members = Object.values(db.members);
-          return members.map((member) => ({
-            id: member.id,
-            name: member.name,
-            nameUpper: member.name.toUpperCase(),
-            family: db.families[member.familyId],
-            emails: [],
-          }));
-        },
-      ),
+      fn(graph.Graph.members, () => {
+        const members = Object.values(db.members);
+        return members.map((member) => ({
+          id: member.id,
+          name: member.name,
+          nameUpper: member.name.toUpperCase(),
+          family: db.families[member.familyId],
+          emails: [],
+        }));
+      }),
     ],
   });
 
@@ -89,24 +85,21 @@ Deno.test("Resolve basic list", async () => {
   ]);
 });
 
-Deno.test("Resolve single member", async () => {
+test("Resolve single member", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      fn(
-        graph.Graph.member,
-        () => {
-          const member = db.members["m1"];
-          return {
-            id: member.id,
-            name: member.name,
-            nameUpper: member.name.toUpperCase(),
-            family: db.families[member.familyId],
-            emails: ["john@example.com"],
-          };
-        },
-      ),
+      fn(graph.Graph.member, () => {
+        const member = db.members["m1"];
+        return {
+          id: member.id,
+          name: member.name,
+          nameUpper: member.name.toUpperCase(),
+          family: db.families[member.familyId],
+          emails: ["john@example.com"],
+        };
+      }),
     ],
   });
 
@@ -122,16 +115,11 @@ Deno.test("Resolve single member", async () => {
   });
 });
 
-Deno.test("Resolve family", async () => {
+test("Resolve family", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
-    resolvers: [
-      fn(
-        graph.Graph.family,
-        () => db.families["f1"],
-      ),
-    ],
+    resolvers: [fn(graph.Graph.family, () => db.families["f1"])],
   });
 
   const q = client.Graph.family();

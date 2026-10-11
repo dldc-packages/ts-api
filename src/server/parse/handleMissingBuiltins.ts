@@ -1,9 +1,5 @@
-import * as v from "@valibot/valibot";
-import type {
-  TBuiltinStructure,
-  TRootStructure,
-  TStructure,
-} from "../structure.types.ts";
+import * as v from "valibot";
+import type { TBuiltinStructure, TRootStructure, TStructure } from "../structure.types.ts";
 
 /**
  * What to do when the schema references a type that is neither declared in the
@@ -66,9 +62,7 @@ export function handleMissingBuiltins(
 
   if (toThrow.length > 0) {
     throw new Error(
-      `Missing builtin type${toThrow.length > 1 ? "s" : ""}: ${
-        toThrow.join(", ")
-      }. ` +
+      `Missing builtin type${toThrow.length > 1 ? "s" : ""}: ${toThrow.join(", ")}. ` +
         "Register them with createBuiltins() or set missingBuiltinAction to 'warn' or 'ignore'.",
     );
   }
@@ -85,18 +79,10 @@ function createAutoBuiltin(name: string): TBuiltinStructure {
   };
 }
 
-function collectMissingRefs(
-  rootStructure: TRootStructure,
-): Map<string, TMissingRefUsage> {
+function collectMissingRefs(rootStructure: TRootStructure): Map<string, TMissingRefUsage> {
   const missing = new Map<string, TMissingRefUsage>();
   for (const type of rootStructure.types) {
-    walkForMissingRefs(
-      rootStructure,
-      type,
-      new Set(type.parameters),
-      "neutral",
-      missing,
-    );
+    walkForMissingRefs(rootStructure, type, new Set(type.parameters), "neutral", missing);
   }
   return missing;
 }
@@ -115,8 +101,7 @@ function walkForMissingRefs(
         !rootStructure.types.some((t) => t.name === structure.ref) &&
         !rootStructure.builtins.some((b) => b.name === structure.ref)
       ) {
-        const usage = missing.get(structure.ref) ??
-          { input: false, output: false };
+        const usage = missing.get(structure.ref) ?? { input: false, output: false };
         if (context === "input") {
           usage.input = true;
         }
@@ -126,58 +111,34 @@ function walkForMissingRefs(
         missing.set(structure.ref, usage);
       }
       structure.params.forEach((p) =>
-        walkForMissingRefs(rootStructure, p, locals, context, missing)
+        walkForMissingRefs(rootStructure, p, locals, context, missing),
       );
       break;
     case "interface":
     case "object":
       structure.properties.forEach((p) =>
-        walkForMissingRefs(rootStructure, p.structure, locals, context, missing)
+        walkForMissingRefs(rootStructure, p.structure, locals, context, missing),
       );
       break;
     case "alias":
-      walkForMissingRefs(
-        rootStructure,
-        structure.type,
-        locals,
-        context,
-        missing,
-      );
+      walkForMissingRefs(rootStructure, structure.type, locals, context, missing);
       break;
     case "array":
-      walkForMissingRefs(
-        rootStructure,
-        structure.items,
-        locals,
-        context,
-        missing,
-      );
+      walkForMissingRefs(rootStructure, structure.items, locals, context, missing);
       break;
     case "nullable":
-      walkForMissingRefs(
-        rootStructure,
-        structure.type,
-        locals,
-        context,
-        missing,
-      );
+      walkForMissingRefs(rootStructure, structure.type, locals, context, missing);
       break;
     case "union":
       structure.types.forEach((t) =>
-        walkForMissingRefs(rootStructure, t, locals, context, missing)
+        walkForMissingRefs(rootStructure, t, locals, context, missing),
       );
       break;
     case "function":
       structure.arguments.arguments.forEach((a) =>
-        walkForMissingRefs(rootStructure, a.structure, locals, "input", missing)
+        walkForMissingRefs(rootStructure, a.structure, locals, "input", missing),
       );
-      walkForMissingRefs(
-        rootStructure,
-        structure.returns,
-        locals,
-        "output",
-        missing,
-      );
+      walkForMissingRefs(rootStructure, structure.returns, locals, "output", missing);
       break;
     case "primitive":
     case "literal":
@@ -195,8 +156,7 @@ function resolveAction(
   }
   if (usage.input && usage.output) {
     // Used on both sides: take the stricter of the two.
-    return MISSING_BUILTIN_SEVERITY[config.input] >=
-        MISSING_BUILTIN_SEVERITY[config.output]
+    return MISSING_BUILTIN_SEVERITY[config.input] >= MISSING_BUILTIN_SEVERITY[config.output]
       ? config.input
       : config.output;
   }

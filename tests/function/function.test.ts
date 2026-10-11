@@ -1,3 +1,4 @@
+import { test } from "vite-plus/test";
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject } from "../../src/client/mod.ts";
@@ -11,13 +12,11 @@ interface AllTypes {
   StuffResult: StuffResult;
 }
 
-const graph = parse<AllTypes>(
-  loadSchema(resolve("./tests/function/graph.ts")),
-);
+const graph = parse<AllTypes>(loadSchema(resolve("./tests/function/graph.ts")));
 
 const client = query<AllTypes>();
 
-Deno.test("Fails if no resolver", async () => {
+test("Fails if no resolver", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
@@ -26,29 +25,24 @@ Deno.test("Fails if no resolver", async () => {
 
   const q = client.Graph.sub.doStuff("hello", 1, { key: "value" });
   const { path: queryDef, args: variables } = queryToObject(q);
-  const err = await assertRejects(() =>
-    engine.run({ path: queryDef, args: variables })
-  );
+  const err = await assertRejects(() => engine.run({ path: queryDef, args: variables }));
   assertEquals(
     (err as Error).message,
     "Invalid resolved value for root.Namespace.doStuff (expected: valid value, received: undefined)",
   );
 });
 
-Deno.test("get function results", async () => {
+test("get function results", async () => {
   let args: any[] = [];
 
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      fn(
-        graph.Graph.sub.doStuff,
-        (_ctx, [str, num, obj]) => {
-          args = [str, num, obj];
-          return { data: "hello", num: 42 };
-        },
-      ),
+      fn(graph.Graph.sub.doStuff, (_ctx, [str, num, obj]) => {
+        args = [str, num, obj];
+        return { data: "hello", num: 42 };
+      }),
     ],
   });
 

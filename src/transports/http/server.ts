@@ -1,4 +1,4 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 import type { TEngine } from "../../server/engine.ts";
 
 const apiBodySchema = v.object({
@@ -6,9 +6,7 @@ const apiBodySchema = v.object({
   args: v.array(v.unknown()),
 });
 
-export function parseBody(
-  body: unknown,
-): { path: string[]; args: unknown[] } {
+export function parseBody(body: unknown): { path: string[]; args: unknown[] } {
   return v.parse(apiBodySchema, body);
 }
 
@@ -17,10 +15,7 @@ export function parseBody(
  * @param request The HTTP request containing the query.
  * @returns The result of executing the query.
  */
-export async function handleQuery(
-  engine: TEngine,
-  request: Request,
-): Promise<unknown> {
+export async function handleQuery(engine: TEngine, request: Request): Promise<unknown> {
   const body = await request.json();
   const parsed = parseBody(body);
   const result = await engine.run(parsed);

@@ -1,7 +1,9 @@
+import { test } from "vite-plus/test";
 import { execQuery } from "@dldc/ts-api/transports/sse/client";
 import { handleQuery } from "@dldc/ts-api/transports/sse/server";
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
+import { serve } from "../utils/serve.ts";
 import { query, queryToObject, type TQuery } from "../../src/client/mod.ts";
 import { createEngine, fn, parse, resolver } from "../../src/server/mod.ts";
 import type { TodoListTypes } from "../schemas/todolist.types.ts";
@@ -9,9 +11,7 @@ import { loadSchema } from "../utils/loadSchema.ts";
 
 const client = query<TodoListTypes>();
 
-const graph = parse<TodoListTypes>(
-  loadSchema(resolve("./tests/schemas/todolist.ts")),
-);
+const graph = parse<TodoListTypes>(loadSchema(resolve("./tests/schemas/todolist.ts")));
 
 const engine = createEngine({
   graph,
@@ -41,13 +41,10 @@ interface SseServer {
   shutdown: () => Promise<void>;
 }
 
-function startSseServer(): SseServer {
-  const server = Deno.serve(
-    { port: 0 },
-    (request) => handleQuery(engine, request),
-  );
+async function startSseServer(): Promise<SseServer> {
+  const server = await serve((request) => handleQuery(engine, request));
   return {
-    base: `http://127.0.0.1:${server.addr.port}`,
+    base: `http://127.0.0.1:${server.port}`,
     shutdown: () => server.shutdown(),
   };
 }
@@ -60,7 +57,7 @@ async function collect<T>(input: string, query: TQuery<T>): Promise<T[]> {
   return values;
 }
 
-Deno.test("sse: streams every yielded value", async () => {
+test("sse: streams every yielded value", async () => {
   const { base, shutdown } = await startSseServer();
   try {
     const q = client.Graph.config();
@@ -74,7 +71,7 @@ Deno.test("sse: streams every yielded value", async () => {
   }
 });
 
-Deno.test("sse: a non-iterable result is yielded once", async () => {
+test("sse: a non-iterable result is yielded once", async () => {
   const { base, shutdown } = await startSseServer();
   try {
     const q = client.Graph.apps.all({ limit: 10, page: 1 });
@@ -89,21 +86,18 @@ Deno.test("sse: a non-iterable result is yielded once", async () => {
   }
 });
 
-Deno.test("sse: invalid arguments are delivered as an error event", async () => {
+test("sse: invalid arguments are delivered as an error event", async () => {
   const { base, shutdown } = await startSseServer();
   try {
     const q = client.Graph.apps.byId(42 as any);
     const err = await assertRejects(() => collect(base, q));
-    assertEquals(
-      (err as Error).message,
-      "Invalid arguments passed to root.Graph.apps.byId",
-    );
+    assertEquals((err as Error).message, "Invalid arguments passed to root.Graph.apps.byId");
   } finally {
     await shutdown();
   }
 });
 
-Deno.test("sse: a failing resolver is delivered as an error event", async () => {
+test("sse: a failing resolver is delivered as an error event", async () => {
   const failingEngine = createEngine({
     graph,
     entries: ["Graph"],
@@ -113,11 +107,11 @@ Deno.test("sse: a failing resolver is delivered as an error event", async () => 
       }),
     ],
   });
-  const server = Deno.serve({ port: 0 }, (request) => {
+  const server = await serve((request) => {
     return handleQuery(failingEngine, request);
   });
   try {
-    const base = `http://127.0.0.1:${server.addr.port}`;
+    const base = `http://127.0.0.1:${server.port}`;
     const q = client.Graph.config();
     const err = await assertRejects(() => collect(base, q));
     assertEquals((err as Error).message, "boom");
@@ -126,7 +120,7 @@ Deno.test("sse: a failing resolver is delivered as an error event", async () => 
   }
 });
 
-Deno.test("sse: the client query is the same { path, args } payload as http", () => {
+test("sse: the client query is the same { path, args } payload as http", () => {
   const q = client.Graph.apps.byId("app1");
   const { path, args } = queryToObject(q);
   assertEquals(path, ["Graph", "apps", "byId"]);

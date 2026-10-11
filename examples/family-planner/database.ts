@@ -21,11 +21,7 @@ export function createMember(name: string): DbMember {
   return member;
 }
 
-export function createEvent(
-  title: string,
-  day: Weekday,
-  memberId: string,
-): DbEvent {
+export function createEvent(title: string, day: Weekday, memberId: string): DbEvent {
   // Check if member exists
   if (!members.has(memberId)) {
     throw new Error(`Member with id ${memberId} does not exist`);
@@ -36,14 +32,10 @@ export function createEvent(
 }
 
 export function listMembers(): DbMember[] {
-  return Array.from(members.values()).sort((a, b) =>
-    a.name.localeCompare(b.name)
-  );
+  return Array.from(members.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
-export function listEvents(
-  { memberIds, search, weekdays }: ListEventsParams,
-): DbEvent[] {
+export function listEvents({ memberIds, search, weekdays }: ListEventsParams): DbEvent[] {
   return Array.from(events.values())
     .filter((event) => {
       if (search !== undefined && !event.title.includes(search)) {

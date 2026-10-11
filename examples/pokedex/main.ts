@@ -2,7 +2,7 @@
  * Run the whole pokedex example end-to-end: boot the server on port 8000,
  * run the web-transport + superjson client against it over HTTP, then stop.
  *
- *   deno task example:pokedex
+ *   pnpm example:pokedex
  */
 import { main } from "./client/index.ts";
 import { startServer } from "./server/index.ts";

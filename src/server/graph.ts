@@ -1,20 +1,14 @@
 import type { TTypesBase } from "../utils/types.ts";
 import { GET, PATH, REF, ROOT, STRUCTURE, type TYPES } from "./constants.ts";
 import { getStructureProp } from "./getGraphProp.ts";
-import type {
-  TAllStructure,
-  TRootStructure,
-  TStructure,
-} from "./structure.types.ts";
+import type { TAllStructure, TRootStructure, TStructure } from "./structure.types.ts";
 import type { TGraphOf, TLocalTypes } from "./types.ts";
 
 export type TGraphBaseAny = TGraphBase<any, any>;
 
 export type TGraphBaseOutput<Output> = TGraphBase<any, Output>;
 
-export type TGraphGet = (
-  prop: string | number | symbol | TAllStructure,
-) => TGraphBaseAny;
+export type TGraphGet = (prop: string | number | symbol | TAllStructure) => TGraphBaseAny;
 
 export interface TGraphBase<Input, Output = unknown> {
   [TYPES]: { input: Input; output: Output };
@@ -29,9 +23,7 @@ export interface TGraphBase<Input, Output = unknown> {
   _<T extends TGraphBaseAny>(next: T): T;
 }
 
-export function graph<Types extends TTypesBase>(
-  rootStructure: TRootStructure,
-): TGraphOf<Types> {
+export function graph<Types extends TTypesBase>(rootStructure: TRootStructure): TGraphOf<Types> {
   return graphInternal({
     rootStructure,
     localTypes: {},
@@ -48,15 +40,15 @@ export interface TGraphInternalParams {
 export type TGraphCacheKey = string | number | symbol | TAllStructure;
 export type TGraphCache = Map<TGraphCacheKey, TGraphBaseAny>;
 
-export function graphInternal(
-  { rootStructure, localTypes, path }: TGraphInternalParams,
-): TGraphBaseAny {
+export function graphInternal({
+  rootStructure,
+  localTypes,
+  path,
+}: TGraphInternalParams): TGraphBaseAny {
   const cache: TGraphCache = new Map();
   const structure = path[path.length - 1];
 
-  function get(
-    prop: string | number | symbol | TAllStructure,
-  ): TGraphBaseAny {
+  function get(prop: string | number | symbol | TAllStructure): TGraphBaseAny {
     if (path.length > 10) {
       throw new Error("Path too deep");
     }

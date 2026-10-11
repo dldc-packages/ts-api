@@ -1,6 +1,7 @@
+import { describe, expect, test } from "vite-plus/test";
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 import { query, queryToObject } from "../../src/client/mod.ts";
 import {
   builtin,
@@ -26,24 +27,19 @@ const builtins = createBuiltins({
   }),
 });
 
-const graph = parse<AllTypes>(
-  loadSchema(resolve("./tests/builtins/graph.ts")),
-  { builtins },
-);
+const graph = parse<AllTypes>(loadSchema(resolve("./tests/builtins/graph.ts")), { builtins });
 
-Deno.test("Snapshot structure", async (test) => {
-  await test.assertSnapshot(graph[ROOT]);
+test("Snapshot structure", async () => {
+  expect(graph[ROOT]).toMatchSnapshot();
 });
 
 const client = query<AllTypes>();
 
-Deno.test("Properly parse MyBuiltin", async () => {
+test("Properly parse MyBuiltin", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
-    resolvers: [
-      fn(graph.Graph.now, () => "Hello"),
-    ],
+    resolvers: [fn(graph.Graph.now, () => "Hello")],
   });
 
   const q = client.Graph.now();
@@ -52,34 +48,28 @@ Deno.test("Properly parse MyBuiltin", async () => {
   assertEquals(res, "Hello");
 });
 
-Deno.test("Fail if output is not a string", async () => {
+test("Fail if output is not a string", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
-    resolvers: [
-      fn(graph.Graph.now, () => 42 as any),
-    ],
+    resolvers: [fn(graph.Graph.now, () => 42 as any)],
   });
 
   const q = client.Graph.now();
   const { path: queryDef, args: variables } = queryToObject(q);
-  const err = await assertRejects(() =>
-    engine.run({ path: queryDef, args: variables })
-  );
+  const err = await assertRejects(() => engine.run({ path: queryDef, args: variables }));
   assertEquals(
     (err as Error).message,
     "Invalid resolved value for root.Graph.now (expected: valid value, received: 42)",
   );
 });
 
-Deno.test("validateOutput: false skips return value validation", async () => {
+test("validateOutput: false skips return value validation", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     validateOutput: false,
-    resolvers: [
-      fn(graph.Graph.now, () => 42 as any),
-    ],
+    resolvers: [fn(graph.Graph.now, () => 42 as any)],
   });
 
   const q = client.Graph.now();
@@ -89,7 +79,7 @@ Deno.test("validateOutput: false skips return value validation", async () => {
   assertEquals(result, 42);
 });
 
-Deno.test("MyBuiltin input", async (t) => {
+describe("MyBuiltin input", () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
@@ -100,22 +90,17 @@ Deno.test("MyBuiltin input", async (t) => {
     ],
   });
 
-  await t.step("Parse MyBuiltin input", async () => {
+  test("Parse MyBuiltin input", async () => {
     const q = client.Graph.doStuff("Hello");
     const { path: queryDef, args: variables } = queryToObject(q);
     const res = await engine.run({ path: queryDef, args: variables });
     assertEquals(res, "Hello");
   });
 
-  await t.step("Fail if input is not a string", async () => {
+  test("Fail if input is not a string", async () => {
     const q = client.Graph.doStuff(42 as any);
     const { path: queryDef, args: variables } = queryToObject(q);
-    const err = await assertRejects(() =>
-      engine.run({ path: queryDef, args: variables })
-    );
-    assertEquals(
-      (err as Error).message,
-      "Invalid arguments passed to root.Graph.doStuff",
-    );
+    const err = await assertRejects(() => engine.run({ path: queryDef, args: variables }));
+    assertEquals((err as Error).message, "Invalid arguments passed to root.Graph.doStuff");
   });
 });

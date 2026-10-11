@@ -1,7 +1,9 @@
+import { test } from "vite-plus/test";
 import { execQuery } from "@dldc/ts-api/transports/http/client";
 import { handleQuery, parseBody } from "@dldc/ts-api/transports/http/server";
 import { assertEquals, assertRejects, assertThrows } from "@std/assert";
 import { resolve } from "@std/path";
+import { serve } from "../utils/serve.ts";
 import { query } from "../../src/client/mod.ts";
 import { createEngine, fn, parse } from "../../src/server/mod.ts";
 import type { TodoListTypes } from "../schemas/todolist.types.ts";
@@ -9,9 +11,7 @@ import { loadSchema } from "../utils/loadSchema.ts";
 
 const client = query<TodoListTypes>();
 
-const graph = parse<TodoListTypes>(
-  loadSchema(resolve("./tests/schemas/todolist.ts")),
-);
+const graph = parse<TodoListTypes>(loadSchema(resolve("./tests/schemas/todolist.ts")));
 
 const engine = createEngine({
   graph,
@@ -37,14 +37,13 @@ interface HttpServer {
 }
 
 /** Serve the http transport's `handleQuery` over a real HTTP server. */
-function startServer(
-  handler: (request: Request) => Promise<Response> | Response = async (
-    request,
-  ) => Response.json(await handleQuery(engine, request)),
-): HttpServer {
-  const server = Deno.serve({ port: 0 }, handler);
+async function startServer(
+  handler: (request: Request) => Promise<Response> | Response = async (request) =>
+    Response.json(await handleQuery(engine, request)),
+): Promise<HttpServer> {
+  const server = await serve(handler);
   return {
-    base: `http://127.0.0.1:${server.addr.port}`,
+    base: server.baseUrl,
     shutdown: () => server.shutdown(),
   };
 }
@@ -61,8 +60,8 @@ function jsonRequest(body: unknown): Request {
 // client
 // ---------------------------------------------------------------------------
 
-Deno.test("http: execQuery returns the result of a query", async () => {
-  const { base, shutdown } = startServer();
+test("http: execQuery returns the result of a query", async () => {
+  const { base, shutdown } = await startServer();
   try {
     const q = client.Graph.config();
     const result = await execQuery(q, base);
@@ -74,10 +73,10 @@ Deno.test("http: execQuery returns the result of a query", async () => {
   }
 });
 
-Deno.test("http: execQuery posts { path, args } as JSON", async () => {
+test("http: execQuery posts { path, args } as JSON", async () => {
   let captured: unknown;
   let contentType: string | null = null;
-  const { base, shutdown } = startServer(async (request) => {
+  const { base, shutdown } = await startServer(async (request) => {
     contentType = request.headers.get("content-type");
     const text = await request.text();
     captured = JSON.parse(text);
@@ -103,9 +102,9 @@ Deno.test("http: execQuery posts { path, args } as JSON", async () => {
   }
 });
 
-Deno.test("http: execQuery forwards custom headers", async () => {
+test("http: execQuery forwards custom headers", async () => {
   let seenAuth: string | null = null;
-  const { base, shutdown } = startServer(async (request) => {
+  const { base, shutdown } = await startServer(async (request) => {
     seenAuth = request.headers.get("authorization");
     return Response.json(await handleQuery(engine, request));
   });
@@ -118,10 +117,8 @@ Deno.test("http: execQuery forwards custom headers", async () => {
   }
 });
 
-Deno.test("http: execQuery throws on a non-ok status", async () => {
-  const { base, shutdown } = startServer(() =>
-    new Response("not found", { status: 404 })
-  );
+test("http: execQuery throws on a non-ok status", async () => {
+  const { base, shutdown } = await startServer(() => new Response("not found", { status: 404 }));
   try {
     const q = client.Graph.config();
     const err = await assertRejects(() => execQuery(q, base));
@@ -131,8 +128,8 @@ Deno.test("http: execQuery throws on a non-ok status", async () => {
   }
 });
 
-Deno.test("http: execQuery propagates an abort signal", async () => {
-  const { base, shutdown } = startServer(async () => {
+test("http: execQuery propagates an abort signal", async () => {
+  const { base, shutdown } = await startServer(async () => {
     // Keep the request pending so the client-side abort wins the race.
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 500));
     return Response.json({ ok: true });
@@ -141,9 +138,7 @@ Deno.test("http: execQuery propagates an abort signal", async () => {
     const controller = new AbortController();
     const q = client.Graph.config();
     setTimeout(() => controller.abort(), 20);
-    const err = await assertRejects(() =>
-      execQuery(q, base, { signal: controller.signal })
-    );
+    const err = await assertRejects(() => execQuery(q, base, { signal: controller.signal }));
     assertEquals((err as Error).name, "AbortError");
   } finally {
     await shutdown();
@@ -154,30 +149,21 @@ Deno.test("http: execQuery propagates an abort signal", async () => {
 // server
 // ---------------------------------------------------------------------------
 
-Deno.test("http: handleQuery runs a query from a JSON body", async () => {
-  const result = await handleQuery(
-    engine,
-    jsonRequest({ path: ["Graph", "config"], args: [] }),
-  );
+test("http: handleQuery runs a query from a JSON body", async () => {
+  const result = await handleQuery(engine, jsonRequest({ path: ["Graph", "config"], args: [] }));
   assertEquals(result, {
     env: { version: "1.0.0", num: 42, str: "hello", bool: true },
   });
 });
 
-Deno.test("http: handleQuery rejects on invalid arguments", async () => {
+test("http: handleQuery rejects on invalid arguments", async () => {
   const err = await assertRejects(() =>
-    handleQuery(
-      engine,
-      jsonRequest({ path: ["Graph", "apps", "byId"], args: [42] }),
-    )
+    handleQuery(engine, jsonRequest({ path: ["Graph", "apps", "byId"], args: [42] })),
   );
-  assertEquals(
-    (err as Error).message,
-    "Invalid arguments passed to root.Graph.apps.byId",
-  );
+  assertEquals((err as Error).message, "Invalid arguments passed to root.Graph.apps.byId");
 });
 
-Deno.test("http: handleQuery rejects when the body is not valid JSON", async () => {
+test("http: handleQuery rejects when the body is not valid JSON", async () => {
   const request = new Request("http://localhost", {
     method: "POST",
     body: "{not json",
@@ -185,7 +171,7 @@ Deno.test("http: handleQuery rejects when the body is not valid JSON", async () 
   await assertRejects(() => handleQuery(engine, request));
 });
 
-Deno.test("http: handleQuery rejects when a resolver throws", async () => {
+test("http: handleQuery rejects when a resolver throws", async () => {
   const failingEngine = createEngine({
     graph,
     entries: ["Graph"],
@@ -196,10 +182,7 @@ Deno.test("http: handleQuery rejects when a resolver throws", async () => {
     ],
   });
   const err = await assertRejects(() =>
-    handleQuery(
-      failingEngine,
-      jsonRequest({ path: ["Graph", "config"], args: [] }),
-    )
+    handleQuery(failingEngine, jsonRequest({ path: ["Graph", "config"], args: [] })),
   );
   assertEquals((err as Error).message, "boom");
 });
@@ -208,23 +191,23 @@ Deno.test("http: handleQuery rejects when a resolver throws", async () => {
 // parseBody
 // ---------------------------------------------------------------------------
 
-Deno.test("http: parseBody accepts a valid body", () => {
+test("http: parseBody accepts a valid body", () => {
   const body = { path: ["Graph", "config"], args: [1, "two", null] };
   assertEquals(parseBody(body), body);
 });
 
-Deno.test("http: parseBody rejects a non-object body", () => {
+test("http: parseBody rejects a non-object body", () => {
   assertThrows(() => parseBody("nope"));
   assertThrows(() => parseBody(null));
   assertThrows(() => parseBody(42));
 });
 
-Deno.test("http: parseBody rejects a missing or malformed path", () => {
+test("http: parseBody rejects a missing or malformed path", () => {
   assertThrows(() => parseBody({ args: [] }));
   assertThrows(() => parseBody({ path: "Graph", args: [] }));
   assertThrows(() => parseBody({ path: [123], args: [] }));
 });
 
-Deno.test("http: parseBody rejects malformed args", () => {
+test("http: parseBody rejects malformed args", () => {
   assertThrows(() => parseBody({ path: ["Graph"], args: "one" }));
 });

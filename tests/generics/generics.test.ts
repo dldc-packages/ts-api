@@ -1,3 +1,4 @@
+import { test } from "vite-plus/test";
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject } from "../../src/client/mod.ts";
@@ -14,11 +15,9 @@ export interface AllTypes {
 
 const client = query<AllTypes>();
 
-const graph = parse<AllTypes>(
-  loadSchema(resolve("./tests/generics/graph.ts")),
-);
+const graph = parse<AllTypes>(loadSchema(resolve("./tests/generics/graph.ts")));
 
-Deno.test("Fails if no resolver", async () => {
+test("Fails if no resolver", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
@@ -27,27 +26,22 @@ Deno.test("Fails if no resolver", async () => {
 
   const q = client.Graph.todos();
   const { path: queryDef, args: variables } = queryToObject(q);
-  const err = await assertRejects(() =>
-    engine.run({ path: queryDef, args: variables })
-  );
+  const err = await assertRejects(() => engine.run({ path: queryDef, args: variables }));
   assertEquals(
     (err as Error).message,
     "Invalid resolved value for root.Graph.todos (expected: valid value, received: undefined)",
   );
 });
 
-Deno.test("get generic results", async () => {
+test("get generic results", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      fn(
-        graph.Graph.todos,
-        () => ({
-          total: 1,
-          data: [{ name: "todo1", done: true }],
-        }),
-      ),
+      fn(graph.Graph.todos, () => ({
+        total: 1,
+        data: [{ name: "todo1", done: true }],
+      })),
     ],
   });
 
@@ -60,18 +54,15 @@ Deno.test("get generic results", async () => {
   });
 });
 
-Deno.test("Resolver in generic", async () => {
+test("Resolver in generic", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      fn(
-        graph.Graph.todos,
-        () => ({
-          total: 0,
-          data: [],
-        }),
-      ),
+      fn(graph.Graph.todos, () => ({
+        total: 0,
+        data: [],
+      })),
     ],
   });
 
@@ -84,43 +75,39 @@ Deno.test("Resolver in generic", async () => {
   });
 });
 
-Deno.test("Fails if a property is missing", async () => {
+test("Fails if a property is missing", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
       fn(
         graph.Graph.todos,
-        () => ({
-          data: [],
-        } as any),
+        () =>
+          ({
+            data: [],
+          }) as any,
       ),
     ],
   });
 
   const q = client.Graph.todos();
   const { path: queryDef, args: variables } = queryToObject(q);
-  const err = await assertRejects(() =>
-    engine.run({ path: queryDef, args: variables })
-  );
+  const err = await assertRejects(() => engine.run({ path: queryDef, args: variables }));
   assertEquals(
     (err as Error).message,
     'Invalid resolved value for root.Graph.todos (expected: valid value, received: {"data":[]})',
   );
 });
 
-Deno.test("nested function with generic", async () => {
+test("nested function with generic", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      fn(
-        graph.Graph.nested,
-        (_ctx, [num]) => {
-          assertEquals(num, 42);
-          return { name: "todo1", done: true };
-        },
-      ),
+      fn(graph.Graph.nested, (_ctx, [num]) => {
+        assertEquals(num, 42);
+        return { name: "todo1", done: true };
+      }),
     ],
   });
 
@@ -130,17 +117,14 @@ Deno.test("nested function with generic", async () => {
   assertEquals(result, { name: "todo1", done: true });
 });
 
-Deno.test("generic as input: createMany receives Paginated<TodoItem>", async () => {
+test("generic as input: createMany receives Paginated<TodoItem>", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      fn(
-        graph.Graph.createMany,
-        (_ctx, [items]) => {
-          return items.data;
-        },
-      ),
+      fn(graph.Graph.createMany, (_ctx, [items]) => {
+        return items.data;
+      }),
     ],
   });
 
@@ -159,17 +143,14 @@ Deno.test("generic as input: createMany receives Paginated<TodoItem>", async () 
   ]);
 });
 
-Deno.test("generic as input: search receives ListParams<string>", async () => {
+test("generic as input: search receives ListParams<string>", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      fn(
-        graph.Graph.search,
-        (_ctx, [params]) => {
-          return [{ name: params.filter ?? "all", done: false }];
-        },
-      ),
+      fn(graph.Graph.search, (_ctx, [params]) => {
+        return [{ name: params.filter ?? "all", done: false }];
+      }),
     ],
   });
 
@@ -179,17 +160,14 @@ Deno.test("generic as input: search receives ListParams<string>", async () => {
   assertEquals(result, [{ name: "buy", done: false }]);
 });
 
-Deno.test("generic as input: search with optional filter omitted", async () => {
+test("generic as input: search with optional filter omitted", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      fn(
-        graph.Graph.search,
-        (_ctx, [params]) => {
-          return [{ name: params.filter ?? "all", done: false }];
-        },
-      ),
+      fn(graph.Graph.search, (_ctx, [params]) => {
+        return [{ name: params.filter ?? "all", done: false }];
+      }),
     ],
   });
 
@@ -199,17 +177,14 @@ Deno.test("generic as input: search with optional filter omitted", async () => {
   assertEquals(result, [{ name: "all", done: false }]);
 });
 
-Deno.test("generic input validation: createMany rejects invalid data", async () => {
+test("generic input validation: createMany rejects invalid data", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      fn(
-        graph.Graph.createMany,
-        (_ctx, [items]) => {
-          return items.data;
-        },
-      ),
+      fn(graph.Graph.createMany, (_ctx, [items]) => {
+        return items.data;
+      }),
     ],
   });
 
@@ -218,29 +193,21 @@ Deno.test("generic input validation: createMany rejects invalid data", async () 
     data: [{ name: "todo1", done: "not-a-boolean" as any }],
   });
   const { path: queryDef, args: variables } = queryToObject(q);
-  const err = await assertRejects(
-    async () => {
-      await engine.run({ path: queryDef, args: variables });
-    },
-  );
-  assertEquals(
-    (err as Error).message,
-    "Invalid arguments passed to root.Graph.createMany",
-  );
+  const err = await assertRejects(async () => {
+    await engine.run({ path: queryDef, args: variables });
+  });
+  assertEquals((err as Error).message, "Invalid arguments passed to root.Graph.createMany");
 });
 
-Deno.test("nested declared generic: Paginated<Paginated<TodoItem>> resolves", async () => {
+test("nested declared generic: Paginated<Paginated<TodoItem>> resolves", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      fn(
-        graph.Graph.nestedPaginated,
-        () => ({
-          total: 1,
-          data: [{ total: 1, data: [{ name: "todo1", done: true }] }],
-        }),
-      ),
+      fn(graph.Graph.nestedPaginated, () => ({
+        total: 1,
+        data: [{ total: 1, data: [{ name: "todo1", done: true }] }],
+      })),
     ],
   });
 
@@ -253,7 +220,7 @@ Deno.test("nested declared generic: Paginated<Paginated<TodoItem>> resolves", as
   });
 });
 
-Deno.test("nested declared generic output is validated deeply", async () => {
+test("nested declared generic output is validated deeply", async () => {
   // The inner `Paginated<TodoItem>` is validated too: `done` is a boolean, so
   // the resolver returning a string must be rejected.
   const engine = createEngine({
@@ -273,13 +240,9 @@ Deno.test("nested declared generic output is validated deeply", async () => {
 
   const q = client.Graph.nestedPaginated();
   const { path: queryDef, args: variables } = queryToObject(q);
-  const err = await assertRejects(() =>
-    engine.run({ path: queryDef, args: variables })
-  );
+  const err = await assertRejects(() => engine.run({ path: queryDef, args: variables }));
   assertEquals(
-    (err as Error).message.startsWith(
-      "Invalid resolved value for root.Graph.nestedPaginated",
-    ),
+    (err as Error).message.startsWith("Invalid resolved value for root.Graph.nestedPaginated"),
     true,
   );
 });

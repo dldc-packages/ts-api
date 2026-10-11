@@ -24,33 +24,20 @@ export async function main(baseUrl: string): Promise<void> {
 
   console.log("\n1. Catching a few pokemon (mutations)");
   const pikachu = await api.execMutation(client.Graph.pokedex.catch("Pikachu"));
-  const shiny = await api.execMutation(
-    client.Graph.pokedex.catch("Bulbasaur", true),
-  );
+  const shiny = await api.execMutation(client.Graph.pokedex.catch("Bulbasaur", true));
   await api.execMutation(client.Graph.pokedex.catch("Squirtle"));
-  const charmander = await api.execMutation(
-    client.Graph.pokedex.catch("Charmander"),
-  );
+  const charmander = await api.execMutation(client.Graph.pokedex.catch("Charmander"));
   for (const p of [pikachu, shiny, charmander]) {
-    console.log(
-      `   ${p.name} (${
-        p.types.join(", ")
-      }) caught at ${p.caughtAt.toISOString()}`,
-    );
+    console.log(`   ${p.name} (${p.types.join(", ")}) caught at ${p.caughtAt.toISOString()}`);
   }
-  console.log(
-    "   caughtAt is a real Date on the client:",
-    pikachu.caughtAt instanceof Date,
-  );
+  console.log("   caughtAt is a real Date on the client:", pikachu.caughtAt instanceof Date);
 
   console.log("\n2. Listing the whole dex");
   dex = await api.execQuery(client.Graph.pokedex.list());
   console.log("  ", dex.map(short).join(", "));
 
   console.log("\n3. Filtering by type");
-  const grass = await api.execQuery(
-    client.Graph.pokedex.list({ types: ["grass"] }),
-  );
+  const grass = await api.execQuery(client.Graph.pokedex.list({ types: ["grass"] }));
   console.log("   grass:", grass.map(short).join(", ") || "none");
 
   console.log("\n4. Filtering by a caught-after Date (superjson for args)");
@@ -63,9 +50,7 @@ export async function main(baseUrl: string): Promise<void> {
   console.log("   ", found?.name);
 
   console.log("\n6. Releasing the shiny one");
-  const released = await api.execMutation(
-    client.Graph.pokedex.release(shiny.id),
-  );
+  const released = await api.execMutation(client.Graph.pokedex.release(shiny.id));
   console.log("   released:", released?.name ?? "<already gone>");
 
   console.log("\n7. Streaming a radar scan (SSE + superjson)");

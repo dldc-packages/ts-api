@@ -1,21 +1,14 @@
+import { test } from "vite-plus/test";
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject } from "../src/client/mod.ts";
-import {
-  createEngine,
-  createKey,
-  fn,
-  parse,
-  resolver,
-} from "../src/server/mod.ts";
+import { createEngine, createKey, fn, parse, resolver } from "../src/server/mod.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
 import { loadSchema } from "./utils/loadSchema.ts";
 
 const client = query<TodoListTypes>();
 
-const graph = parse<TodoListTypes>(
-  loadSchema(resolve("./tests/schemas/todolist.ts")),
-);
+const graph = parse<TodoListTypes>(loadSchema(resolve("./tests/schemas/todolist.ts")));
 
 interface AuthUser {
   id: string;
@@ -30,27 +23,22 @@ const engine = createEngine({
   resolvers: [
     fn(graph.Graph.auth, (ctx) => {
       const user = ctx.getOrFail(AuthKey.Consumer);
-      return user
-        ? { user: { userName: user.name, app: { appName: "app1", todos: [] } } }
-        : null;
+      return user ? { user: { userName: user.name, app: { appName: "app1", todos: [] } } } : null;
     }),
-    resolver(
-      graph.Graph.users,
-      (ctx, next) => {
-        const user = ctx.getOrFail(AuthKey.Consumer);
-        if (!user) {
-          throw new Error("Unauthorized");
-        }
-        return next(ctx);
-      },
-    ),
+    resolver(graph.Graph.users, (ctx, next) => {
+      const user = ctx.getOrFail(AuthKey.Consumer);
+      if (!user) {
+        throw new Error("Unauthorized");
+      }
+      return next(ctx);
+    }),
     fn(graph.Graph.users.byId, (_ctx, [id]) => {
       return { userName: id, app: { appName: "app1", todos: [] } };
     }),
   ],
 });
 
-Deno.test("context: authenticated user can call auth()", async () => {
+test("context: authenticated user can call auth()", async () => {
   const q = client.Graph.auth();
   const { path: queryDef, args } = queryToObject(q);
 
@@ -63,7 +51,7 @@ Deno.test("context: authenticated user can call auth()", async () => {
   });
 });
 
-Deno.test("context: null user returns null from auth()", async () => {
+test("context: null user returns null from auth()", async () => {
   const q = client.Graph.auth();
   const { path: queryDef, args } = queryToObject(q);
 
@@ -74,7 +62,7 @@ Deno.test("context: null user returns null from auth()", async () => {
   assertEquals(result, null);
 });
 
-Deno.test("context: unauthenticated user is rejected by namespace middleware", async () => {
+test("context: unauthenticated user is rejected by namespace middleware", async () => {
   const q = client.Graph.users.byId("1");
   const { path: queryDef, args } = queryToObject(q);
 

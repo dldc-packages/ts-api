@@ -15,50 +15,38 @@ import type { Pokemon } from "../schema.ts";
 import * as db from "./database.ts";
 import { graph } from "./graph.ts";
 
-const listResolver = queryResolver(
-  graph.Graph.pokedex.list,
-  (_ctx, [params]) => {
-    return db.listPokemon(params).map(toPokemon);
-  },
-);
+const listResolver = queryResolver(graph.Graph.pokedex.list, (_ctx, [params]) => {
+  return db.listPokemon(params).map(toPokemon);
+});
 
 const byIdResolver = queryResolver(graph.Graph.pokedex.byId, (_ctx, [id]) => {
   const pokemon = db.getPokemon(id);
   return pokemon ? toPokemon(pokemon) : null;
 });
 
-const catchResolver = mutationResolver(
-  graph.Graph.pokedex.catch,
-  (_ctx, [name, shiny = false]) => {
-    return toPokemon(db.catchPokemon(name, shiny));
-  },
-);
+const catchResolver = mutationResolver(graph.Graph.pokedex.catch, (_ctx, [name, shiny = false]) => {
+  return toPokemon(db.catchPokemon(name, shiny));
+});
 
-const releaseResolver = mutationResolver(
-  graph.Graph.pokedex.release,
-  (_ctx, [id]) => {
-    const pokemon = db.releasePokemon(id);
-    return pokemon ? toPokemon(pokemon) : null;
-  },
-);
+const releaseResolver = mutationResolver(graph.Graph.pokedex.release, (_ctx, [id]) => {
+  const pokemon = db.releasePokemon(id);
+  return pokemon ? toPokemon(pokemon) : null;
+});
 
 /**
  * `streamResolver` (for `StreamResult` endpoints) resolves to an async
  * generator: every yielded value is streamed to the client as a Server-Sent
  * Events message.
  */
-const searchResolver = streamResolver(
-  graph.Graph.pokedex.search,
-  (_ctx, [name]) => {
-    return (async function* () {
-      for (const pokemon of db.listPokemon({ search: name })) {
-        // Emulate a slow radar sweep so the client sees several events arrive.
-        await new Promise((resolve) => setTimeout(resolve, 200));
-        yield toPokemon(pokemon);
-      }
-    })();
-  },
-);
+const searchResolver = streamResolver(graph.Graph.pokedex.search, (_ctx, [name]) => {
+  return (async function* () {
+    for (const pokemon of db.listPokemon({ search: name })) {
+      // Emulate a slow radar sweep so the client sees several events arrive.
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      yield toPokemon(pokemon);
+    }
+  })();
+});
 
 function toPokemon(pokemon: db.DbPokemon): Pokemon {
   return {

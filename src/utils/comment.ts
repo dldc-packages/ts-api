@@ -79,9 +79,9 @@ function normalizeBlockComment(raw: string): string {
   // star and the single space after it, but preserve any deeper indentation
   // (` *   code` keeps its extra spaces).
   if (lines.every((line) => line.trim().startsWith("*"))) {
-    return dropOuterEmpty(
-      lines.map((line) => line.replace(/^\s*\*\s?/, "")),
-    ).join("\n").trim();
+    return dropOuterEmpty(lines.map((line) => line.replace(/^\s*\*\s?/, "")))
+      .join("\n")
+      .trim();
   }
   // Plain layout: continuation lines are indented to align under the first
   // line's text (they have no `*` anchor), so their common leading whitespace
@@ -91,8 +91,7 @@ function normalizeBlockComment(raw: string): string {
     .filter((line) => line.trim() !== "")
     .map((line) => leadingWhitespaceLength(line));
   const commonIndent = indents.length > 0 ? Math.min(...indents) : 0;
-  return [first, ...rest.map((line) => line.slice(commonIndent))].join("\n")
-    .trim();
+  return [first, ...rest.map((line) => line.slice(commonIndent))].join("\n").trim();
 }
 
 /** Length of the leading whitespace of a line. */

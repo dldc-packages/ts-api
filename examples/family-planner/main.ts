@@ -19,10 +19,11 @@ async function executeQuery<R>(query: TQuery<R>): Promise<R> {
 /**
  * Let's start by listing all the members
  */
-const membersIds = await executeQuery(
-  q.Graph.members.list(),
-);
-console.log("Member ids:\n", membersIds.map((m) => m.id)); // [] we don't have any members yet
+const membersIds = await executeQuery(q.Graph.members.list());
+console.log(
+  "Member ids:\n",
+  membersIds.map((m) => m.id),
+); // [] we don't have any members yet
 
 /**
  * Let's add some members
@@ -42,7 +43,10 @@ console.log({ maggieId: maggie.id });
  * Let's list the members again
  */
 const members = await executeQuery(q.Graph.members.list());
-console.log("Members:\n", members.map((m) => ({ id: m.id, name: m.name })));
+console.log(
+  "Members:\n",
+  members.map((m) => ({ id: m.id, name: m.name })),
+);
 
 /**
  * Let's add some events before we continue
@@ -90,15 +94,16 @@ const createdEvents = await executeQuery(
     { memberId: lisa.id, title: "Watch a movie", day: "Friday" },
   ]),
 );
-console.log("Created events ids:", createdEvents.map((e) => e.id));
+console.log(
+  "Created events ids:",
+  createdEvents.map((e) => e.id),
+);
 
 /**
  * Let's list the events!
  * The list events function uses some filters as well as pagination
  */
-const events = await executeQuery(
-  q.Graph.events.list({}, { pageSize: 5, page: 1 }),
-);
+const events = await executeQuery(q.Graph.events.list({}, { pageSize: 5, page: 1 }));
 console.log("Events:\n", {
   total: events.total,
   data: events.data.map((e) => ({

@@ -27,38 +27,34 @@ generation, no build step.
 
 ## Installation
 
-This package is published on the JSR registry. Install it with:
+This package is published on the npm registry. Install it with:
 
 ```sh
-deno add jsr:@dldc/ts-api
+npm install @dldc/ts-api
 ```
 
-> This package is built for Deno and the JSR registry. To run the examples or
-> tests, use Deno. For Deno-specific setup, see [deno.com](https://deno.com).
+or with pnpm:
+
+```sh
+pnpm add @dldc/ts-api
+```
 
 ## Permissions
 
 `parse` is pure: it takes the schema **source text** and does no file-system
-access, so it runs anywhere — including the browser and edge runtimes. The only
-permission it needs from the environment is for the parser it imports
-(`@lezer/lr`), which reads a single environment variable at load time:
+access, so it runs anywhere — including Node, the browser, and edge runtimes.
+No special permissions or flags are required.
 
-```sh
-deno run --allow-env=LOG server.ts
-```
+The only environment interaction is the parser it imports (`@lezer/lr`), which
+reads a single environment variable at load time (used for optional debug
+logging):
 
-- `--allow-env=LOG` — `parse` imports a lightweight syntax parser that reads the
-  `LOG` environment variable at module load time (used for optional debug
-  logging). Scoping it to just `LOG` is sufficient; it never touches any other
-  environment variable.
+- `LOG` — read by the lightweight syntax parser at module load time (used for
+  optional debug logging). It never touches any other environment variable, and
+  you don't need to set it for normal use.
 
-On the server, _you_ are responsible for loading the schema file (either by
-reading it yourself, or with `parseFromFile` from
-`@dldc/ts-api/server/filesystem`), so your app also needs read access to it:
-
-```sh
-deno run --allow-env=LOG --allow-read=path/to/schema.ts server.ts
-```
+On Node, _you_ are responsible for loading the schema file (either by reading it
+yourself, or with `parseFromFile` from `@dldc/ts-api/server/filesystem`).
 
 The rest of the library — `query` on the client, `createEngine`/resolvers on the
 server — is pure and needs no permissions at all.
@@ -94,7 +90,7 @@ export interface Graph {
 
 ```ts
 // server.ts
-import { resolve } from "@std/path";
+import { resolve } from "node:path";
 import { parseFromFile } from "@dldc/ts-api/server/filesystem";
 import { createEngine, fn } from "@dldc/ts-api/server";
 import type { Graph } from "./api/schema.ts";
@@ -349,7 +345,7 @@ must list `Admin`:
 
 ```ts
 // server.ts
-import { resolve } from "@std/path";
+import { resolve } from "node:path";
 import { parseFromFile } from "@dldc/ts-api/server/filesystem";
 import type { Admin, Graph } from "./api/schema.ts";
 
@@ -615,7 +611,7 @@ and qualified names (`Temporal.PlainDate`) are supported. This means you can use
 ```ts
 // api/builtins.ts
 import { builtin } from "@dldc/ts-api/server";
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 export const PlainDateBuiltin = builtin<Temporal.PlainDate>({
   // valibot schema used to validate the value at runtime
@@ -662,7 +658,7 @@ concrete generic instantiation:
 ```ts
 // api/builtins.ts
 import { builtin } from "@dldc/ts-api/server";
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 
 export type Page<T> = { items: T[]; cursor: string };
 
@@ -879,9 +875,10 @@ import { parse } from "@dldc/ts-api/server";
 // Browser/edge: fetch or import the schema source
 const graph = parse<{ Graph: Graph }>(await (await fetch(schemaUrl)).text());
 
-// Deno/Node: load the file yourself, then pass the source
+// Node: load the file yourself, then pass the source
+import { readFile } from "node:fs/promises";
 const graph = parse<{ Graph: Graph }>(
-  await Deno.readTextFile("./api/schema.ts"),
+  await readFile("./api/schema.ts", "utf8"),
 );
 ```
 
@@ -1232,11 +1229,22 @@ runs the query, but returns the **result value** — you decide how to serialize
 it and which status codes to send:
 
 ```ts
+import { createServer } from "node:http";
+
 import { handleQuery } from "@dldc/ts-api/transports/http/server";
 
-Deno.serve({ port: 8000 }, async (req) => {
-  return Response.json(await handleQuery(engine, req));
-});
+// `handleQuery` takes a Web-standard `Request` and returns a `Response`, so it
+// plugs into any Web-standard server. Here it's mounted over `node:http`.
+createServer(async (req, res) => {
+  const body = Buffer.concat(await req.toArray());
+  const request = new Request(
+    new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`),
+    { method: req.method, body: body.length ? body : undefined },
+  );
+  const response = await handleQuery(engine, request);
+  res.writeHead(response.status, Object.fromEntries(response.headers));
+  res.end(await response.text());
+}).listen(8000);
 ```
 
 `parseBody` is also exported if you want to validate the `{ path, args }`
@@ -1273,7 +1281,8 @@ sent if running the query throws.
 ```ts
 import { handleQuery } from "@dldc/ts-api/transports/sse/server";
 
-Deno.serve({ port: 8000 }, (req) => handleQuery(engine, req));
+// Web-standard `Request → Response`, so it mounts like the http transport above.
+createServer(...);
 ```
 
 Streaming is lazy: nothing runs until the client reads the stream, and the
@@ -1325,7 +1334,7 @@ export interface Graph {
 Parse with `webBuiltins`, then mount a single route that serves every kind:
 
 ```ts
-import { resolve } from "@std/path";
+import { resolve } from "node:path";
 import { createBuiltins } from "@dldc/ts-api/server";
 import { parseFromFile } from "@dldc/ts-api/server/filesystem";
 import { webBuiltins } from "@dldc/ts-api/transports/web/builtins";
@@ -1335,14 +1344,16 @@ const graph = parseFromFile<{ Graph: Graph }>(resolve("./schema.ts"), {
   builtins: createBuiltins({ ...webBuiltins }),
 });
 
-// One route handles GET, POST and SSE for /api/*
-Deno.serve({ port: 8000 }, (req) => {
+// One route handles GET, POST and SSE for /api/*. The `handler` is a
+// Web-standard `Request → Response`; the http-transport section above shows how
+// to mount it over `node:http`.
+async function handler(req: Request): Promise<Response> {
   const url = new URL(req.url);
   if (!url.pathname.startsWith("/api/")) {
     return new Response("Not found", { status: 404 });
   }
   return handleWeb(engine, req, { basePath: "/api" });
-});
+}
 ```
 
 Client side, pick the function matching the endpoint kind:
@@ -1451,7 +1462,7 @@ Look at the `examples/` directory for complete examples.
 The `family-planner` example shows the core client/server loop. Run it with:
 
 ```sh
-deno task example:family-planner
+pnpm example:family-planner
 ```
 
 The `pokedex` example shows the web transport with superjson: queries, mutations
@@ -1459,13 +1470,13 @@ and SSE streams behind a single endpoint, with `Date` values surviving the wire
 on both sides (server and client are separate files). Run it with:
 
 ```sh
-deno task example:pokedex
+pnpm example:pokedex
 ```
 
 Just the pokedex server on its own:
 
 ```sh
-deno task example:pokedex:server
+pnpm example:pokedex:server
 ```
 
 You can also look at the `tests` directory to see all supported features.

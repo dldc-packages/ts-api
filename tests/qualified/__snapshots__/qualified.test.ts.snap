@@ -1,91 +1,91 @@
-export const snapshot = {};
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-snapshot[`Qualified builtin snapshot structure 1`] = `
+exports[`Qualified builtin snapshot structure 1`] = `
 {
-  builtins: [
+  "builtins": [
     {
-      getSchema: [Function: getSchema],
-      key: "builtin.Date",
-      kind: "builtin",
-      name: "Date",
+      "getSchema": [Function],
+      "key": "builtin.Date",
+      "kind": "builtin",
+      "name": "Date",
     },
     {
-      getSchema: [Function: getSchema],
-      key: "builtin.Temporal.PlainDate",
-      kind: "builtin",
-      name: "Temporal.PlainDate",
+      "getSchema": [Function],
+      "key": "builtin.Temporal.PlainDate",
+      "kind": "builtin",
+      "name": "Temporal.PlainDate",
     },
   ],
-  key: "root",
-  kind: "root",
-  mode: "graph",
-  types: [
+  "key": "root",
+  "kind": "root",
+  "mode": "graph",
+  "types": [
     {
-      comment: undefined,
-      key: "root.Graph",
-      kind: "interface",
-      name: "Graph",
-      parameters: [],
-      properties: [
+      "comment": undefined,
+      "key": "root.Graph",
+      "kind": "interface",
+      "name": "Graph",
+      "parameters": [],
+      "properties": [
         {
-          comment: undefined,
-          name: "birthday",
-          optional: false,
-          structure: {
-            arguments: {
-              arguments: [],
-              key: "root.Graph.birthday.arguments",
-              kind: "arguments",
+          "comment": undefined,
+          "name": "birthday",
+          "optional": false,
+          "structure": {
+            "arguments": {
+              "arguments": [],
+              "key": "root.Graph.birthday.arguments",
+              "kind": "arguments",
             },
-            key: "root.Graph.birthday",
-            kind: "function",
-            returns: {
-              key: "root.Graph.birthday.returns",
-              kind: "ref",
-              params: [],
-              ref: "Temporal.PlainDate",
+            "key": "root.Graph.birthday",
+            "kind": "function",
+            "returns": {
+              "key": "root.Graph.birthday.returns",
+              "kind": "ref",
+              "params": [],
+              "ref": "Temporal.PlainDate",
             },
           },
         },
         {
-          comment: undefined,
-          name: "daysBetween",
-          optional: false,
-          structure: {
-            arguments: {
-              arguments: [
+          "comment": undefined,
+          "name": "daysBetween",
+          "optional": false,
+          "structure": {
+            "arguments": {
+              "arguments": [
                 {
-                  comment: undefined,
-                  name: "from",
-                  optional: false,
-                  structure: {
-                    key: "root.Graph.daysBetween.arguments.from",
-                    kind: "ref",
-                    params: [],
-                    ref: "Temporal.PlainDate",
+                  "comment": undefined,
+                  "name": "from",
+                  "optional": false,
+                  "structure": {
+                    "key": "root.Graph.daysBetween.arguments.from",
+                    "kind": "ref",
+                    "params": [],
+                    "ref": "Temporal.PlainDate",
                   },
                 },
                 {
-                  comment: undefined,
-                  name: "to",
-                  optional: false,
-                  structure: {
-                    key: "root.Graph.daysBetween.arguments.to",
-                    kind: "ref",
-                    params: [],
-                    ref: "Temporal.PlainDate",
+                  "comment": undefined,
+                  "name": "to",
+                  "optional": false,
+                  "structure": {
+                    "key": "root.Graph.daysBetween.arguments.to",
+                    "kind": "ref",
+                    "params": [],
+                    "ref": "Temporal.PlainDate",
                   },
                 },
               ],
-              key: "root.Graph.daysBetween.arguments",
-              kind: "arguments",
+              "key": "root.Graph.daysBetween.arguments",
+              "kind": "arguments",
             },
-            key: "root.Graph.daysBetween",
-            kind: "function",
-            returns: {
-              key: "root.Graph.daysBetween.returns",
-              kind: "primitive",
-              type: "number",
+            "key": "root.Graph.daysBetween",
+            "kind": "function",
+            "returns": {
+              "key": "root.Graph.daysBetween.returns",
+              "kind": "primitive",
+              "type": "number",
             },
           },
         },

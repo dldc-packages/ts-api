@@ -1,8 +1,4 @@
-import type {
-  MutationResult,
-  QueryResult,
-  StreamResult,
-} from "../../src/transports/web/types.ts";
+import type { MutationResult, QueryResult, StreamResult } from "../../src/transports/web/types.ts";
 
 export interface Todo {
   todoName: string;

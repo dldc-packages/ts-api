@@ -1,17 +1,11 @@
+import { expect, test } from "vite-plus/test";
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
-import {
-  extractApi,
-  parse,
-  ROOT,
-  type TRootStructure,
-} from "../../src/server/mod.ts";
+import { extractApi, parse, ROOT, type TRootStructure } from "../../src/server/mod.ts";
 import { loadSchema } from "../utils/loadSchema.ts";
 import type { Graph } from "./schema.ts";
 
-const graph = parse<{ Graph: Graph }>(
-  loadSchema(resolve("./tests/comments/schema.ts")),
-);
+const graph = parse<{ Graph: Graph }>(loadSchema(resolve("./tests/comments/schema.ts")));
 
 function inter(root: TRootStructure, name: string) {
   const t = root.types.find((s) => s.name === name);
@@ -21,10 +15,7 @@ function inter(root: TRootStructure, name: string) {
   return t;
 }
 
-function prop(
-  i: ReturnType<typeof inter>,
-  name: string,
-) {
+function prop(i: ReturnType<typeof inter>, name: string) {
   const p = i.properties.find((x) => x.name === name);
   if (!p) {
     throw new Error(`No property "${name}"`);
@@ -32,11 +23,11 @@ function prop(
   return p;
 }
 
-Deno.test("Parse schema with comments", async (test) => {
-  await test.assertSnapshot(graph[ROOT]);
+test("Parse schema with comments", async () => {
+  expect(graph[ROOT]).toMatchSnapshot();
 });
 
-Deno.test("comments: top-level declarations get their leading comment", () => {
+test("comments: top-level declarations get their leading comment", () => {
   const root = graph[ROOT] as TRootStructure;
 
   const role = root.types.find((s) => s.name === "Role")!;
@@ -47,7 +38,7 @@ Deno.test("comments: top-level declarations get their leading comment", () => {
   assertEquals(inter(root, "Graph").comment, "Main Graph entry");
 });
 
-Deno.test("comments: property comments across all comment styles", () => {
+test("comments: property comments across all comment styles", () => {
   const root = graph[ROOT] as TRootStructure;
   const user = inter(root, "User");
 
@@ -56,10 +47,7 @@ Deno.test("comments: property comments across all comment styles", () => {
   // plain multi-line block (alignment dedented)
   assertEquals(prop(user, "group").comment, "Inline multi-line\ncomment");
   // run of line comments
-  assertEquals(
-    prop(user, "maybeGroup").comment,
-    "Multiple\nsingle line\ncomments",
-  );
+  assertEquals(prop(user, "maybeGroup").comment, "Multiple\nsingle line\ncomments");
   // multi-line JSDoc with markdown bullets
   assertEquals(prop(user, "tags").comment, "list:\n- one\n- two");
   // single-line JSDoc
@@ -67,13 +55,10 @@ Deno.test("comments: property comments across all comment styles", () => {
   // plain block without stars
   assertEquals(prop(user, "code").comment, "Block comment without JSDoc stars");
   // line comment
-  assertEquals(
-    prop(inter(root, "Group"), "users").comment,
-    "line comment for the users property",
-  );
+  assertEquals(prop(inter(root, "Group"), "users").comment, "line comment for the users property");
 });
 
-Deno.test("comments: modifiers and nested objects keep their doc", () => {
+test("comments: modifiers and nested objects keep their doc", () => {
   const root = graph[ROOT] as TRootStructure;
   const wm = inter(root, "WithModifiers");
 
@@ -92,7 +77,7 @@ Deno.test("comments: modifiers and nested objects keep their doc", () => {
   }
 });
 
-Deno.test("comments: trailing comments are not doc comments", () => {
+test("comments: trailing comments are not doc comments", () => {
   const root = graph[ROOT] as TRootStructure;
   const wt = inter(root, "WithTrailing");
 
@@ -101,14 +86,14 @@ Deno.test("comments: trailing comments are not doc comments", () => {
   assertEquals(prop(wt, "third").comment, undefined);
 });
 
-Deno.test("comments: the closest comment block wins", () => {
+test("comments: the closest comment block wins", () => {
   const root = graph[ROOT] as TRootStructure;
   const s = inter(root, "Separated");
 
   assertEquals(prop(s, "prop").comment, "second, closer comment");
 });
 
-Deno.test("comments: a dangling comment does not leak to the next declaration", () => {
+test("comments: a dangling comment does not leak to the next declaration", () => {
   const root = graph[ROOT] as TRootStructure;
 
   assertEquals(
@@ -118,7 +103,7 @@ Deno.test("comments: a dangling comment does not leak to the next declaration", 
   assertEquals(inter(root, "AfterDangling").comment, undefined);
 });
 
-Deno.test("comments: exposed via extractApi", () => {
+test("comments: exposed via extractApi", () => {
   const api = extractApi(graph, ["Graph"]);
 
   // root namespace comment comes from the entry declaration
@@ -167,10 +152,7 @@ Deno.test("comments: exposed via extractApi", () => {
   assertEquals(usersProp.comment, "line comment for the users property");
 
   // code fences survive in endpoint comments
-  assertEquals(
-    endpoint("version").comment,
-    "```ts\nconst v = Graph.version();\n```",
-  );
+  assertEquals(endpoint("version").comment, "```ts\nconst v = Graph.version();\n```");
 
   // nodes without comments always carry the field, with an undefined value
   const withTrailingFirst = type("WithTrailing").properties![0];

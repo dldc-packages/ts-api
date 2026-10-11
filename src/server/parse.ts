@@ -4,10 +4,7 @@ import type { TTypesBase } from "../utils/types.ts";
 import { DEFAULT_BUILTINS_GRAPH } from "./builtins.ts";
 import { ROOT } from "./constants.ts";
 import { graph, type TGraphBaseAny } from "./graph.ts";
-import {
-  buildCommentsMap,
-  type CommentsMap,
-} from "./parse/buildCommentsMap.ts";
+import { buildCommentsMap, type CommentsMap } from "./parse/buildCommentsMap.ts";
 import { collectImportedNames } from "./parse/collectImportedNames.ts";
 import {
   handleMissingBuiltins,
@@ -125,11 +122,10 @@ export function parse<Types extends TTypesBase>(
     }
     let structNode = node;
     if (node.type.name === "ExportDeclaration") {
-      structNode = children(node).find(
-        (c) =>
-          c.type.name === "InterfaceDeclaration" ||
-          c.type.name === "TypeAliasDeclaration",
-      ) ?? node;
+      structNode =
+        children(node).find(
+          (c) => c.type.name === "InterfaceDeclaration" || c.type.name === "TypeAliasDeclaration",
+        ) ?? node;
     }
     const struct = parseNode(commentsMap, structNode, key, sourceText);
     if (struct.kind !== "interface" && struct.kind !== "alias") {
@@ -137,9 +133,7 @@ export function parse<Types extends TTypesBase>(
         `Only interfaces and type aliases are supported at the root level, found: ${struct.kind}`,
       );
     }
-    const alreadyExists = rootStructure.types.find(
-      (s) => s.name === struct.name,
-    );
+    const alreadyExists = rootStructure.types.find((s) => s.name === struct.name);
     if (alreadyExists) {
       throw new Error(`Duplicate type name: ${struct.name}`);
     }
@@ -149,10 +143,7 @@ export function parse<Types extends TTypesBase>(
   validateNoRecursiveTypes(rootStructure);
   validateNoFunctionsInReturns(rootStructure);
   validateNoImportedNamespaces(rootStructure, importedNames);
-  handleMissingBuiltins(
-    rootStructure,
-    options.missingBuiltinAction ?? "throw",
-  );
+  handleMissingBuiltins(rootStructure, options.missingBuiltinAction ?? "throw");
 
   return graph(rootStructure) as TGraphOf<Types>;
 }
@@ -169,21 +160,11 @@ function parseNode(
 ): TStructure {
   switch (node.type.name) {
     case "TypeAnnotation":
-      return parseNode(
-        commentsMap,
-        requiredType(node, "type"),
-        parentKey,
-        sourceText,
-      );
+      return parseNode(commentsMap, requiredType(node, "type"), parentKey, sourceText);
     case "ReadonlyType":
     case "ParenthesizedType":
       // Transparent wrappers: `readonly X` and `(X)` carry no semantic weight.
-      return parseNode(
-        commentsMap,
-        requiredType(node, "type"),
-        parentKey,
-        sourceText,
-      );
+      return parseNode(commentsMap, requiredType(node, "type"), parentKey, sourceText);
     case "TypeName":
       return parseTypeName(node, parentKey, sourceText);
     case "ParameterizedType":
@@ -203,19 +184,9 @@ function parseNode(
     case "FunctionSignature":
       return parseFunctionSignature(commentsMap, node, parentKey, sourceText);
     case "InterfaceDeclaration":
-      return parseInterfaceDeclaration(
-        commentsMap,
-        node,
-        parentKey,
-        sourceText,
-      );
+      return parseInterfaceDeclaration(commentsMap, node, parentKey, sourceText);
     case "TypeAliasDeclaration":
-      return parseTypeAliasDeclaration(
-        commentsMap,
-        node,
-        parentKey,
-        sourceText,
-      );
+      return parseTypeAliasDeclaration(commentsMap, node, parentKey, sourceText);
     case "VoidType":
       throw new Error("Void expressions are not supported, use null instead");
     default:
@@ -223,11 +194,7 @@ function parseNode(
   }
 }
 
-function parseTypeName(
-  node: SyntaxNode,
-  parentKey: string,
-  sourceText: string,
-): TStructure {
+function parseTypeName(node: SyntaxNode, parentKey: string, sourceText: string): TStructure {
   const name = textOf(node, sourceText);
   if (name === "string") {
     return { kind: "primitive", key: parentKey, type: "string" };
@@ -266,9 +233,8 @@ function parseParameterizedType(
   }
   const argsList = childByName(node, "TypeArgList");
   const paramNodes = argsList
-    ? children(argsList)
-      .filter((c) =>
-        c.type.name !== "<" && c.type.name !== ">" && c.type.name !== ","
+    ? children(argsList).filter(
+        (c) => c.type.name !== "<" && c.type.name !== ">" && c.type.name !== ",",
       )
     : [];
 
@@ -277,38 +243,22 @@ function parseParameterizedType(
   // declared in the schema nor registered as a builtin.
   if (refName === "Array") {
     if (paramNodes.length !== 1) {
-      throw new Error(
-        `Array<T> must have exactly one type argument, got ${paramNodes.length}`,
-      );
+      throw new Error(`Array<T> must have exactly one type argument, got ${paramNodes.length}`);
     }
     return {
       kind: "array",
       key: parentKey,
-      items: parseNode(
-        commentsMap,
-        paramNodes[0],
-        `${parentKey}.items`,
-        sourceText,
-      ),
+      items: parseNode(commentsMap, paramNodes[0], `${parentKey}.items`, sourceText),
     };
   }
 
   const params = paramNodes.map((param, index) =>
-    parseNode(
-      commentsMap,
-      param,
-      `${parentKey}.params.${index}`,
-      sourceText,
-    )
+    parseNode(commentsMap, param, `${parentKey}.params.${index}`, sourceText),
   );
   return { kind: "ref", key: parentKey, ref: refName, params };
 }
 
-function parseIndexedType(
-  node: SyntaxNode,
-  parentKey: string,
-  sourceText: string,
-): TStructure {
+function parseIndexedType(node: SyntaxNode, parentKey: string, sourceText: string): TStructure {
   if (hasChild(node, "[")) {
     // `T["k"]` — indexed access types are not supported.
     return throwUnknown(node, sourceText, "IndexedAccessType");
@@ -331,12 +281,7 @@ function parseArrayType(
   return {
     kind: "array",
     key: parentKey,
-    items: parseNode(
-      commentsMap,
-      requiredType(node, "element"),
-      `${parentKey}.items`,
-      sourceText,
-    ),
+    items: parseNode(commentsMap, requiredType(node, "element"), `${parentKey}.items`, sourceText),
   };
 }
 
@@ -349,33 +294,22 @@ function parseUnionType(
   // Check if it's a nullable
   const all = children(node).filter((n) => n.type.name !== "LogicOp");
   const hasNull = all.some((n) => n.type.name === "NullType");
-  const subTypes = hasNull
-    ? all.filter((n) => n.type.name !== "NullType")
-    : all;
+  const subTypes = hasNull ? all.filter((n) => n.type.name !== "NullType") : all;
   if (hasNull && subTypes.length === 1) {
     return {
       kind: "nullable",
       key: parentKey,
-      type: parseNode(
-        commentsMap,
-        subTypes[0],
-        `${parentKey}.type`,
-        sourceText,
-      ),
+      type: parseNode(commentsMap, subTypes[0], `${parentKey}.type`, sourceText),
     };
   }
   const types: TStructure[] = subTypes.map((typeNode, i) =>
-    parseNode(commentsMap, typeNode, `${parentKey}.${i}`, sourceText)
+    parseNode(commentsMap, typeNode, `${parentKey}.${i}`, sourceText),
   );
   const union: TStructureUnion = { kind: "union", key: parentKey, types };
   return hasNull ? { kind: "nullable", key: parentKey, type: union } : union;
 }
 
-function parseLiteralType(
-  node: SyntaxNode,
-  parentKey: string,
-  sourceText: string,
-): TStructure {
+function parseLiteralType(node: SyntaxNode, parentKey: string, sourceText: string): TStructure {
   const raw = textOf(node, sourceText).trim();
   if (raw === "true") {
     return { kind: "literal", key: parentKey, type: true };
@@ -433,9 +367,7 @@ function parseMembers(
   for (const member of children(node)) {
     const name = member.type.name;
     if (name === "PropertyType") {
-      properties.push(
-        parsePropertyType(commentsMap, member, parentKey, sourceText),
-      );
+      properties.push(parsePropertyType(commentsMap, member, parentKey, sourceText));
     } else if (name === "MethodType") {
       if (interfaceContext) {
         throw new Error(
@@ -470,18 +402,17 @@ function parsePropertyType(
   const valueNode = requiredType(annotation, "property");
   const keyNode = children(member).find(
     (n) =>
-      n.type.name !== "TypeAnnotation" &&
-      n.type.name !== "Optional" &&
-      n.type.name !== "readonly",
+      n.type.name !== "TypeAnnotation" && n.type.name !== "Optional" && n.type.name !== "readonly",
   );
   if (!keyNode || keyNode.type.isError) {
     // A Lezer error node (`⚠`) inside the property means a syntax construct we
     // can't interpret — fail loudly instead of misreading the member.
     throwUnknown(keyNode ?? member, sourceText);
   }
-  const propName = keyNode.type.name === "String"
-    ? unquote(textOf(keyNode, sourceText))
-    : textOf(keyNode, sourceText);
+  const propName =
+    keyNode.type.name === "String"
+      ? unquote(textOf(keyNode, sourceText))
+      : textOf(keyNode, sourceText);
   const propKey = `${parentKey}.${propName}`;
   return {
     name: propName,
@@ -505,21 +436,17 @@ function parseFunctionSignature(
   };
   const paramList = childByName(node, "ParamList");
   if (paramList) {
-    let param:
-      | {
-        name: string;
-        optional: boolean;
-        type: SyntaxNode | null;
-        node: SyntaxNode;
-      }
-      | null = null;
+    let param: {
+      name: string;
+      optional: boolean;
+      type: SyntaxNode | null;
+      node: SyntaxNode;
+    } | null = null;
     for (const part of children(paramList)) {
       const name = part.type.name;
       if (name === "VariableDefinition") {
         if (param) {
-          argumentsStruct.arguments.push(
-            flushParam(commentsMap, param, argsKey, sourceText),
-          );
+          argumentsStruct.arguments.push(flushParam(commentsMap, param, argsKey, sourceText));
         }
         param = {
           name: textOf(part, sourceText),
@@ -531,18 +458,12 @@ function parseFunctionSignature(
         if (param) param.optional = true;
       } else if (name === "TypeAnnotation") {
         if (param) param.type = requiredType(part, "parameter");
-      } else if (
-        name !== "," && name !== "(" && name !== ")" && name !== "..."
-      ) {
-        throw new Error(
-          `Unsupported function parameter: ${textOf(part, sourceText)}`,
-        );
+      } else if (name !== "," && name !== "(" && name !== ")" && name !== "...") {
+        throw new Error(`Unsupported function parameter: ${textOf(part, sourceText)}`);
       }
     }
     if (param) {
-      argumentsStruct.arguments.push(
-        flushParam(commentsMap, param, argsKey, sourceText),
-      );
+      argumentsStruct.arguments.push(flushParam(commentsMap, param, argsKey, sourceText));
     }
   }
   const returnsNode = children(node).find(
@@ -555,12 +476,7 @@ function parseFunctionSignature(
     kind: "function",
     key: parentKey,
     arguments: argumentsStruct,
-    returns: parseNode(
-      commentsMap,
-      returnsNode,
-      `${parentKey}.returns`,
-      sourceText,
-    ),
+    returns: parseNode(commentsMap, returnsNode, `${parentKey}.returns`, sourceText),
   };
 }
 
@@ -582,12 +498,7 @@ function flushParam(
   const argKey = `${argsKey}.${param.name}`;
   return {
     name: param.name,
-    structure: parseNode(
-      commentsMap,
-      type,
-      argKey,
-      sourceText,
-    ) as TFunctionArgumentStructure,
+    structure: parseNode(commentsMap, type, argKey, sourceText) as TFunctionArgumentStructure,
     optional: param.optional,
     comment: commentsMap.get(param.node.from),
   };
@@ -599,9 +510,7 @@ function parseTypeParameters(node: SyntaxNode, sourceText: string): string[] {
     return [];
   }
   if (hasChild(paramList, "Equals")) {
-    throw new Error(
-      "Type parameters with default values are not supported yet.",
-    );
+    throw new Error("Type parameters with default values are not supported yet.");
   }
   return children(paramList)
     .filter((param) => param.type.name === "TypeDefinition")

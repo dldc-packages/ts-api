@@ -8,10 +8,7 @@ import { children, textOf } from "./utils.ts";
  * names are imported lets us reject using them as part of the graph structure
  * (see {@link validateNoImportedNamespaces}).
  */
-export function collectImportedNames(
-  root: SyntaxNode,
-  sourceText: string,
-): Set<string> {
+export function collectImportedNames(root: SyntaxNode, sourceText: string): Set<string> {
   const names = new Set<string>();
   for (const statement of children(root)) {
     if (statement.type.name !== "ImportDeclaration") {

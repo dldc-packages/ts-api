@@ -1,6 +1,7 @@
+import { expect, test } from "vite-plus/test";
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 import { query, queryToObject } from "../../src/client/mod.ts";
 import {
   builtin,
@@ -25,18 +26,15 @@ const builtins = createBuiltins({
   }),
 });
 
-const graph = parse<AllTypes>(
-  loadSchema(resolve("./tests/qualified/graph.ts")),
-  { builtins },
-);
+const graph = parse<AllTypes>(loadSchema(resolve("./tests/qualified/graph.ts")), { builtins });
 
-Deno.test("Qualified builtin snapshot structure", async (test) => {
-  await test.assertSnapshot(graph[ROOT]);
+test("Qualified builtin snapshot structure", async () => {
+  expect(graph[ROOT]).toMatchSnapshot();
 });
 
 const client = query<AllTypes>();
 
-Deno.test("Qualified builtin as output", async () => {
+test("Qualified builtin as output", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
@@ -53,7 +51,7 @@ Deno.test("Qualified builtin as output", async () => {
   assertEquals(result, Temporal.PlainDate.from("2024-01-15"));
 });
 
-Deno.test("Qualified builtin as input", async () => {
+test("Qualified builtin as input", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
@@ -72,7 +70,7 @@ Deno.test("Qualified builtin as input", async () => {
   assertEquals(result, 14);
 });
 
-Deno.test("Qualified builtin rejects invalid output", async () => {
+test("Qualified builtin rejects invalid output", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
@@ -85,14 +83,12 @@ Deno.test("Qualified builtin rejects invalid output", async () => {
 
   const q = client.Graph.birthday();
   const { path, args } = queryToObject(q);
-  await assertRejects(
-    async () => {
-      await engine.run({ path, args });
-    },
-  );
+  await assertRejects(async () => {
+    await engine.run({ path, args });
+  });
 });
 
-Deno.test("Qualified builtin rejects invalid input", async () => {
+test("Qualified builtin rejects invalid input", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
@@ -108,9 +104,7 @@ Deno.test("Qualified builtin rejects invalid input", async () => {
     Temporal.PlainDate.from("2024-01-15"),
   );
   const { path, args } = queryToObject(q);
-  await assertRejects(
-    async () => {
-      await engine.run({ path, args });
-    },
-  );
+  await assertRejects(async () => {
+    await engine.run({ path, args });
+  });
 });

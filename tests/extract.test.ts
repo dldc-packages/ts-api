@@ -1,26 +1,16 @@
+import { expect, test } from "vite-plus/test";
 import { assertEquals, assertThrows } from "@std/assert";
 import { resolve } from "@std/path";
-import type {
-  ApiEndpoint,
-  ApiNamespace,
-  ApiTypeDeclaration,
-} from "../src/server/extract.ts";
+import type { ApiEndpoint, ApiNamespace, ApiTypeDeclaration } from "../src/server/extract.ts";
 import { extractApi, getStructure, parse } from "../src/server/mod.ts";
 import type { BasicTypes } from "./schemas/basic.types.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
 import { loadSchema } from "./utils/loadSchema.ts";
 
-const basicGraph = parse<BasicTypes>(
-  loadSchema(resolve("./tests/schemas/basic.ts")),
-);
-const todolistGraph = parse<TodoListTypes>(
-  loadSchema(resolve("./tests/schemas/todolist.ts")),
-);
+const basicGraph = parse<BasicTypes>(loadSchema(resolve("./tests/schemas/basic.ts")));
+const todolistGraph = parse<TodoListTypes>(loadSchema(resolve("./tests/schemas/todolist.ts")));
 
-function findEndpoint(
-  children: ApiNamespace["children"],
-  name: string,
-): ApiEndpoint {
+function findEndpoint(children: ApiNamespace["children"], name: string): ApiEndpoint {
   const node = children.find((c) => c.name === name);
   if (!node || node.kind !== "endpoint") {
     throw new Error(`Endpoint "${name}" not found`);
@@ -28,10 +18,7 @@ function findEndpoint(
   return node;
 }
 
-function findNamespace(
-  children: ApiNamespace["children"],
-  name: string,
-): ApiNamespace {
+function findNamespace(children: ApiNamespace["children"], name: string): ApiNamespace {
   const node = children.find((c) => c.name === name);
   if (!node || node.kind !== "namespace") {
     throw new Error(`Namespace "${name}" not found`);
@@ -39,59 +26,49 @@ function findNamespace(
   return node;
 }
 
-function findType(
-  types: ApiTypeDeclaration[],
-  name: string,
-): ApiTypeDeclaration {
+function findType(types: ApiTypeDeclaration[], name: string): ApiTypeDeclaration {
   const t = types.find((t) => t.name === name);
   if (!t) throw new Error(`Type "${name}" not found`);
   return t;
 }
 
-Deno.test("getStructure: returns root structure with types and builtins", () => {
+test("getStructure: returns root structure with types and builtins", () => {
   const structure = getStructure(basicGraph);
 
   assertEquals(structure.kind, "root");
   assertEquals(structure.mode, "graph");
-  assertEquals(structure.types.map((t) => t.name), [
-    "Role",
-    "User",
-    "Group",
-    "Graph",
-  ]);
-  assertEquals(structure.builtins.map((b) => b.name), ["Date"]);
+  assertEquals(
+    structure.types.map((t) => t.name),
+    ["Role", "User", "Group", "Graph"],
+  );
+  assertEquals(
+    structure.builtins.map((b) => b.name),
+    ["Date"],
+  );
 });
 
-Deno.test("getStructure: todolist has all types", () => {
+test("getStructure: todolist has all types", () => {
   const structure = getStructure(todolistGraph);
 
-  assertEquals(structure.types.map((t) => t.name), [
-    "PaginationParams",
-    "User",
-    "App",
-    "Todo",
-    "CoinHeads",
-    "CoinTails",
-    "Config",
-    "Graph",
-  ]);
+  assertEquals(
+    structure.types.map((t) => t.name),
+    ["PaginationParams", "User", "App", "Todo", "CoinHeads", "CoinTails", "Config", "Graph"],
+  );
 });
 
-Deno.test("getStructure: interfaces have properties and parameters", () => {
+test("getStructure: interfaces have properties and parameters", () => {
   const structure = getStructure(basicGraph);
   const user = structure.types.find((t) => t.name === "User")!;
 
   if (user.kind !== "interface") throw new Error("expected interface");
   assertEquals(user.parameters, []);
-  assertEquals(user.properties.map((p) => p.name), [
-    "name",
-    "age",
-    "group",
-    "maybeGroup",
-  ]);
+  assertEquals(
+    user.properties.map((p) => p.name),
+    ["name", "age", "group", "maybeGroup"],
+  );
 });
 
-Deno.test("getStructure: aliases have type and parameters", () => {
+test("getStructure: aliases have type and parameters", () => {
   const structure = getStructure(basicGraph);
   const role = structure.types.find((t) => t.name === "Role")!;
 
@@ -100,44 +77,38 @@ Deno.test("getStructure: aliases have type and parameters", () => {
   assertEquals(role.type.kind, "union");
 });
 
-Deno.test("extractApi: snapshot basic", async (test) => {
+test("extractApi: snapshot basic", async () => {
   const api = extractApi(basicGraph, ["Graph"]);
-  await test.assertSnapshot(api);
+  expect(api).toMatchSnapshot();
 });
 
-Deno.test("extractApi: snapshot todolist", async (test) => {
+test("extractApi: snapshot todolist", async () => {
   const api = extractApi(todolistGraph, ["Graph"]);
-  await test.assertSnapshot(api);
+  expect(api).toMatchSnapshot();
 });
 
-Deno.test("extractApi: root namespace has correct name and path", () => {
+test("extractApi: root namespace has correct name and path", () => {
   const api = extractApi(basicGraph, ["Graph"]);
   assertEquals(api.entries[0].kind, "namespace");
   assertEquals(api.entries[0].name, "Graph");
   assertEquals(api.entries[0].path, ["Graph"]);
 });
 
-Deno.test("extractApi: endpoints and namespaces are separated", () => {
+test("extractApi: endpoints and namespaces are separated", () => {
   const api = extractApi(todolistGraph, ["Graph"]);
   const children = api.entries[0].children;
 
-  assertEquals(children.map((c) => c.kind), [
-    "endpoint",
-    "namespace",
-    "namespace",
-    "endpoint",
-    "endpoint",
-  ]);
-  assertEquals(children.map((c) => c.name), [
-    "auth",
-    "users",
-    "apps",
-    "flip",
-    "config",
-  ]);
+  assertEquals(
+    children.map((c) => c.kind),
+    ["endpoint", "namespace", "namespace", "endpoint", "endpoint"],
+  );
+  assertEquals(
+    children.map((c) => c.name),
+    ["auth", "users", "apps", "flip", "config"],
+  );
 });
 
-Deno.test("extractApi: endpoint has arguments and returns", () => {
+test("extractApi: endpoint has arguments and returns", () => {
   const api = extractApi(todolistGraph, ["Graph"]);
   const users = findNamespace(api.entries[0].children, "users");
   const byId = findEndpoint(users.children, "byId");
@@ -158,7 +129,7 @@ Deno.test("extractApi: endpoint has arguments and returns", () => {
   });
 });
 
-Deno.test("extractApi: endpoint with no args", () => {
+test("extractApi: endpoint with no args", () => {
   const api = extractApi(basicGraph, ["Graph"]);
   const group = findEndpoint(api.entries[0].children, "group");
 
@@ -166,12 +137,15 @@ Deno.test("extractApi: endpoint with no args", () => {
   assertEquals(group.returns, { kind: "ref", name: "Group", params: [] });
 });
 
-Deno.test("extractApi: nested namespace paths", () => {
+test("extractApi: nested namespace paths", () => {
   const api = extractApi(todolistGraph, ["Graph"]);
   const apps = findNamespace(api.entries[0].children, "apps");
 
   assertEquals(apps.path, ["Graph", "apps"]);
-  assertEquals(apps.children.map((c) => c.name), ["all", "byId"]);
+  assertEquals(
+    apps.children.map((c) => c.name),
+    ["all", "byId"],
+  );
 
   const all = findEndpoint(apps.children, "all");
   assertEquals(all.path, ["Graph", "apps", "all"]);
@@ -189,7 +163,7 @@ Deno.test("extractApi: nested namespace paths", () => {
   });
 });
 
-Deno.test("extractApi: union return type", () => {
+test("extractApi: union return type", () => {
   const api = extractApi(basicGraph, ["Graph"]);
   const randomItem = findEndpoint(api.entries[0].children, "randomItem");
 
@@ -202,7 +176,7 @@ Deno.test("extractApi: union return type", () => {
   });
 });
 
-Deno.test("extractApi: nullable return type", () => {
+test("extractApi: nullable return type", () => {
   const api = extractApi(todolistGraph, ["Graph"]);
   const auth = findEndpoint(api.entries[0].children, "auth");
 
@@ -222,7 +196,7 @@ Deno.test("extractApi: nullable return type", () => {
   });
 });
 
-Deno.test("extractApi: inline object return type", () => {
+test("extractApi: inline object return type", () => {
   const api = extractApi(todolistGraph, ["Graph"]);
   const config = findEndpoint(api.entries[0].children, "config");
 
@@ -262,35 +236,29 @@ Deno.test("extractApi: inline object return type", () => {
   });
 });
 
-Deno.test("extractApi: types array contains all declarations", () => {
+test("extractApi: types array contains all declarations", () => {
   const api = extractApi(basicGraph, ["Graph"]);
 
-  assertEquals(api.types.map((t) => t.name), [
-    "Role",
-    "User",
-    "Group",
-    "Graph",
-  ]);
-  assertEquals(api.types.map((t) => t.kind), [
-    "alias",
-    "interface",
-    "interface",
-    "interface",
-  ]);
+  assertEquals(
+    api.types.map((t) => t.name),
+    ["Role", "User", "Group", "Graph"],
+  );
+  assertEquals(
+    api.types.map((t) => t.kind),
+    ["alias", "interface", "interface", "interface"],
+  );
 });
 
-Deno.test("extractApi: interface type declaration has properties", () => {
+test("extractApi: interface type declaration has properties", () => {
   const api = extractApi(basicGraph, ["Graph"]);
   const user = findType(api.types, "User");
 
   assertEquals(user.kind, "interface");
   assertEquals(user.parameters, []);
-  assertEquals(user.properties!.map((p) => p.name), [
-    "name",
-    "age",
-    "group",
-    "maybeGroup",
-  ]);
+  assertEquals(
+    user.properties!.map((p) => p.name),
+    ["name", "age", "group", "maybeGroup"],
+  );
   assertEquals(user.properties![0], {
     name: "name",
     type: { kind: "primitive", type: "string" },
@@ -320,7 +288,7 @@ Deno.test("extractApi: interface type declaration has properties", () => {
   });
 });
 
-Deno.test("extractApi: alias type declaration has type", () => {
+test("extractApi: alias type declaration has type", () => {
   const api = extractApi(basicGraph, ["Graph"]);
   const role = findType(api.types, "Role");
 
@@ -335,16 +303,15 @@ Deno.test("extractApi: alias type declaration has type", () => {
   });
 });
 
-Deno.test("extractApi: Graph interface has function properties", () => {
+test("extractApi: Graph interface has function properties", () => {
   const api = extractApi(basicGraph, ["Graph"]);
   const graphType = findType(api.types, "Graph");
 
   assertEquals(graphType.kind, "interface");
-  assertEquals(graphType.properties!.map((p) => p.name), [
-    "group",
-    "user",
-    "randomItem",
-  ]);
+  assertEquals(
+    graphType.properties!.map((p) => p.name),
+    ["group", "user", "randomItem"],
+  );
   const groupProp = graphType.properties![0];
   if (groupProp.type.kind !== "function") throw new Error("expected function");
   assertEquals(groupProp.type.arguments, []);
@@ -355,7 +322,7 @@ Deno.test("extractApi: Graph interface has function properties", () => {
   });
 });
 
-Deno.test("extractApi: throws on unknown entry", () => {
+test("extractApi: throws on unknown entry", () => {
   assertThrows(
     () => extractApi(basicGraph, ["NonExistent"]),
     Error,
@@ -363,7 +330,7 @@ Deno.test("extractApi: throws on unknown entry", () => {
   );
 });
 
-Deno.test("extractApi: builtin types appear as builtin", () => {
+test("extractApi: builtin types appear as builtin", () => {
   const dateGraph = parse(loadSchema(resolve("./tests/date/graph.ts")));
   const api = extractApi(dateGraph, ["Graph"]);
 

@@ -1,3 +1,4 @@
+import { test } from "vite-plus/test";
 import { assertEquals, assertNotEquals, assertThrows } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject } from "../../src/client/mod.ts";
@@ -31,58 +32,49 @@ const client = query<AllTypes>();
 const client3 = query<AllTypes3>();
 
 // The type is imported and used in the graph, but never declared as a builtin.
-function parseWith(
-  action: TMissingBuiltinAction | TMissingBuiltinActionConfig = "throw",
-) {
-  return parse<AllTypes>(
-    loadSchema(resolve("./tests/undeclared-ref/graph.ts")),
-    { missingBuiltinAction: action },
-  );
+function parseWith(action: TMissingBuiltinAction | TMissingBuiltinActionConfig = "throw") {
+  return parse<AllTypes>(loadSchema(resolve("./tests/undeclared-ref/graph.ts")), {
+    missingBuiltinAction: action,
+  });
 }
 
 function parseGraph2(config: TMissingBuiltinActionConfig) {
-  return parse<AllTypes2>(
-    loadSchema(resolve("./tests/undeclared-ref/graph2.ts")),
-    { missingBuiltinAction: config },
-  );
+  return parse<AllTypes2>(loadSchema(resolve("./tests/undeclared-ref/graph2.ts")), {
+    missingBuiltinAction: config,
+  });
 }
 
 function parseGraph3(action: TMissingBuiltinAction) {
-  return parse<AllTypes3>(
-    loadSchema(resolve("./tests/undeclared-ref/graph3.ts")),
-    { missingBuiltinAction: action },
-  );
+  return parse<AllTypes3>(loadSchema(resolve("./tests/undeclared-ref/graph3.ts")), {
+    missingBuiltinAction: action,
+  });
 }
 
 function makeEngine(graph: ReturnType<typeof parseWith>) {
   return createEngine({
     graph,
     entries: ["Graph"],
-    resolvers: [
-      fn(graph.Graph.get, () => "hello"),
-      fn(graph.Graph.echo, (_ctx, [value]) => value),
-    ],
+    resolvers: [fn(graph.Graph.get, () => "hello"), fn(graph.Graph.echo, (_ctx, [value]) => value)],
   });
 }
 
-Deno.test("parse throws by default on a missing builtin", () => {
-  assertThrows(
-    () => parseWith("throw"),
-    Error,
-    "Missing builtin type: ImportedType",
-  );
+test("parse throws by default on a missing builtin", () => {
+  assertThrows(() => parseWith("throw"), Error, "Missing builtin type: ImportedType");
 });
 
-Deno.test("imports are skipped, missing types are not registered by default", () => {
+test("imports are skipped, missing types are not registered by default", () => {
   assertThrows(() => parseWith("throw"));
 });
 
-Deno.test("parse with 'ignore' auto-registers missing types as builtins", () => {
+test("parse with 'ignore' auto-registers missing types as builtins", () => {
   const graph = parseWith("ignore");
   const root = getStructure(graph);
 
   // Only the locally declared Graph interface is a top-level type.
-  assertEquals(root.types.map((t) => t.name), ["Graph"]);
+  assertEquals(
+    root.types.map((t) => t.name),
+    ["Graph"],
+  );
   // The imported type is auto-registered as a builtin.
   assertEquals(
     root.builtins.map((b) => b.name),
@@ -90,12 +82,10 @@ Deno.test("parse with 'ignore' auto-registers missing types as builtins", () => 
   );
 });
 
-Deno.test("extractApi resolves auto-registered builtins as builtin", () => {
+test("extractApi resolves auto-registered builtins as builtin", () => {
   const api = extractApi(parseWith("ignore"), ["Graph"]);
   // The `get` endpoint returns the imported type, auto-registered as a builtin.
-  const get = api.entries[0].children.find(
-    (c) => c.kind === "endpoint" && c.name === "get",
-  );
+  const get = api.entries[0].children.find((c) => c.kind === "endpoint" && c.name === "get");
   assertNotEquals(get, undefined);
   if (get?.kind !== "endpoint") {
     throw new Error("Expected `get` to be an endpoint");
@@ -103,7 +93,7 @@ Deno.test("extractApi resolves auto-registered builtins as builtin", () => {
   assertEquals(get.returns, { kind: "builtin", name: "ImportedType" });
 });
 
-Deno.test("engine runs with an auto-registered builtin", async () => {
+test("engine runs with an auto-registered builtin", async () => {
   const graph = parseWith("ignore");
   const engine = makeEngine(graph);
 
@@ -113,7 +103,7 @@ Deno.test("engine runs with an auto-registered builtin", async () => {
   assertEquals(result, "hello");
 });
 
-Deno.test("auto-registered generic builtin is registered and used with type arguments", () => {
+test("auto-registered generic builtin is registered and used with type arguments", () => {
   const graph = parseGraph3("ignore");
   const root = getStructure(graph);
 
@@ -125,16 +115,14 @@ Deno.test("auto-registered generic builtin is registered and used with type argu
   );
 });
 
-Deno.test("auto-registered generic builtin works as a response type", async () => {
+test("auto-registered generic builtin works as a response type", async () => {
   // Auto-registered builtins are opaque `unknown` leaves, so the type argument
   // supplied by `ImportedGeneric<Foo>` is simply ignored.
   const graph = parseGraph3("ignore");
   const engine = createEngine({
     graph,
     entries: ["Graph3"],
-    resolvers: [
-      fn(graph.Graph3.list, () => [{ name: "a" }, { name: "b" }]),
-    ],
+    resolvers: [fn(graph.Graph3.list, () => [{ name: "a" }, { name: "b" }])],
   });
 
   const q = client3.Graph3.list();
@@ -143,14 +131,12 @@ Deno.test("auto-registered generic builtin works as a response type", async () =
   assertEquals(result, [{ name: "a" }, { name: "b" }]);
 });
 
-Deno.test("auto-registered generic builtin works as a request type", async () => {
+test("auto-registered generic builtin works as a request type", async () => {
   const graph = parseGraph3("ignore");
   const engine = createEngine({
     graph,
     entries: ["Graph3"],
-    resolvers: [
-      fn(graph.Graph3.count, (_ctx, [items]) => items.length),
-    ],
+    resolvers: [fn(graph.Graph3.count, (_ctx, [items]) => items.length)],
   });
 
   const q = client3.Graph3.count([{ name: "a" }, { name: "b" }]);
@@ -159,7 +145,7 @@ Deno.test("auto-registered generic builtin works as a request type", async () =>
   assertEquals(result, 2);
 });
 
-Deno.test("parse with 'warn' auto-registers and logs a warning", () => {
+test("parse with 'warn' auto-registers and logs a warning", () => {
   const warnings: unknown[] = [];
   const originalWarn = console.warn;
   console.warn = (...args: unknown[]) => {
@@ -178,20 +164,16 @@ Deno.test("parse with 'warn' auto-registers and logs a warning", () => {
   }
 });
 
-Deno.test("object config: input 'ignore', output 'throw' throws on output/both types", () => {
-  const err = captureError(() =>
-    parseGraph2({ input: "ignore", output: "throw" })
-  );
+test("object config: input 'ignore', output 'throw' throws on output/both types", () => {
+  const err = captureError(() => parseGraph2({ input: "ignore", output: "throw" }));
   assertNotEquals(err, undefined);
   assertEquals(err!.message.includes("OutputType"), true);
   assertEquals(err!.message.includes("BothType"), true);
   assertEquals(err!.message.includes("InputType"), false);
 });
 
-Deno.test("object config: input 'throw', output 'ignore' throws on input/both types", () => {
-  const err = captureError(() =>
-    parseGraph2({ input: "throw", output: "ignore" })
-  );
+test("object config: input 'throw', output 'ignore' throws on input/both types", () => {
+  const err = captureError(() => parseGraph2({ input: "throw", output: "ignore" }));
   assertNotEquals(err, undefined);
   assertEquals(err!.message.includes("InputType"), true);
   assertEquals(err!.message.includes("BothType"), true);
@@ -207,7 +189,7 @@ function captureError(fn: () => unknown): Error | undefined {
   }
 }
 
-Deno.test("object config: stricter action wins when a type is used on both sides", () => {
+test("object config: stricter action wins when a type is used on both sides", () => {
   const warnings: unknown[] = [];
   const originalWarn = console.warn;
   console.warn = (...args: unknown[]) => {

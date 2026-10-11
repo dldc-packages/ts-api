@@ -9,10 +9,7 @@ export interface TResolver {
   middlewares: TMiddleware[];
 }
 
-export function resolver(
-  path: TGraphBaseAny,
-  ...middlewares: TMiddleware[]
-): TResolver {
+export function resolver(path: TGraphBaseAny, ...middlewares: TMiddleware[]): TResolver {
   return { kind: "resolver", path, middlewares };
 }
 

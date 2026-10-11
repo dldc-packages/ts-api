@@ -24,15 +24,9 @@ export interface TPokedexClient {
   /** Execute a `QueryResult` endpoint (GET, or POST when the URL is too long). */
   execQuery<T>(query: TQuery<QueryResult<T>>, init?: RequestInit): Promise<T>;
   /** Execute a `MutationResult` endpoint (POST). */
-  execMutation<T>(
-    query: TQuery<MutationResult<T>>,
-    init?: RequestInit,
-  ): Promise<T>;
+  execMutation<T>(query: TQuery<MutationResult<T>>, init?: RequestInit): Promise<T>;
   /** Consume a `StreamResult` endpoint over Server-Sent Events. */
-  execStream<T>(
-    query: TQuery<StreamResult<T>>,
-    init?: RequestInit,
-  ): AsyncIterable<T>;
+  execStream<T>(query: TQuery<StreamResult<T>>, init?: RequestInit): AsyncIterable<T>;
 }
 
 /**
@@ -40,20 +34,14 @@ export interface TPokedexClient {
  * into the three `exec` functions.
  */
 export function createClient(baseUrl: string): TPokedexClient {
-  const execQuery = <T>(
-    query: TQuery<QueryResult<T>>,
-    init?: RequestInit,
-  ): Promise<T> => webExecQuery(query, baseUrl, init, codec);
+  const execQuery = <T>(query: TQuery<QueryResult<T>>, init?: RequestInit): Promise<T> =>
+    webExecQuery(query, baseUrl, init, codec);
 
-  const execMutation = <T>(
-    query: TQuery<MutationResult<T>>,
-    init?: RequestInit,
-  ): Promise<T> => webExecMutation(query, baseUrl, init, codec);
+  const execMutation = <T>(query: TQuery<MutationResult<T>>, init?: RequestInit): Promise<T> =>
+    webExecMutation(query, baseUrl, init, codec);
 
-  const execStream = <T>(
-    query: TQuery<StreamResult<T>>,
-    init?: RequestInit,
-  ): AsyncIterable<T> => webExecStream(query, baseUrl, init, codec);
+  const execStream = <T>(query: TQuery<StreamResult<T>>, init?: RequestInit): AsyncIterable<T> =>
+    webExecStream(query, baseUrl, init, codec);
 
   return { execQuery, execMutation, execStream };
 }

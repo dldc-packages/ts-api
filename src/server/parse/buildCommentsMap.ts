@@ -10,10 +10,7 @@ const SKIPPED_NODE_TYPES = new Set(["ExportDeclaration", "export", ";"]);
 /**
  * Builds a map of node -> comment from the given syntax tree.
  */
-export function buildCommentsMap(
-  sourceText: string,
-  tree: Tree,
-): CommentsMap {
+export function buildCommentsMap(sourceText: string, tree: Tree): CommentsMap {
   const commentsMap: CommentsMap = new Map();
   const cursor = tree.cursor();
   // traverse all node sequentially to build the comments map

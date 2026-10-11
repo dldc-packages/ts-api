@@ -1,9 +1,7 @@
 import type { TRootStructure, TStructure } from "../structure.types.ts";
 import { findType } from "./utils.ts";
 
-export function validateNoFunctionsInReturns(
-  rootStructure: TRootStructure,
-): void {
+export function validateNoFunctionsInReturns(rootStructure: TRootStructure): void {
   const visited = new Set<string>();
   for (const type of rootStructure.types) {
     walkForFunctions(rootStructure, type, visited);
@@ -40,9 +38,7 @@ function walkForFunctions(
       walkForFunctions(rootStructure, structure.type, visited);
       break;
     case "union":
-      structure.types.forEach((t) =>
-        walkForFunctions(rootStructure, t, visited)
-      );
+      structure.types.forEach((t) => walkForFunctions(rootStructure, t, visited));
       break;
     case "ref": {
       const resolved = findType(rootStructure, structure.ref);
@@ -89,29 +85,14 @@ function checkNoFunctionsInStructure(
       }
       break;
     case "array":
-      checkNoFunctionsInStructure(
-        rootStructure,
-        structure.items,
-        visited,
-        `${context}.items`,
-      );
+      checkNoFunctionsInStructure(rootStructure, structure.items, visited, `${context}.items`);
       break;
     case "nullable":
-      checkNoFunctionsInStructure(
-        rootStructure,
-        structure.type,
-        visited,
-        `${context}.type`,
-      );
+      checkNoFunctionsInStructure(rootStructure, structure.type, visited, `${context}.type`);
       break;
     case "union":
       structure.types.forEach((t, i) =>
-        checkNoFunctionsInStructure(
-          rootStructure,
-          t,
-          visited,
-          `${context}.${i}`,
-        )
+        checkNoFunctionsInStructure(rootStructure, t, visited, `${context}.${i}`),
       );
       break;
     case "ref": {
@@ -131,12 +112,7 @@ function checkNoFunctionsInStructure(
       break;
     }
     case "alias":
-      checkNoFunctionsInStructure(
-        rootStructure,
-        structure.type,
-        visited,
-        context,
-      );
+      checkNoFunctionsInStructure(rootStructure, structure.type, visited, context);
       break;
     case "primitive":
     case "literal":

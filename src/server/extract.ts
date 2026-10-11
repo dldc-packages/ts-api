@@ -1,10 +1,6 @@
 import { ROOT } from "./constants.ts";
 import type { TGraphBaseAny } from "./graph.ts";
-import type {
-  TRootStructure,
-  TStructure,
-  TTopLevelStructure,
-} from "./structure.types.ts";
+import type { TRootStructure, TStructure, TTopLevelStructure } from "./structure.types.ts";
 import type { TLocalTypes } from "./types.ts";
 
 /**
@@ -39,10 +35,10 @@ export type ApiType =
   | { kind: "ref"; name: string; params: ApiType[] }
   | { kind: "builtin"; name: string }
   | {
-    kind: "function";
-    arguments: ApiArgument[];
-    returns: ApiType;
-  };
+      kind: "function";
+      arguments: ApiArgument[];
+      returns: ApiType;
+    };
 
 /**
  * A property of an inline object type (e.g. `{ name: string }`).
@@ -159,10 +155,7 @@ export interface ApiTree {
  * api.entries.forEach(visit);
  * ```
  */
-export function extractApi(
-  graph: TGraphBaseAny,
-  entries: string[],
-): ApiTree {
+export function extractApi(graph: TGraphBaseAny, entries: string[]): ApiTree {
   const rootStructure = graph[ROOT];
 
   const entriesNamespaces = entries.map((entry) => {
@@ -218,18 +211,12 @@ function walkNamespace(
     };
   }
 
-  const newVisited = concrete.kind === "interface"
-    ? new Set(visited).add(concrete.name)
-    : visited;
+  const newVisited = concrete.kind === "interface" ? new Set(visited).add(concrete.name) : visited;
 
   const children: ApiNode[] = [];
   for (const prop of concrete.properties) {
     const propPath = [...path, prop.name];
-    const propConcrete = resolveToConcrete(
-      rootStructure,
-      localTypes,
-      prop.structure,
-    );
+    const propConcrete = resolveToConcrete(rootStructure, localTypes, prop.structure);
 
     if (propConcrete.kind === "function") {
       children.push({
@@ -243,11 +230,7 @@ function walkNamespace(
           optional: a.optional,
           comment: a.comment,
         })),
-        returns: convertType(
-          rootStructure,
-          localTypes,
-          propConcrete.returns,
-        ),
+        returns: convertType(rootStructure, localTypes, propConcrete.returns),
       });
     } else {
       const ns = walkNamespace(
@@ -284,9 +267,7 @@ function resolveToConcrete(
       if (local) {
         return resolveToConcrete(rootStructure, localTypes, local);
       }
-      const topLevel = rootStructure.types.find((t) =>
-        t.name === structure.ref
-      );
+      const topLevel = rootStructure.types.find((t) => t.name === structure.ref);
       if (topLevel) {
         const nextLocalTypes: TLocalTypes = { ...localTypes };
         topLevel.parameters.forEach((name, index) => {
@@ -298,9 +279,7 @@ function resolveToConcrete(
         const inner = topLevel.kind === "alias" ? topLevel.type : topLevel;
         return resolveToConcrete(rootStructure, nextLocalTypes, inner);
       }
-      const builtin = rootStructure.builtins.find((b) =>
-        b.name === structure.ref
-      );
+      const builtin = rootStructure.builtins.find((b) => b.name === structure.ref);
       if (builtin) {
         return builtin;
       }
@@ -337,9 +316,7 @@ function convertType(
     case "union":
       return {
         kind: "union",
-        types: structure.types.map((t) =>
-          convertType(rootStructure, localTypes, t)
-        ),
+        types: structure.types.map((t) => convertType(rootStructure, localTypes, t)),
       };
     case "object":
       return {
@@ -352,18 +329,14 @@ function convertType(
         })),
       };
     case "ref": {
-      const builtin = rootStructure.builtins.find((b) =>
-        b.name === structure.ref
-      );
+      const builtin = rootStructure.builtins.find((b) => b.name === structure.ref);
       if (builtin) {
         return { kind: "builtin", name: builtin.name };
       }
       return {
         kind: "ref",
         name: structure.ref,
-        params: structure.params.map((p) =>
-          convertType(rootStructure, localTypes, p)
-        ),
+        params: structure.params.map((p) => convertType(rootStructure, localTypes, p)),
       };
     }
     case "builtin":

@@ -17,5 +17,6 @@ export interface TQueryRequest {
 
 export type TQueryOf<T> = T extends (...args: infer A) => infer R
   ? (...args: A) => TQuery<R>
-  : T extends Record<string, any> ? { [K in keyof T]: TQueryOf<T[K]> }
-  : never;
+  : T extends Record<string, any>
+    ? { [K in keyof T]: TQueryOf<T[K]> }
+    : never;

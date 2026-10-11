@@ -1,3 +1,4 @@
+import { test } from "vite-plus/test";
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject, type TQuery } from "../../src/client/mod.ts";
@@ -21,9 +22,7 @@ export interface AllTypes {
 
 const client = query<AllTypes>();
 
-const graph = parse<AllTypes>(
-  loadSchema(resolve("./tests/admin/graph.ts")),
-);
+const graph = parse<AllTypes>(loadSchema(resolve("./tests/admin/graph.ts")));
 
 /**
  * Helper to run a query against an engine and return the raw result.
@@ -33,7 +32,7 @@ function run(engine: ReturnType<typeof createEngine>, q: TQuery<unknown>) {
   return engine.run({ path, args });
 }
 
-Deno.test("graph.Admin is the generic alias root.Admin", () => {
+test("graph.Admin is the generic alias root.Admin", () => {
   const admin = graph.Admin as TGraphBaseAny;
   assertEquals(admin[STRUCTURE].kind, "alias");
   assertEquals(admin[STRUCTURE].key, "root.Admin");
@@ -45,47 +44,39 @@ Deno.test("graph.Admin is the generic alias root.Admin", () => {
   assertEquals(resolved[STRUCTURE].key, "root.Admin");
 });
 
-Deno.test("getEndpointResponseStructure traverses ref/alias wrappers", () => {
+test("getEndpointResponseStructure traverses ref/alias wrappers", () => {
   // `files.admin` is `Admin<() => null>` and `files.rename` is
   // `Admin<(id, name) => null>`: the response structure is resolved through
   // the generic alias on both.
-  assertEquals(
-    getEndpointResponseStructure(graph, ["Graph", "files", "admin"]),
-    {
-      kind: "literal",
-      key: "root.Graph.files.admin.params.0.returns",
-      type: null,
-    },
-  );
-  assertEquals(
-    getEndpointResponseStructure(graph, ["Graph", "files", "rename"]),
-    {
-      kind: "literal",
-      key: "root.Graph.files.rename.params.0.returns",
-      type: null,
-    },
-  );
+  assertEquals(getEndpointResponseStructure(graph, ["Graph", "files", "admin"]), {
+    kind: "literal",
+    key: "root.Graph.files.admin.params.0.returns",
+    type: null,
+  });
+  assertEquals(getEndpointResponseStructure(graph, ["Graph", "files", "rename"]), {
+    kind: "literal",
+    key: "root.Graph.files.rename.params.0.returns",
+    type: null,
+  });
   // A plain endpoint nested in a namespace (no wrapper).
-  assertEquals(
-    getEndpointResponseStructure(graph, ["Graph", "status"]),
-    { kind: "primitive", key: "root.Graph.status.returns", type: "string" },
-  );
+  assertEquals(getEndpointResponseStructure(graph, ["Graph", "status"]), {
+    kind: "primitive",
+    key: "root.Graph.status.returns",
+    type: "string",
+  });
 });
 
-Deno.test("admin guard runs before every Admin endpoint", async () => {
+test("admin guard runs before every Admin endpoint", async () => {
   const order: string[] = [];
 
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      resolver(
-        graph.Admin,
-        (_ctx, next) => {
-          order.push("admin-guard");
-          return next(_ctx);
-        },
-      ),
+      resolver(graph.Admin, (_ctx, next) => {
+        order.push("admin-guard");
+        return next(_ctx);
+      }),
       fn(graph.Graph.users.admin.delete, () => {
         order.push("users.delete");
         return null;
@@ -113,19 +104,16 @@ Deno.test("admin guard runs before every Admin endpoint", async () => {
   assertEquals(order, ["admin-guard", "posts.pin(42)"]);
 });
 
-Deno.test("admin guard can block the endpoint", async () => {
+test("admin guard can block the endpoint", async () => {
   let deleted = false;
 
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      resolver(
-        graph.Admin,
-        (_ctx) => {
-          throw new Error("Forbidden: admin only");
-        },
-      ),
+      resolver(graph.Admin, (_ctx) => {
+        throw new Error("Forbidden: admin only");
+      }),
       fn(graph.Graph.users.admin.delete, () => {
         deleted = true;
         return null;
@@ -134,27 +122,22 @@ Deno.test("admin guard can block the endpoint", async () => {
   });
 
   const { path, args } = queryToObject(client.Graph.users.admin.delete());
-  const err = await assertRejects(
-    () => engine.run({ path, args }),
-  );
+  const err = await assertRejects(() => engine.run({ path, args }));
   assertEquals((err as Error).message, "Forbidden: admin only");
   assertEquals(deleted, false);
 });
 
-Deno.test("non-admin endpoints are NOT guarded", async () => {
+test("non-admin endpoints are NOT guarded", async () => {
   const order: string[] = [];
 
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      resolver(
-        graph.Admin,
-        (_ctx, next) => {
-          order.push("admin-guard");
-          return next(_ctx);
-        },
-      ),
+      resolver(graph.Admin, (_ctx, next) => {
+        order.push("admin-guard");
+        return next(_ctx);
+      }),
       fn(graph.Graph.status, () => "ok"),
       fn(graph.Graph.users.create, () => null),
       fn(graph.Graph.posts.create, () => null),
@@ -165,40 +148,30 @@ Deno.test("non-admin endpoints are NOT guarded", async () => {
   const { path: path1, args: args1 } = queryToObject(client.Graph.status());
   assertEquals(await engine.run({ path: path1, args: args1 }), "ok");
 
-  const { path: path2, args: args2 } = queryToObject(
-    client.Graph.users.create(),
-  );
+  const { path: path2, args: args2 } = queryToObject(client.Graph.users.create());
   assertEquals(await engine.run({ path: path2, args: args2 }), null);
 
-  const { path: path3, args: args3 } = queryToObject(
-    client.Graph.posts.publish("hello"),
-  );
+  const { path: path3, args: args3 } = queryToObject(client.Graph.posts.publish("hello"));
   assertEquals(await engine.run({ path: path3, args: args3 }), "hello");
 
   assertEquals(order, []);
 });
 
-Deno.test("admin guard composes with a namespace resolver", async () => {
+test("admin guard composes with a namespace resolver", async () => {
   const order: string[] = [];
 
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      resolver(
-        graph.Graph.users,
-        (_ctx, next) => {
-          order.push("users-namespace");
-          return next(_ctx);
-        },
-      ),
-      resolver(
-        graph.Admin,
-        (_ctx, next) => {
-          order.push("admin-guard");
-          return next(_ctx);
-        },
-      ),
+      resolver(graph.Graph.users, (_ctx, next) => {
+        order.push("users-namespace");
+        return next(_ctx);
+      }),
+      resolver(graph.Admin, (_ctx, next) => {
+        order.push("admin-guard");
+        return next(_ctx);
+      }),
       fn(graph.Graph.users.admin.delete, () => {
         order.push("users.delete");
         return null;
@@ -211,20 +184,17 @@ Deno.test("admin guard composes with a namespace resolver", async () => {
   assertEquals(order, ["users-namespace", "admin-guard", "users.delete"]);
 });
 
-Deno.test("Admin<() => null>: function as the generic endpoint", async () => {
+test("Admin<() => null>: function as the generic endpoint", async () => {
   const order: string[] = [];
 
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      resolver(
-        graph.Admin,
-        (_ctx, next) => {
-          order.push("admin-guard");
-          return next(_ctx);
-        },
-      ),
+      resolver(graph.Admin, (_ctx, next) => {
+        order.push("admin-guard");
+        return next(_ctx);
+      }),
       fn(graph.Graph.files.admin, () => {
         order.push("files.admin");
         return null;
@@ -236,20 +206,17 @@ Deno.test("Admin<() => null>: function as the generic endpoint", async () => {
   assertEquals(order, ["admin-guard", "files.admin"]);
 });
 
-Deno.test("Admin<(id, name) => null>: args flow through the generic", async () => {
+test("Admin<(id, name) => null>: args flow through the generic", async () => {
   const order: string[] = [];
 
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      resolver(
-        graph.Admin,
-        (_ctx, next) => {
-          order.push("admin-guard");
-          return next(_ctx);
-        },
-      ),
+      resolver(graph.Admin, (_ctx, next) => {
+        order.push("admin-guard");
+        return next(_ctx);
+      }),
       fn(graph.Graph.files.rename, (_ctx, [id, name]) => {
         order.push(`files.rename(${id}, ${name})`);
         return null;
@@ -261,43 +228,31 @@ Deno.test("Admin<(id, name) => null>: args flow through the generic", async () =
   assertEquals(order, ["admin-guard", "files.rename(7, report.pdf)"]);
 });
 
-Deno.test("Admin<() => null>: guard blocks and args validation uses the user-facing path", async () => {
+test("Admin<() => null>: guard blocks and args validation uses the user-facing path", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      resolver(
-        graph.Admin,
-        () => {
-          throw new Error("Forbidden: admin only");
-        },
-      ),
+      resolver(graph.Admin, () => {
+        throw new Error("Forbidden: admin only");
+      }),
       fn(graph.Graph.files.rename, () => null),
     ],
   });
 
   // Guard blocks
   const { path, args } = queryToObject(client.Graph.files.rename(1, "a"));
-  const err = await assertRejects(
-    () => engine.run({ path, args }),
-  );
+  const err = await assertRejects(() => engine.run({ path, args }));
   assertEquals((err as Error).message, "Forbidden: admin only");
 
   // Args validation error references the queried path, not an internal key
   const engine2 = createEngine({
     graph,
     entries: ["Graph"],
-    resolvers: [
-      fn(graph.Graph.files.rename, () => null),
-    ],
+    resolvers: [fn(graph.Graph.files.rename, () => null)],
   });
   const bad = client.Graph.files.rename("nope" as any, "a");
   const badReq = queryToObject(bad);
-  const err2 = await assertRejects(
-    () => engine2.run(badReq),
-  );
-  assertEquals(
-    (err2 as Error).message,
-    "Invalid arguments passed to root.Graph.files.rename",
-  );
+  const err2 = await assertRejects(() => engine2.run(badReq));
+  assertEquals((err2 as Error).message, "Invalid arguments passed to root.Graph.files.rename");
 });

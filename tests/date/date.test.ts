@@ -1,3 +1,4 @@
+import { describe, test } from "vite-plus/test";
 import { assertEquals, assertRejects } from "@std/assert";
 import { resolve } from "@std/path";
 import type { IsExact } from "@std/testing/types";
@@ -12,19 +13,15 @@ interface AllTypes {
   Namespace: Namespace;
 }
 
-const graph = parse<AllTypes>(
-  loadSchema(resolve("./tests/date/graph.ts")),
-);
+const graph = parse<AllTypes>(loadSchema(resolve("./tests/date/graph.ts")));
 
 const client = query<AllTypes>();
 
-Deno.test("Properly parse Date", async () => {
+test("Properly parse Date", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
-    resolvers: [
-      fn(graph.Graph.sub.now, () => new Date("2021-01-01T00:00:00.000Z")),
-    ],
+    resolvers: [fn(graph.Graph.sub.now, () => new Date("2021-01-01T00:00:00.000Z"))],
   });
 
   const q = client.Graph.sub.now();
@@ -34,28 +31,24 @@ Deno.test("Properly parse Date", async () => {
   assertEquals((res as Date).toISOString(), "2021-01-01T00:00:00.000Z");
 });
 
-Deno.test("Fail if output is not a date", async () => {
+test("Fail if output is not a date", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
-    resolvers: [
-      fn(graph.Graph.sub.now, () => 42 as any),
-    ],
+    resolvers: [fn(graph.Graph.sub.now, () => 42 as any)],
   });
 
   const q = client.Graph.sub.now();
   assertType<IsExact<typeof q, TQuery<Date>>>(true);
   const { path: queryDef, args: variables } = queryToObject(q);
-  const err = await assertRejects(() =>
-    engine.run({ path: queryDef, args: variables })
-  );
+  const err = await assertRejects(() => engine.run({ path: queryDef, args: variables }));
   assertEquals(
     (err as Error).message,
     "Invalid resolved value for root.Namespace.now (expected: valid value, received: 42)",
   );
 });
 
-Deno.test("Date input", async (t) => {
+describe("Date input", () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
@@ -66,24 +59,17 @@ Deno.test("Date input", async (t) => {
     ],
   });
 
-  await t.step("Parse Date input", async () => {
-    const q = client.Graph.sub.doStuff(
-      new Date("2021-01-01T00:00:00.000Z"),
-    );
+  test("Parse Date input", async () => {
+    const q = client.Graph.sub.doStuff(new Date("2021-01-01T00:00:00.000Z"));
     const { path: queryDef, args: variables } = queryToObject(q);
     const res = await engine.run({ path: queryDef, args: variables });
     assertEquals(res, "2021-01-01T00:00:00.000Z");
   });
 
-  await t.step("Fail if input is not a date", async () => {
+  test("Fail if input is not a date", async () => {
     const q = client.Graph.sub.doStuff(42 as any);
     const { path: queryDef, args: variables } = queryToObject(q);
-    const err = await assertRejects(() =>
-      engine.run({ path: queryDef, args: variables })
-    );
-    assertEquals(
-      (err as Error).message,
-      "Invalid arguments passed to root.Namespace.doStuff",
-    );
+    const err = await assertRejects(() => engine.run({ path: queryDef, args: variables }));
+    assertEquals((err as Error).message, "Invalid arguments passed to root.Namespace.doStuff");
   });
 });

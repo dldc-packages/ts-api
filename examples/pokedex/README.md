@@ -11,13 +11,13 @@ Boot the server on `http://localhost:8000/api`, run the client against it, then
 stop:
 
 ```sh
-deno task example:pokedex
+pnpm example:pokedex
 ```
 
 Or start just the server (keep it running):
 
 ```sh
-deno task example:pokedex:server
+pnpm example:pokedex:server
 ```
 
 ## Folder layout

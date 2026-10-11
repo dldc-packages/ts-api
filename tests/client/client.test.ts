@@ -1,13 +1,7 @@
+import { test } from "vite-plus/test";
 import { assertEquals } from "@std/assert";
 import { query, queryToObject } from "../../src/client/mod.ts";
-import type {
-  App,
-  CoinHeads,
-  CoinTails,
-  Config,
-  Graph,
-  User,
-} from "./graph.ts";
+import type { App, CoinHeads, CoinTails, Config, Graph, User } from "./graph.ts";
 
 export interface TodoListTypes {
   Graph: Graph;
@@ -20,12 +14,12 @@ export interface TodoListTypes {
 
 const client = query<TodoListTypes>();
 
-Deno.test("simple query", () => {
+test("simple query", () => {
   const q = client.Graph.config();
   assertEquals(queryToObject(q), { path: ["Graph", "config"], args: [] });
 });
 
-Deno.test("call with args", () => {
+test("call with args", () => {
   const q = client.Graph.apps.all({ page: 1, limit: 10 });
   assertEquals(queryToObject(q), {
     path: ["Graph", "apps", "all"],
@@ -33,7 +27,7 @@ Deno.test("call with args", () => {
   });
 });
 
-Deno.test("call with no args", () => {
+test("call with no args", () => {
   const q = client.Graph.apps.all();
   assertEquals(queryToObject(q), {
     path: ["Graph", "apps", "all"],
@@ -41,7 +35,7 @@ Deno.test("call with no args", () => {
   });
 });
 
-Deno.test("call with string arg", () => {
+test("call with string arg", () => {
   const q = client.Graph.apps.byId("some-id");
   assertEquals(queryToObject(q), {
     path: ["Graph", "apps", "byId"],
@@ -49,12 +43,12 @@ Deno.test("call with string arg", () => {
   });
 });
 
-Deno.test("call returns typed result", () => {
+test("call returns typed result", () => {
   const q = client.Graph.config();
   void q;
 });
 
-Deno.test("call with multiple args", () => {
+test("call with multiple args", () => {
   const q = client.Graph.users.byId("user-123");
   assertEquals(queryToObject(q), {
     path: ["Graph", "users", "byId"],
@@ -62,7 +56,7 @@ Deno.test("call with multiple args", () => {
   });
 });
 
-Deno.test("call with no-arg function", () => {
+test("call with no-arg function", () => {
   const q = client.Graph.flip();
   assertEquals(queryToObject(q), {
     path: ["Graph", "flip"],
@@ -70,7 +64,7 @@ Deno.test("call with no-arg function", () => {
   });
 });
 
-Deno.test("call with optional arg omitted", () => {
+test("call with optional arg omitted", () => {
   const q = client.Graph.apps.all();
   assertEquals(queryToObject(q), {
     path: ["Graph", "apps", "all"],

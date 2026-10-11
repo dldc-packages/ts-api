@@ -1,0 +1,104 @@
+{
+  "name": "@dldc/ts-api",
+  "version": "4.0.1",
+  "description": "TypeScript API - describe an API as a TypeScript graph, then query it from Rust-light clients",
+  "license": "MIT",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    "./client": {
+      "types": "./dist/client.d.mts",
+      "default": "./dist/client.mjs"
+    },
+    "./server": {
+      "types": "./dist/server.d.mts",
+      "default": "./dist/server.mjs"
+    },
+    "./server/filesystem": {
+      "types": "./dist/server/filesystem.d.mts",
+      "default": "./dist/server/filesystem.mjs"
+    },
+    "./transports/http/client": {
+      "types": "./dist/transports/http/client.d.mts",
+      "default": "./dist/transports/http/client.mjs"
+    },
+    "./transports/http/server": {
+      "types": "./dist/transports/http/server.d.mts",
+      "default": "./dist/transports/http/server.mjs"
+    },
+    "./transports/sse/client": {
+      "types": "./dist/transports/sse/client.d.mts",
+      "default": "./dist/transports/sse/client.mjs"
+    },
+    "./transports/sse/server": {
+      "types": "./dist/transports/sse/server.d.mts",
+      "default": "./dist/transports/sse/server.mjs"
+    },
+    "./transports/web/builtins": {
+      "types": "./dist/transports/web/builtins.d.mts",
+      "default": "./dist/transports/web/builtins.mjs"
+    },
+    "./transports/web/client": {
+      "types": "./dist/transports/web/client.d.mts",
+      "default": "./dist/transports/web/client.mjs"
+    },
+    "./transports/web/resolvers": {
+      "types": "./dist/transports/web/resolvers.d.mts",
+      "default": "./dist/transports/web/resolvers.mjs"
+    },
+    "./transports/web/server": {
+      "types": "./dist/transports/web/server.d.mts",
+      "default": "./dist/transports/web/server.mjs"
+    },
+    "./transports/web/types": {
+      "types": "./dist/transports/web/types.d.mts",
+      "default": "./dist/transports/web/types.mjs"
+    }
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "scripts": {
+    "test": "vp test run",
+    "test:run": "vp test run",
+    "test:watch": "vp test",
+    "test:coverage": "vp test run --coverage",
+    "test:update-snapshots": "vp test run -u",
+    "check": "vp check",
+    "lint": "vp lint",
+    "format": "vp fmt",
+    "pack": "vp pack",
+    "example:family-planner": "tsx examples/family-planner/main.ts",
+    "example:pokedex": "tsx examples/pokedex/main.ts",
+    "example:pokedex:server": "tsx examples/pokedex/server/index.ts"
+  },
+  "dependencies": {
+    "@dldc/erreur": "^7.1.0",
+    "@dldc/stack": "^7.0.1",
+    "@jsonurl/jsonurl": "^1.1.8",
+    "@lezer/common": "^1.5.2",
+    "@lezer/javascript": "^1.5.5",
+    "superjson": "^2.2.2",
+    "valibot": "^1.5.0"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/core": "^0.18.5",
+    "@std/assert": "jsr:@std/assert@^1.0.19",
+    "@std/path": "jsr:@std/path@^1.1.6",
+    "@std/testing": "jsr:@std/testing@^1.0.20",
+    "@types/node": "^24.0.0",
+    "@vitest/coverage-v8": "^5.0.3",
+    "temporal-polyfill": "^1.0.5",
+    "temporal-spec": "^1.0.1",
+    "tsx": "^4.19.0",
+    "typescript": "^6.0.3",
+    "vite-plus": "^1.1.0"
+  },
+  "engines": {
+    "node": "^22.18.0 || ^24.11.0 || >=26.0.0"
+  },
+  "packageManager": "pnpm@10.33.4"
+}

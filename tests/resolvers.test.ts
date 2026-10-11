@@ -1,3 +1,4 @@
+import { test } from "vite-plus/test";
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject } from "../src/client/mod.ts";
@@ -7,11 +8,9 @@ import { loadSchema } from "./utils/loadSchema.ts";
 
 const client = query<TodoListTypes>();
 
-const graph = parse<TodoListTypes>(
-  loadSchema(resolve("./tests/schemas/todolist.ts")),
-);
+const graph = parse<TodoListTypes>(loadSchema(resolve("./tests/schemas/todolist.ts")));
 
-Deno.test("Resolver order on same node", async () => {
+test("Resolver order on same node", async () => {
   const order: number[] = [];
 
   const engine = createEngine({
@@ -44,27 +43,21 @@ Deno.test("Resolver order on same node", async () => {
   assertEquals(order, [1, 2]);
 });
 
-Deno.test("Namespace resolver wraps function resolver", async () => {
+test("Namespace resolver wraps function resolver", async () => {
   const order: string[] = [];
 
   const engine = createEngine({
     graph,
     entries: ["Graph"],
     resolvers: [
-      resolver(
-        graph.Graph,
-        (ctx, next) => {
-          order.push("namespace");
-          return next(ctx);
-        },
-      ),
-      fn(
-        graph.Graph.config,
-        () => {
-          order.push("function");
-          return { env: { version: "1.0.0", num: 0, str: "", bool: false } };
-        },
-      ),
+      resolver(graph.Graph, (ctx, next) => {
+        order.push("namespace");
+        return next(ctx);
+      }),
+      fn(graph.Graph.config, () => {
+        order.push("function");
+        return { env: { version: "1.0.0", num: 0, str: "", bool: false } };
+      }),
     ],
   });
 

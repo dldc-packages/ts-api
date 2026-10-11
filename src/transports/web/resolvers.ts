@@ -10,10 +10,14 @@ import type { MutationResult, QueryResult, StreamResult } from "./types.ts";
  * `QueryResult<T>` / `MutationResult<T>` / `StreamResult<T>` only exist at the
  * type level — the runtime value (and what resolvers return) is `T`.
  */
-type TWebUnwrap<T> = T extends QueryResult<infer U> ? U
-  : T extends MutationResult<infer U> ? U
-  : T extends StreamResult<infer U> ? U
-  : never;
+type TWebUnwrap<T> =
+  T extends QueryResult<infer U>
+    ? U
+    : T extends MutationResult<infer U>
+      ? U
+      : T extends StreamResult<infer U>
+        ? U
+        : never;
 
 /** The args tuple of a graph node (the shape `fn` already passes). */
 type TWebArgs<G extends TGraphBaseAny> = G[typeof TYPES]["input"];
@@ -53,9 +57,7 @@ export function queryResolver<G extends TWebQueryEndpoint>(
   resolver: (
     ctx: ApiContext,
     args: TWebArgs<G>,
-  ) =>
-    | TWebUnwrap<G[typeof TYPES]["output"]>
-    | Promise<TWebUnwrap<G[typeof TYPES]["output"]>>,
+  ) => TWebUnwrap<G[typeof TYPES]["output"]> | Promise<TWebUnwrap<G[typeof TYPES]["output"]>>,
 ): TResolver {
   return fn(path, resolver as unknown as TFnResolver<G>);
 }
@@ -71,9 +73,7 @@ export function mutationResolver<G extends TWebMutationEndpoint>(
   resolver: (
     ctx: ApiContext,
     args: TWebArgs<G>,
-  ) =>
-    | TWebUnwrap<G[typeof TYPES]["output"]>
-    | Promise<TWebUnwrap<G[typeof TYPES]["output"]>>,
+  ) => TWebUnwrap<G[typeof TYPES]["output"]> | Promise<TWebUnwrap<G[typeof TYPES]["output"]>>,
 ): TResolver {
   return fn(path, resolver as unknown as TFnResolver<G>);
 }

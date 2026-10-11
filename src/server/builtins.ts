@@ -1,4 +1,4 @@
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 import { TYPES } from "./constants.ts";
 import { graphInternal } from "./graph.ts";
 import type { TBuiltinStructure, TRootStructure } from "./structure.types.ts";
@@ -23,10 +23,7 @@ export interface TBuiltinConfig<T> {
   getSchema: TBuiltinGetSchema;
 }
 
-export type TBuiltinTypesConfig = Record<
-  string,
-  TBuiltinConfig<any> | null
->;
+export type TBuiltinTypesConfig = Record<string, TBuiltinConfig<any> | null>;
 
 export type TBuiltinTypes = Record<string, TBuiltinStructure>;
 
@@ -65,9 +62,7 @@ export function createBuiltins<Conf extends TBuiltinTypesConfig>(
   }) as any;
 }
 
-export function builtin<T>(
-  config: Omit<TBuiltinConfig<T>, typeof TYPES>,
-): TBuiltinConfig<T> {
+export function builtin<T>(config: Omit<TBuiltinConfig<T>, typeof TYPES>): TBuiltinConfig<T> {
   return {
     [TYPES]: null as any,
     ...config,
@@ -84,8 +79,5 @@ export const DEFAULT_BUILTINS: TDefaultBuiltins = {
   }),
 };
 
-export const DEFAULT_BUILTINS_GRAPH: TGraphBuiltins<
-  TBuiltinsFromConfig<TDefaultBuiltins>
-> = createBuiltins<TDefaultBuiltins>(
-  DEFAULT_BUILTINS,
-);
+export const DEFAULT_BUILTINS_GRAPH: TGraphBuiltins<TBuiltinsFromConfig<TDefaultBuiltins>> =
+  createBuiltins<TDefaultBuiltins>(DEFAULT_BUILTINS);

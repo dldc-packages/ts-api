@@ -29,9 +29,7 @@ export function validateNoImportedNamespaces(
     if (structure.kind !== "interface" && structure.kind !== "object") {
       return;
     }
-    const hasEndpoint = structure.properties.some(
-      (prop) => prop.structure.kind === "function",
-    );
+    const hasEndpoint = structure.properties.some((prop) => prop.structure.kind === "function");
     if (!hasEndpoint) {
       return;
     }
@@ -73,11 +71,7 @@ export function validateNoImportedNamespaces(
       case "interface":
       case "object": {
         // Inline sub-namespace (contains endpoints) → recurse; otherwise data.
-        if (
-          structure.properties.some(
-            (prop) => prop.structure.kind === "function",
-          )
-        ) {
+        if (structure.properties.some((prop) => prop.structure.kind === "function")) {
           walkNamespace(structure, locals);
         }
         return;

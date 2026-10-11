@@ -59,9 +59,7 @@ export function children(node: SyntaxNode): SyntaxNode[] {
       const name = cur.node.type.name;
       // Comments carry no AST meaning for ts-api and can appear anywhere
       // between tokens, so they are dropped from traversal everywhere.
-      if (
-        name === "LineComment" || name === "BlockComment" || name === "Hashbang"
-      ) {
+      if (name === "LineComment" || name === "BlockComment" || name === "Hashbang") {
         continue;
       }
       out.push(cur.node);
@@ -75,10 +73,7 @@ export function typeChild(node: SyntaxNode): SyntaxNode | undefined {
   return children(node).find((c) => TYPE_NODE_NAMES.has(c.type.name));
 }
 
-export function childByName(
-  node: SyntaxNode,
-  name: string,
-): SyntaxNode | undefined {
+export function childByName(node: SyntaxNode, name: string): SyntaxNode | undefined {
   return children(node).find((n) => n.type.name === name);
 }
 
@@ -102,17 +97,11 @@ export function lineAt(node: SyntaxNode, sourceText: string): number {
   return line;
 }
 
-export function throwUnknown(
-  node: SyntaxNode,
-  sourceText: string,
-  kindName?: string,
-): never {
+export function throwUnknown(node: SyntaxNode, sourceText: string, kindName?: string): never {
   const kind = kindName ?? node.type.name;
   console.info(textOf(node, sourceText), `at line ${lineAt(node, sourceText)}`);
   throw new Error(
-    `Unknown node: ${textOf(node, sourceText)} (${kind}) at line ${
-      lineAt(node, sourceText)
-    }`,
+    `Unknown node: ${textOf(node, sourceText)} (${kind}) at line ${lineAt(node, sourceText)}`,
   );
 }
 
@@ -120,15 +109,15 @@ export function throwUnknown(
 export function unquote(raw: string): string {
   const q = raw.charCodeAt(0);
   const last = raw.charCodeAt(raw.length - 1);
-  if (q === 34 && last === 34) { // double quotes
+  if (q === 34 && last === 34) {
+    // double quotes
     return JSON.parse(raw);
   }
-  if (q === 39 && last === 39) { // single quotes
+  if (q === 39 && last === 39) {
+    // single quotes
     const inner = raw.slice(1, -1);
     try {
-      return JSON.parse(
-        '"' + inner.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"',
-      );
+      return JSON.parse('"' + inner.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"');
     } catch {
       // Best effort: keep the raw content when escaping is ambiguous.
       return inner;

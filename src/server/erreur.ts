@@ -1,21 +1,23 @@
 import { createErreurStore, type TReadonlyErreurStore } from "@dldc/erreur";
-import type * as v from "@valibot/valibot";
+import type * as v from "valibot";
 import { STRUCTURE } from "./constants.ts";
 import type { TGraphBaseAny } from "./graph.ts";
 
 /**
  * Those error are likely caused by the query and can be send back to the client.
  */
-export type TGraphClientErreurData = {
-  kind: "ArgsValidationFailed";
-  graph: TGraphBaseAny;
-  issues: v.BaseIssue<any>[];
-} | {
-  kind: "InvalidEntry";
-  graph: TGraphBaseAny;
-  entries: string[];
-  requested: string;
-};
+export type TGraphClientErreurData =
+  | {
+      kind: "ArgsValidationFailed";
+      graph: TGraphBaseAny;
+      issues: v.BaseIssue<any>[];
+    }
+  | {
+      kind: "InvalidEntry";
+      graph: TGraphBaseAny;
+      entries: string[];
+      requested: string;
+    };
 
 const GraphClientErreurPrivate = createErreurStore<TGraphClientErreurData>();
 export const GraphClientErreur: TReadonlyErreurStore<TGraphClientErreurData> =
@@ -36,15 +38,14 @@ export function createInvalidEntry(
   entries: string[],
   requested: string,
 ): Error {
-  const entryMessage = entries.length === 1
-    ? printValue(entries[0])
-    : `one of ${printValue(entries)}`;
+  const entryMessage =
+    entries.length === 1 ? printValue(entries[0]) : `one of ${printValue(entries)}`;
 
   return GraphClientErreurPrivate.setAndReturn(
     new Error(
-      `Invalid entry, all queries should start from ${entryMessage} (requested: ${
-        printValue(requested)
-      })`,
+      `Invalid entry, all queries should start from ${entryMessage} (requested: ${printValue(
+        requested,
+      )})`,
     ),
     { graph, kind: "InvalidEntry", entries, requested },
   );

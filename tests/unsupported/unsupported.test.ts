@@ -1,14 +1,9 @@
+import { test } from "vite-plus/test";
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
-import * as v from "@valibot/valibot";
+import * as v from "valibot";
 import { query, queryToObject } from "../../src/client/mod.ts";
-import {
-  builtin,
-  createBuiltins,
-  createEngine,
-  fn,
-  parse,
-} from "../../src/server/mod.ts";
+import { builtin, createBuiltins, createEngine, fn, parse } from "../../src/server/mod.ts";
 import { loadSchema } from "../utils/loadSchema.ts";
 import type { Graph as ImportedDataGraph } from "./imported-data.ts";
 import type { Graph as ImportedNamespaceGraph } from "./imported-namespace.ts";
@@ -39,30 +34,26 @@ function expectThrow(fn: () => unknown): Error {
   throw new Error("Expected to throw");
 }
 
-Deno.test("mapped type (K in keyof) is not supported", () => {
+test("mapped type (K in keyof) is not supported", () => {
   const err = expectThrow(() =>
-    parse<{ Graph: MappedGraph }>(
-      loadSchema(resolve("./tests/unsupported/mapped.ts")),
-    )
+    parse<{ Graph: MappedGraph }>(loadSchema(resolve("./tests/unsupported/mapped.ts"))),
   );
   assertEquals(err.message.includes("MappedType"), true);
 });
 
-Deno.test("indexed access type (T['k']) is not supported", () => {
+test("indexed access type (T['k']) is not supported", () => {
   const err = expectThrow(() =>
-    parse<{ Graph: IndexedGraph }>(
-      loadSchema(resolve("./tests/unsupported/indexed.ts")),
-    )
+    parse<{ Graph: IndexedGraph }>(loadSchema(resolve("./tests/unsupported/indexed.ts"))),
   );
   assertEquals(err.message.includes("IndexedAccessType"), true);
 });
 
-Deno.test("imported type used as a namespace fails", () => {
+test("imported type used as a namespace fails", () => {
   const err = expectThrow(() =>
     parse<{ Graph: ImportedNamespaceGraph }>(
       loadSchema(resolve("./tests/unsupported/imported-namespace.ts")),
       { builtins: importedBuiltins },
-    )
+    ),
   );
   assertEquals(
     err.message,
@@ -73,16 +64,16 @@ Deno.test("imported type used as a namespace fails", () => {
   );
 });
 
-Deno.test("imported type used as a namespace fails even without a builtin", () => {
+test("imported type used as a namespace fails even without a builtin", () => {
   const err = expectThrow(() =>
     parse<{ Graph: ImportedNamespaceGraph }>(
       loadSchema(resolve("./tests/unsupported/imported-namespace.ts")),
-    )
+    ),
   );
   assertEquals(err.message.includes("used as a namespace"), true);
 });
 
-Deno.test("imported types used as data are allowed", async () => {
+test("imported types used as data are allowed", async () => {
   const graph = parse<{ Graph: ImportedDataGraph }>(
     loadSchema(resolve("./tests/unsupported/imported-data.ts")),
     { builtins: importedBuiltins },

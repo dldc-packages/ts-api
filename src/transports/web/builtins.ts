@@ -1,4 +1,4 @@
-import type * as v from "@valibot/valibot";
+import type * as v from "valibot";
 import { builtin, type TBuiltinConfig } from "../../server/builtins.ts";
 import type { MutationResult, QueryResult, StreamResult } from "./types.ts";
 
@@ -8,9 +8,9 @@ import type { MutationResult, QueryResult, StreamResult } from "./types.ts";
  * be used with exactly one type argument, so getSchema enforces it here — arity
  * validation is the builtin's own responsibility.
  */
-function phantom(name: string): (
-  params: v.BaseSchema<any, any, any>[],
-) => v.BaseSchema<any, any, any> {
+function phantom(
+  name: string,
+): (params: v.BaseSchema<any, any, any>[]) => v.BaseSchema<any, any, any> {
   return (params) => {
     if (params.length !== 1) {
       throw new Error(

@@ -1,7 +1,8 @@
+import { test } from "vite-plus/test";
 import { assertThrows } from "@std/assert";
 import { createEngine, fn, parse } from "../../src/server/mod.ts";
 
-Deno.test("recursion is rejected at parse time (fail fast)", () => {
+test("recursion is rejected at parse time (fail fast)", () => {
   // Direct self-reference through an interface.
   assertThrows(
     () =>
@@ -37,7 +38,7 @@ Deno.test("recursion is rejected at parse time (fail fast)", () => {
   );
 });
 
-Deno.test("finite nested generics are not flagged as recursion at parse", () => {
+test("finite nested generics are not flagged as recursion at parse", () => {
   // `Page<Page<Todo>>` is a finite instantiation, not a recursive type: it
   // re-enters `Page` with different arguments, so it must parse without a
   // recursion error. Building its schema is covered end-to-end by the
@@ -50,7 +51,7 @@ Deno.test("finite nested generics are not flagged as recursion at parse", () => 
   `);
 });
 
-Deno.test("types reused across independent branches are not recursion", () => {
+test("types reused across independent branches are not recursion", () => {
   // A type referenced from several sibling properties/endpoints is fine, as is
   // a generic passthrough alias (`Admin<T> = T`) used at multiple sites.
   parse(`
@@ -66,7 +67,7 @@ Deno.test("types reused across independent branches are not recursion", () => {
   `);
 });
 
-Deno.test("recursive data types are rejected even when only used by introspection", () => {
+test("recursive data types are rejected even when only used by introspection", () => {
   // `getStructure`/`extractApi` don't build schemas, but the type itself can
   // never be schema-resolved, so parse fails fast on it.
   assertThrows(
@@ -79,7 +80,7 @@ Deno.test("recursive data types are rejected even when only used by introspectio
   );
 });
 
-Deno.test("a non-recursive schema still parses and runs", async () => {
+test("a non-recursive schema still parses and runs", async () => {
   interface Todo {
     name: string;
   }

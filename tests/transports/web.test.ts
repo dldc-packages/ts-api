@@ -1,40 +1,29 @@
+import { test } from "vite-plus/test";
 import { createKey } from "@dldc/stack";
 import { webBuiltins } from "@dldc/ts-api/transports/web/builtins";
-import {
-  execMutation,
-  execQuery,
-  execStream,
-} from "@dldc/ts-api/transports/web/client";
+import { execMutation, execQuery, execStream } from "@dldc/ts-api/transports/web/client";
 import {
   mutationResolver,
   queryResolver,
   streamResolver,
 } from "@dldc/ts-api/transports/web/resolvers";
 import { handleWeb } from "@dldc/ts-api/transports/web/server";
-import type {
-  StreamResult,
-  TWebCodec,
-} from "@dldc/ts-api/transports/web/types";
+import type { StreamResult, TWebCodec } from "@dldc/ts-api/transports/web/types";
 import { assertEquals, assertRejects, assertStringIncludes } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, type TQuery } from "../../src/client/mod.ts";
-import {
-  createBuiltins,
-  createEngine,
-  parse,
-  resolver,
-} from "../../src/server/mod.ts";
+import { createBuiltins, createEngine, parse, resolver } from "../../src/server/mod.ts";
 import { readSSE } from "../../src/transports/sse/client.ts";
 import { stringifyJsonURL } from "../../src/transports/web/utils.ts";
 import { loadSchema } from "../utils/loadSchema.ts";
+import { serve } from "../utils/serve.ts";
 import type { WebTypes } from "./web.types.ts";
 
 const client = query<WebTypes>();
 
-const graph = parse<WebTypes>(
-  loadSchema(resolve("./tests/transports/web.ts")),
-  { builtins: createBuiltins({ ...webBuiltins }) },
-);
+const graph = parse<WebTypes>(loadSchema(resolve("./tests/transports/web.ts")), {
+  builtins: createBuiltins({ ...webBuiltins }),
+});
 
 const engine = createEngine({
   graph,
@@ -76,26 +65,21 @@ interface WebServer {
  * Serve `handleWeb` over a real HTTP server, mounted at `/api` (so the client's
  * `baseUrl` is `http://127.0.0.1:<port>/api`).
  */
-function startServer(
+async function startServer(
   handler: (request: Request) => Promise<Response> | Response = (request) =>
     handleWeb(engine, request, { basePath: "/api" }),
-): WebServer {
-  const server = Deno.serve({ port: 0 }, handler);
+): Promise<WebServer> {
+  const server = await serve(handler);
   return {
-    base: `http://127.0.0.1:${server.addr.port}/api`,
+    base: `http://127.0.0.1:${server.port}/api`,
     shutdown: () => server.shutdown(),
   };
 }
 
-function buildServerWith(
-  eng: typeof engine,
-): WebServer {
-  const server = Deno.serve(
-    { port: 0 },
-    (request) => handleWeb(eng, request, { basePath: "/api" }),
-  );
+async function buildServerWith(eng: typeof engine): Promise<WebServer> {
+  const server = await serve((request) => handleWeb(eng, request, { basePath: "/api" }));
   return {
-    base: `http://127.0.0.1:${server.addr.port}/api`,
+    base: `http://127.0.0.1:${server.port}/api`,
     shutdown: () => server.shutdown(),
   };
 }
@@ -125,10 +109,10 @@ const wrappedCodec: TWebCodec = {
 // client — queries & mutations
 // ---------------------------------------------------------------------------
 
-Deno.test("web: execQuery GETs short queries with args in the URL", async () => {
+test("web: execQuery GETs short queries with args in the URL", async () => {
   let method: string | null = null;
   let url: string | null = null;
-  const { base, shutdown } = startServer(async (request) => {
+  const { base, shutdown } = await startServer(async (request) => {
     method = request.method;
     url = request.url;
     return await handleWeb(engine, request, { basePath: "/api" });
@@ -144,8 +128,8 @@ Deno.test("web: execQuery GETs short queries with args in the URL", async () => 
   }
 });
 
-Deno.test("web: execQuery round-trips special characters in GET args", async () => {
-  const { base, shutdown } = startServer();
+test("web: execQuery round-trips special characters in GET args", async () => {
+  const { base, shutdown } = await startServer();
   try {
     const q = client.Graph.aQuery('has "quotes" + spaces', 0);
     const result = await execQuery(q, base);
@@ -155,10 +139,10 @@ Deno.test("web: execQuery round-trips special characters in GET args", async () 
   }
 });
 
-Deno.test("web: execQuery POSTs when the URL would be too long", async () => {
+test("web: execQuery POSTs when the URL would be too long", async () => {
   let method: string | null = null;
   let body: unknown;
-  const { base, shutdown } = startServer(async (request) => {
+  const { base, shutdown } = await startServer(async (request) => {
     method = request.method;
     body = await request.clone().json();
     return await handleWeb(engine, request, { basePath: "/api" });
@@ -176,11 +160,11 @@ Deno.test("web: execQuery POSTs when the URL would be too long", async () => {
   }
 });
 
-Deno.test("web: execMutation POSTs with args as the JSON body", async () => {
+test("web: execMutation POSTs with args as the JSON body", async () => {
   let method: string | null = null;
   let body: unknown;
   let contentType: string | null = null;
-  const { base, shutdown } = startServer(async (request) => {
+  const { base, shutdown } = await startServer(async (request) => {
     method = request.method;
     contentType = request.headers.get("content-type");
     body = await request.clone().json();
@@ -198,9 +182,9 @@ Deno.test("web: execMutation POSTs with args as the JSON body", async () => {
   }
 });
 
-Deno.test("web: execQuery forwards custom headers", async () => {
+test("web: execQuery forwards custom headers", async () => {
   let seenAuth: string | null = null;
-  const { base, shutdown } = startServer(async (request) => {
+  const { base, shutdown } = await startServer(async (request) => {
     seenAuth = request.headers.get("authorization");
     return await handleWeb(engine, request, { basePath: "/api" });
   });
@@ -213,12 +197,9 @@ Deno.test("web: execQuery forwards custom headers", async () => {
   }
 });
 
-Deno.test("web: execQuery throws on a non-ok status", async () => {
-  const server = Deno.serve(
-    { port: 0 },
-    () => new Response("not found", { status: 404 }),
-  );
-  const base = `http://127.0.0.1:${server.addr.port}`;
+test("web: execQuery throws on a non-ok status", async () => {
+  const server = await serve(() => new Response("not found", { status: 404 }));
+  const base = `http://127.0.0.1:${server.port}`;
   try {
     const q = client.Graph.aQuery("foo", 1);
     const err = await assertRejects(() => execQuery(q, base));
@@ -228,19 +209,17 @@ Deno.test("web: execQuery throws on a non-ok status", async () => {
   }
 });
 
-Deno.test("web: execMutation propagates an abort signal", async () => {
-  const server = Deno.serve({ port: 0 }, async () => {
+test("web: execMutation propagates an abort signal", async () => {
+  const server = await serve(async () => {
     await new Promise((resolvePromise) => setTimeout(resolvePromise, 500));
     return Response.json(true);
   });
-  const base = `http://127.0.0.1:${server.addr.port}`;
+  const base = `http://127.0.0.1:${server.port}`;
   try {
     const controller = new AbortController();
     const q = client.Graph.aMutation("keep");
     setTimeout(() => controller.abort(), 20);
-    const err = await assertRejects(() =>
-      execMutation(q, base, { signal: controller.signal })
-    );
+    const err = await assertRejects(() => execMutation(q, base, { signal: controller.signal }));
     assertEquals((err as Error).name, "AbortError");
   } finally {
     await server.shutdown();
@@ -251,8 +230,8 @@ Deno.test("web: execMutation propagates an abort signal", async () => {
 // client — streams
 // ---------------------------------------------------------------------------
 
-Deno.test("web: execStream streams every yielded value over SSE", async () => {
-  const { base, shutdown } = startServer();
+test("web: execStream streams every yielded value over SSE", async () => {
+  const { base, shutdown } = await startServer();
   try {
     const q = client.Graph.aStream("ab");
     const values = await collect(base, q);
@@ -262,11 +241,11 @@ Deno.test("web: execStream streams every yielded value over SSE", async () => {
   }
 });
 
-Deno.test("web: execStream uses POST with args as the JSON body", async () => {
+test("web: execStream uses POST with args as the JSON body", async () => {
   let method: string | null = null;
   let body: unknown;
   let accept: string | null = null;
-  const { base, shutdown } = startServer(async (request) => {
+  const { base, shutdown } = await startServer(async (request) => {
     method = request.method;
     accept = request.headers.get("accept");
     body = await request.clone().json();
@@ -284,21 +263,18 @@ Deno.test("web: execStream uses POST with args as the JSON body", async () => {
   }
 });
 
-Deno.test("web: execStream throws when invalid args are delivered as an error event", async () => {
-  const { base, shutdown } = startServer();
+test("web: execStream throws when invalid args are delivered as an error event", async () => {
+  const { base, shutdown } = await startServer();
   try {
     const q = client.Graph.aStream(42 as any);
     const err = await assertRejects(() => collect(base, q));
-    assertEquals(
-      (err as Error).message,
-      "Invalid arguments passed to root.Graph.aStream",
-    );
+    assertEquals((err as Error).message, "Invalid arguments passed to root.Graph.aStream");
   } finally {
     await shutdown();
   }
 });
 
-Deno.test("web: execStream throws when a failing resolver is delivered as an error event", async () => {
+test("web: execStream throws when a failing resolver is delivered as an error event", async () => {
   const failingEngine = createEngine({
     graph,
     entries: ["Graph"],
@@ -308,7 +284,7 @@ Deno.test("web: execStream throws when a failing resolver is delivered as an err
       }),
     ],
   });
-  const server = buildServerWith(failingEngine);
+  const server = await buildServerWith(failingEngine);
   try {
     const q = client.Graph.aStream("t");
     const err = await assertRejects(() => collect(server.base, q));
@@ -322,16 +298,14 @@ Deno.test("web: execStream throws when a failing resolver is delivered as an err
 // server — handleWeb
 // ---------------------------------------------------------------------------
 
-Deno.test("web: handleWeb runs a GET query from JsonURL args in the URL", async () => {
-  const request = new Request(
-    `http://localhost/api/Graph.aQuery?${stringifyJsonURL(["foo", 3])}`,
-  );
+test("web: handleWeb runs a GET query from JsonURL args in the URL", async () => {
+  const request = new Request(`http://localhost/api/Graph.aQuery?${stringifyJsonURL(["foo", 3])}`);
   const response = await handleWeb(engine, request, { basePath: "/api" });
   assertEquals(response.status, 200);
   assertEquals(await response.json(), { todoName: "foo", done: true });
 });
 
-Deno.test("web: handleWeb runs a POST query from a JSON args body", async () => {
+test("web: handleWeb runs a POST query from a JSON args body", async () => {
   const request = new Request("http://localhost/api/Graph.aMutation", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -342,7 +316,7 @@ Deno.test("web: handleWeb runs a POST query from a JSON args body", async () => 
   assertEquals(await response.json(), true);
 });
 
-Deno.test("web: handleWeb rejects non-array GET args with a 400", async () => {
+test("web: handleWeb rejects non-array GET args with a 400", async () => {
   const request = new Request("http://localhost/api/Graph.aQuery?notanarray");
   const response = await handleWeb(engine, request, { basePath: "/api" });
   assertEquals(response.status, 400);
@@ -351,7 +325,7 @@ Deno.test("web: handleWeb rejects non-array GET args with a 400", async () => {
   });
 });
 
-Deno.test("web: handleWeb rejects a malformed JSON body with a 400", async () => {
+test("web: handleWeb rejects a malformed JSON body with a 400", async () => {
   const request = new Request("http://localhost/api/Graph.aMutation", {
     method: "POST",
     body: "not json",
@@ -360,7 +334,7 @@ Deno.test("web: handleWeb rejects a malformed JSON body with a 400", async () =>
   assertEquals(response.status, 400);
 });
 
-Deno.test("web: handleWeb returns 400 for invalid arguments (client error)", async () => {
+test("web: handleWeb returns 400 for invalid arguments (client error)", async () => {
   const request = new Request(
     `http://localhost/api/Graph.aQuery?${stringifyJsonURL(["only-one"])}`,
   );
@@ -371,7 +345,7 @@ Deno.test("web: handleWeb returns 400 for invalid arguments (client error)", asy
   });
 });
 
-Deno.test("web: handleWeb returns 500 for a failing resolver (server error)", async () => {
+test("web: handleWeb returns 500 for a failing resolver (server error)", async () => {
   const failingEngine = createEngine({
     graph,
     entries: ["Graph"],
@@ -393,17 +367,15 @@ Deno.test("web: handleWeb returns 500 for a failing resolver (server error)", as
   assertEquals(await response.json(), { message: "boom-json" });
 });
 
-Deno.test("web: handleWeb decodes the endpoint path from the full pathname", async () => {
+test("web: handleWeb decodes the endpoint path from the full pathname", async () => {
   // Without a basePath, the whole pathname is decoded as the endpoint path.
-  const request = new Request(
-    `http://localhost/Graph.aQuery?${stringifyJsonURL(["root", 1])}`,
-  );
+  const request = new Request(`http://localhost/Graph.aQuery?${stringifyJsonURL(["root", 1])}`);
   const response = await handleWeb(engine, request);
   assertEquals(response.status, 200);
   assertEquals(await response.json(), { todoName: "root", done: true });
 });
 
-Deno.test("web: handleWeb streams SSE responses to text/event-stream requests", async () => {
+test("web: handleWeb streams SSE responses to text/event-stream requests", async () => {
   const request = new Request("http://localhost/api/Graph.aStream", {
     method: "POST",
     headers: {
@@ -428,27 +400,20 @@ Deno.test("web: handleWeb streams SSE responses to text/event-stream requests", 
 // extendsCtx
 // ---------------------------------------------------------------------------
 
-Deno.test("web: handleWeb passes extendsCtx to engine.run", async () => {
+test("web: handleWeb passes extendsCtx to engine.run", async () => {
   const FlagKey = createKey<string>("web-flag");
   const extEngine = createEngine({
     graph,
     entries: ["Graph"],
-    resolvers: [
-      resolver(
-        graph.Graph.aMutation,
-        (ctx) => ctx.getOrFail(FlagKey.Consumer) === "on",
-      ),
-    ],
+    resolvers: [resolver(graph.Graph.aMutation, (ctx) => ctx.getOrFail(FlagKey.Consumer) === "on")],
   });
-  const server = Deno.serve(
-    { port: 0 },
-    (request) =>
-      handleWeb(extEngine, request, {
-        basePath: "/api",
-        extendsCtx: (ctx) => ctx.with(FlagKey.Provider("on")),
-      }),
+  const server = await serve((request) =>
+    handleWeb(extEngine, request, {
+      basePath: "/api",
+      extendsCtx: (ctx) => ctx.with(FlagKey.Provider("on")),
+    }),
   );
-  const base = `http://127.0.0.1:${server.addr.port}/api`;
+  const base = `http://127.0.0.1:${server.port}/api`;
   try {
     const q = client.Graph.aMutation("x");
     const result = await execMutation(q, base);
@@ -458,7 +423,7 @@ Deno.test("web: handleWeb passes extendsCtx to engine.run", async () => {
   }
 });
 
-Deno.test("web: handleWeb passes extendsCtx to engine.runIterable", async () => {
+test("web: handleWeb passes extendsCtx to engine.runIterable", async () => {
   const FlagKey = createKey<string>("web-flag-stream");
   const extEngine = createEngine({
     graph,
@@ -472,15 +437,13 @@ Deno.test("web: handleWeb passes extendsCtx to engine.runIterable", async () => 
       }),
     ],
   });
-  const server = Deno.serve(
-    { port: 0 },
-    (request) =>
-      handleWeb(extEngine, request, {
-        basePath: "/api",
-        extendsCtx: (ctx) => ctx.with(FlagKey.Provider("stream-on")),
-      }),
+  const server = await serve((request) =>
+    handleWeb(extEngine, request, {
+      basePath: "/api",
+      extendsCtx: (ctx) => ctx.with(FlagKey.Provider("stream-on")),
+    }),
   );
-  const base = `http://127.0.0.1:${server.addr.port}/api`;
+  const base = `http://127.0.0.1:${server.port}/api`;
   try {
     const q = client.Graph.aStream("t");
     const values = await collect(base, q);
@@ -494,16 +457,16 @@ Deno.test("web: handleWeb passes extendsCtx to engine.runIterable", async () => 
 // codec
 // ---------------------------------------------------------------------------
 
-Deno.test("web: execMutation round-trips args and result through the codec", async () => {
+test("web: execMutation round-trips args and result through the codec", async () => {
   let capturedBody: unknown;
-  const server = Deno.serve({ port: 0 }, async (request) => {
+  const server = await serve(async (request) => {
     capturedBody = await request.clone().text();
     return await handleWeb(engine, request, {
       basePath: "/api",
       codec: wrappedCodec,
     });
   });
-  const base = `http://127.0.0.1:${server.addr.port}/api`;
+  const base = `http://127.0.0.1:${server.port}/api`;
   try {
     const q = client.Graph.aMutation("keep");
     const result = await execMutation(q, base, undefined, wrappedCodec);
@@ -515,10 +478,10 @@ Deno.test("web: execMutation round-trips args and result through the codec", asy
   }
 });
 
-Deno.test("web: execQuery GETs short queries with a codec, JsonURL-encoding the wrapped args", async () => {
+test("web: execQuery GETs short queries with a codec, JsonURL-encoding the wrapped args", async () => {
   let method: string | null = null;
   let url: string | null = null;
-  const server = Deno.serve({ port: 0 }, async (request) => {
+  const server = await serve(async (request) => {
     method = request.method;
     url = request.url;
     return await handleWeb(engine, request, {
@@ -526,7 +489,7 @@ Deno.test("web: execQuery GETs short queries with a codec, JsonURL-encoding the 
       codec: wrappedCodec,
     });
   });
-  const base = `http://127.0.0.1:${server.addr.port}/api`;
+  const base = `http://127.0.0.1:${server.port}/api`;
   try {
     const q = client.Graph.aQuery("foo", 123);
     const result = await execQuery(q, base, undefined, wrappedCodec);
@@ -534,19 +497,16 @@ Deno.test("web: execQuery GETs short queries with a codec, JsonURL-encoding the 
     // The codec does not change the transport: short queries still GET, with
     // the codec-encoded args JsonURL-encoded into the URL.
     assertEquals(method, "GET");
-    assertEquals(
-      url,
-      base + "/Graph.aQuery?" + stringifyJsonURL({ wrapped: ["foo", 123] }),
-    );
+    assertEquals(url, base + "/Graph.aQuery?" + stringifyJsonURL({ wrapped: ["foo", 123] }));
   } finally {
     await server.shutdown();
   }
 });
 
-Deno.test("web: execQuery with a codec POSTs when the URL would be too long", async () => {
+test("web: execQuery with a codec POSTs when the URL would be too long", async () => {
   let method: string | null = null;
   let capturedBody: unknown;
-  const server = Deno.serve({ port: 0 }, async (request) => {
+  const server = await serve(async (request) => {
     method = request.method;
     capturedBody = await request.clone().text();
     return await handleWeb(engine, request, {
@@ -554,7 +514,7 @@ Deno.test("web: execQuery with a codec POSTs when the URL would be too long", as
       codec: wrappedCodec,
     });
   });
-  const base = `http://127.0.0.1:${server.addr.port}/api`;
+  const base = `http://127.0.0.1:${server.port}/api`;
   try {
     const big = "a".repeat(3000);
     const q = client.Graph.longQuery(big, "b", "c");
@@ -568,13 +528,11 @@ Deno.test("web: execQuery with a codec POSTs when the URL would be too long", as
   }
 });
 
-Deno.test("web: execStream decodes each SSE event through the codec", async () => {
-  const server = Deno.serve(
-    { port: 0 },
-    (request) =>
-      handleWeb(engine, request, { basePath: "/api", codec: wrappedCodec }),
+test("web: execStream decodes each SSE event through the codec", async () => {
+  const server = await serve((request) =>
+    handleWeb(engine, request, { basePath: "/api", codec: wrappedCodec }),
   );
-  const base = `http://127.0.0.1:${server.addr.port}/api`;
+  const base = `http://127.0.0.1:${server.port}/api`;
   try {
     const q = client.Graph.aStream("ab");
     const values = await collect(base, q, wrappedCodec);
@@ -584,7 +542,7 @@ Deno.test("web: execStream decodes each SSE event through the codec", async () =
   }
 });
 
-Deno.test("web: handleWeb decodes the wrapped body and encodes the wrapped result", async () => {
+test("web: handleWeb decodes the wrapped body and encodes the wrapped result", async () => {
   const request = new Request("http://localhost/api/Graph.aMutation", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -599,9 +557,9 @@ Deno.test("web: handleWeb decodes the wrapped body and encodes the wrapped resul
   assertEquals(await response.json(), { wrapped: true });
 });
 
-Deno.test("web: handleWeb without a codec still uses plain JSON", async () => {
+test("web: handleWeb without a codec still uses plain JSON", async () => {
   // Regression guard: no codec on either side keeps the plain JSON wire.
-  const { base, shutdown } = startServer();
+  const { base, shutdown } = await startServer();
   try {
     const q = client.Graph.aMutation("keep");
     const result = await execMutation(q, base);
@@ -615,10 +573,8 @@ Deno.test("web: handleWeb without a codec still uses plain JSON", async () => {
 // transport enforcement
 // ---------------------------------------------------------------------------
 
-Deno.test("web: handleWeb rejects GET on a mutation", async () => {
-  const request = new Request(
-    `http://localhost/api/Graph.aMutation?${stringifyJsonURL(["x"])}`,
-  );
+test("web: handleWeb rejects GET on a mutation", async () => {
+  const request = new Request(`http://localhost/api/Graph.aMutation?${stringifyJsonURL(["x"])}`);
   const response = await handleWeb(engine, request, { basePath: "/api" });
   assertEquals(response.status, 405);
   assertEquals(await response.json(), {
@@ -626,7 +582,7 @@ Deno.test("web: handleWeb rejects GET on a mutation", async () => {
   });
 });
 
-Deno.test("web: handleWeb rejects GET on a stream", async () => {
+test("web: handleWeb rejects GET on a stream", async () => {
   const request = new Request("http://localhost/api/Graph.aStream");
   const response = await handleWeb(engine, request, { basePath: "/api" });
   assertEquals(response.status, 405);
@@ -635,7 +591,7 @@ Deno.test("web: handleWeb rejects GET on a stream", async () => {
   });
 });
 
-Deno.test("web: handleWeb rejects streaming a non-stream endpoint", async () => {
+test("web: handleWeb rejects streaming a non-stream endpoint", async () => {
   const cases: Array<{ path: string; body: unknown }> = [
     { path: "Graph.aQuery", body: ["foo", 1] },
     { path: "Graph.aMutation", body: ["x"] },
@@ -657,7 +613,7 @@ Deno.test("web: handleWeb rejects streaming a non-stream endpoint", async () => 
   }
 });
 
-Deno.test("web: handleWeb requires Accept: text/event-stream on a stream", async () => {
+test("web: handleWeb requires Accept: text/event-stream on a stream", async () => {
   const request = new Request("http://localhost/api/Graph.aStream", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -666,18 +622,15 @@ Deno.test("web: handleWeb requires Accept: text/event-stream on a stream", async
   const response = await handleWeb(engine, request, { basePath: "/api" });
   assertEquals(response.status, 406);
   assertEquals(await response.json(), {
-    message:
-      "StreamResult endpoints must be called with Accept: text/event-stream",
+    message: "StreamResult endpoints must be called with Accept: text/event-stream",
   });
 });
 
-Deno.test("web: handleWeb accepts the valid combinations", async () => {
+test("web: handleWeb accepts the valid combinations", async () => {
   // GET query
   const getQuery = await handleWeb(
     engine,
-    new Request(
-      `http://localhost/api/Graph.aQuery?${stringifyJsonURL(["foo", 1])}`,
-    ),
+    new Request(`http://localhost/api/Graph.aQuery?${stringifyJsonURL(["foo", 1])}`),
     { basePath: "/api" },
   );
   assertEquals(getQuery.status, 200);
@@ -723,7 +676,7 @@ Deno.test("web: handleWeb accepts the valid combinations", async () => {
   assertEquals(postStream.headers.get("content-type"), "text/event-stream");
 });
 
-Deno.test("web: queryResolver / mutationResolver / streamResolver", async () => {
+test("web: queryResolver / mutationResolver / streamResolver", async () => {
   // The typed resolvers delegate to `fn`, so they behave identically — with
   // the phantom wrappers unwrapped and the args passed as the second argument.
   const engine = createEngine({
@@ -750,9 +703,7 @@ Deno.test("web: queryResolver / mutationResolver / streamResolver", async () => 
   // GET query
   const queryResponse = await handleWeb(
     engine,
-    new Request(
-      `http://localhost/api/Graph.aQuery?${stringifyJsonURL(["foo", 1])}`,
-    ),
+    new Request(`http://localhost/api/Graph.aQuery?${stringifyJsonURL(["foo", 1])}`),
     { basePath: "/api" },
   );
   assertEquals(queryResponse.status, 200);
@@ -792,7 +743,7 @@ Deno.test("web: queryResolver / mutationResolver / streamResolver", async () => 
   assertEquals(values, [2, 3, 4]);
 });
 
-Deno.test("web: resolver helpers are typed to their endpoint kind", () => {
+test("web: resolver helpers are typed to their endpoint kind", () => {
   // Correct helpers accept the matching endpoints and unwrap their return type.
   const query = queryResolver(graph.Graph.aQuery, (_ctx, [foo, bar]) => ({
     todoName: foo,

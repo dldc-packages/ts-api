@@ -1,15 +1,10 @@
+import { test } from "vite-plus/test";
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
 import { query, queryToObject } from "../../src/client/mod.ts";
 import { createEngine, fn, parse } from "../../src/server/mod.ts";
 import { loadSchema } from "../utils/loadSchema.ts";
-import type {
-  Graph,
-  Namespace,
-  PageConfig,
-  PaginatedResult,
-  Stuff,
-} from "./graph.ts";
+import type { Graph, Namespace, PageConfig, PaginatedResult, Stuff } from "./graph.ts";
 
 interface AllTypes {
   Graph: Graph;
@@ -19,13 +14,11 @@ interface AllTypes {
   PaginatedResult: PaginatedResult<unknown>;
 }
 
-const graph = parse<AllTypes>(
-  loadSchema(resolve("./tests/paginated/graph.ts")),
-);
+const graph = parse<AllTypes>(loadSchema(resolve("./tests/paginated/graph.ts")));
 
 const client = query<AllTypes>();
 
-Deno.test("Resolve paginated", async () => {
+test("Resolve paginated", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],
@@ -47,7 +40,7 @@ Deno.test("Resolve paginated", async () => {
   assertEquals(res, { data: [{ data: "hello", num: 42 }], total: 1 });
 });
 
-Deno.test("Resolve paginated with no args", async () => {
+test("Resolve paginated with no args", async () => {
   const engine = createEngine({
     graph,
     entries: ["Graph"],

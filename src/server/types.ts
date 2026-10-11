@@ -12,15 +12,19 @@ export type TMiddleware = (
 
 export type TLocalTypes = Record<string, TStructure>;
 
-export type TGraphOf<T> = T extends Primitive ? TGraphBase<unknown>
-  : T extends (...args: any) => any ? TGraphFunction<T>
-  : T extends Array<infer U> ? TGraphArray<U>
-  : T extends Record<string, any> ? TGraphObject<T>
-  : TGraphBase<unknown>;
+export type TGraphOf<T> = T extends Primitive
+  ? TGraphBase<unknown>
+  : T extends (...args: any) => any
+    ? TGraphFunction<T>
+    : T extends Array<infer U>
+      ? TGraphArray<U>
+      : T extends Record<string, any>
+        ? TGraphObject<T>
+        : TGraphBase<unknown>;
 
-export interface TGraphFunction<
-  Fn extends (...args: any) => any,
-> extends TGraphBase<Parameters<Fn>> {
+export interface TGraphFunction<Fn extends (...args: any) => any> extends TGraphBase<
+  Parameters<Fn>
+> {
   [TYPES]: { input: Parameters<Fn>; output: ReturnType<Fn> };
   return: TGraphOf<NonNullable<ReturnType<Fn>>>;
 }
@@ -29,13 +33,13 @@ export interface TGraphArray<T> extends TGraphBase<unknown> {
   items: TGraphOf<NonNullable<T>>;
 }
 
-export type TGraphObject<T extends Record<string, any>> =
-  & TGraphBase<unknown>
-  & { [K in keyof T]: TGraphOf<NonNullable<T[K]>> };
+export type TGraphObject<T extends Record<string, any>> = TGraphBase<unknown> & {
+  [K in keyof T]: TGraphOf<NonNullable<T[K]>>;
+};
 
-export type TGraphBuiltins<T extends Record<string, any>> =
-  & TGraphBase<null>
-  & { [K in keyof T]: TGraphBase<T[K]> };
+export type TGraphBuiltins<T extends Record<string, any>> = TGraphBase<null> & {
+  [K in keyof T]: TGraphBase<T[K]>;
+};
 
 export type TBuiltinsFromConfig<Conf extends TBuiltinTypesConfig> = {
   [K in keyof Conf]: Conf[K] extends TBuiltinConfig<infer T> ? T : never;

@@ -119,10 +119,7 @@ export async function* readSSE<T>(
  * of a `message` event, throw on an `error` event, and leave any other event
  * (unknown type, keep-alive, empty data) unanswered.
  */
-function* applySSEEvent<T>(
-  event: TSseEvent,
-  decode: (value: unknown) => unknown,
-): Generator<T> {
+function* applySSEEvent<T>(event: TSseEvent, decode: (value: unknown) => unknown): Generator<T> {
   const type = event.event || EVENT_NAME;
   if (type === ERROR_EVENT_NAME) {
     throw new Error(readSSEError(event.data, decode));
@@ -220,9 +217,7 @@ function readSSEError(
   }
   try {
     const parsed = decode(JSON.parse(data)) as { message?: unknown } | null;
-    return typeof parsed?.message === "string"
-      ? parsed.message
-      : String(parsed);
+    return typeof parsed?.message === "string" ? parsed.message : String(parsed);
   } catch {
     return data;
   }

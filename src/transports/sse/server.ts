@@ -42,10 +42,7 @@ function serialized(value: unknown): string {
  * @param request The HTTP request containing the query.
  * @returns A `text/event-stream` Response.
  */
-export async function handleQuery(
-  engine: TEngine,
-  request: Request,
-): Promise<Response> {
+export async function handleQuery(engine: TEngine, request: Request): Promise<Response> {
   let body: unknown;
   try {
     body = await request.json();
@@ -71,9 +68,7 @@ export async function handleQuery(
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        controller.enqueue(
-          encodeSSEEvent("error", serialized({ message })),
-        );
+        controller.enqueue(encodeSSEEvent("error", serialized({ message })));
       }
       controller.close();
     },
@@ -92,9 +87,7 @@ export async function handleQuery(
 function sseErrorResponse(message: string): Response {
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
-      controller.enqueue(
-        encodeSSEEvent("error", serialized({ message })),
-      );
+      controller.enqueue(encodeSSEEvent("error", serialized({ message })));
       controller.close();
     },
   });

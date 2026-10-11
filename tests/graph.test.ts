@@ -1,94 +1,105 @@
+import { describe, expect, test } from "vite-plus/test";
 import { assertEquals } from "@std/assert";
 import { resolve } from "@std/path";
 import { PATH, REF, ROOT } from "../src/server/constants.ts";
-import {
-  getEndpointResponseStructure,
-  parse,
-  type TGraphBase,
-} from "../src/server/mod.ts";
+import { getEndpointResponseStructure, parse, type TGraphBase } from "../src/server/mod.ts";
 import type { BasicTypes } from "./schemas/basic.types.ts";
 import type { TodoListTypes } from "./schemas/todolist.types.ts";
 import { loadSchema } from "./utils/loadSchema.ts";
 
-Deno.test("todolist snapshot structure", async (test) => {
-  const graph = parse<TodoListTypes>(
-    loadSchema(resolve("./tests/schemas/todolist.ts")),
-  );
-  await test.assertSnapshot(graph[ROOT]);
+test("todolist snapshot structure", async () => {
+  const graph = parse<TodoListTypes>(loadSchema(resolve("./tests/schemas/todolist.ts")));
+  expect(graph[ROOT]).toMatchSnapshot();
 });
 
-const graph = parse<BasicTypes>(
-  loadSchema(resolve("./tests/schemas/basic.ts")),
-);
+const graph = parse<BasicTypes>(loadSchema(resolve("./tests/schemas/basic.ts")));
 
-Deno.test("snapshot structure", async (test) => {
-  await test.assertSnapshot(graph[ROOT]);
+test("snapshot structure", async () => {
+  expect(graph[ROOT]).toMatchSnapshot();
 });
 
-Deno.test("g.User.age", () => {
+test("g.User.age", () => {
   const p1 = graph.User.age;
   const path = p1[PATH];
-  assertEquals(path.map((p) => p.key), ["root.User.age"]);
+  assertEquals(
+    path.map((p) => p.key),
+    ["root.User.age"],
+  );
 });
 
-Deno.test("g.User.group", () => {
+test("g.User.group", () => {
   const p2 = graph.User.group;
   const path = p2[PATH];
-  assertEquals(path.map((p) => p.key), ["root.User.group"]);
+  assertEquals(
+    path.map((p) => p.key),
+    ["root.User.group"],
+  );
 });
 
-Deno.test("g.User.group.name", () => {
+test("g.User.group.name", () => {
   const p3 = graph.User.group.name;
   const path = p3[PATH];
-  assertEquals(path.map((p) => p.key), ["root.User.group", "root.Group.name"]);
+  assertEquals(
+    path.map((p) => p.key),
+    ["root.User.group", "root.Group.name"],
+  );
 });
 
-Deno.test("g.Graph.user (function)", () => {
+test("g.Graph.user (function)", () => {
   const p4 = graph.Graph.user;
   const path = p4[PATH];
-  assertEquals(path.map((p) => p.key), ["root.Graph.user"]);
+  assertEquals(
+    path.map((p) => p.key),
+    ["root.Graph.user"],
+  );
 });
 
-Deno.test("g.Graph.user.return", () => {
+test("g.Graph.user.return", () => {
   const p4 = graph.Graph.user.return;
   const path = p4[PATH];
-  assertEquals(path.map((p) => p.key), ["root.Graph.user.returns"]);
+  assertEquals(
+    path.map((p) => p.key),
+    ["root.Graph.user.returns"],
+  );
 });
 
-Deno.test("g.Graph.user.return[REF]", () => {
+test("g.Graph.user.return[REF]", () => {
   const p4 = graph.Graph.user.return[REF];
   const path = p4[PATH];
-  assertEquals(path.map((p) => p.key), [
-    "root.Graph.user.returns",
-    "root.User",
-  ]);
+  assertEquals(
+    path.map((p) => p.key),
+    ["root.Graph.user.returns", "root.User"],
+  );
 });
 
-Deno.test("g.Graph.user.return.group", () => {
+test("g.Graph.user.return.group", () => {
   const p4 = graph.Graph.user.return.group;
   const path = p4[PATH];
-  assertEquals(path.map((p) => p.key), [
-    "root.Graph.user.returns",
-    "root.User.group",
-  ]);
+  assertEquals(
+    path.map((p) => p.key),
+    ["root.Graph.user.returns", "root.User.group"],
+  );
 });
 
-Deno.test("g.User.maybeGroup", () => {
+test("g.User.maybeGroup", () => {
   const p = graph.User.maybeGroup;
   const path = p[PATH];
-  assertEquals(path.map((p) => p.key), ["root.User.maybeGroup"]);
+  assertEquals(
+    path.map((p) => p.key),
+    ["root.User.maybeGroup"],
+  );
 });
 
-Deno.test("g.User.maybeGroup.name", () => {
+test("g.User.maybeGroup.name", () => {
   const p = graph.User.maybeGroup.name;
   const path = p[PATH];
-  assertEquals(path.map((p) => p.key), [
-    "root.User.maybeGroup.type",
-    "root.Group.name",
-  ]);
+  assertEquals(
+    path.map((p) => p.key),
+    ["root.User.maybeGroup.type", "root.Group.name"],
+  );
 });
 
-Deno.test("matrix", async (t) => {
+describe("matrix", () => {
   const CASES: { graph: TGraphBase<any>; result: string[] }[] = [
     { graph: graph.User.age, result: ["root.User.age"] },
     { graph: graph.User.group, result: ["root.User.group"] },
@@ -113,24 +124,26 @@ Deno.test("matrix", async (t) => {
 
   for (const { graph, result } of CASES) {
     const name = result.join(" > ");
-    await t.step(name, () => {
-      assertEquals(graph[PATH].map((p) => p.key), result);
+    test(name, () => {
+      assertEquals(
+        graph[PATH].map((p) => p.key),
+        result,
+      );
     });
   }
 });
 
-Deno.test("getEndpointResponseStructure resolves an endpoint's return", () => {
-  assertEquals(
-    getEndpointResponseStructure(graph, ["Graph", "user"]),
-    { kind: "ref", key: "root.Graph.user.returns", ref: "User", params: [] },
-  );
-  assertEquals(
-    getEndpointResponseStructure(graph, ["Graph", "randomItem"])?.kind,
-    "union",
-  );
+test("getEndpointResponseStructure resolves an endpoint's return", () => {
+  assertEquals(getEndpointResponseStructure(graph, ["Graph", "user"]), {
+    kind: "ref",
+    key: "root.Graph.user.returns",
+    ref: "User",
+    params: [],
+  });
+  assertEquals(getEndpointResponseStructure(graph, ["Graph", "randomItem"])?.kind, "union");
 });
 
-Deno.test("getEndpointResponseStructure returns undefined for non-endpoints", () => {
+test("getEndpointResponseStructure returns undefined for non-endpoints", () => {
   // An interface is not a function endpoint.
   assertEquals(getEndpointResponseStructure(graph, ["User"]), undefined);
   // Empty path.
@@ -138,8 +151,5 @@ Deno.test("getEndpointResponseStructure returns undefined for non-endpoints", ()
   // Unknown root type.
   assertEquals(getEndpointResponseStructure(graph, ["Nope"]), undefined);
   // Unknown property.
-  assertEquals(
-    getEndpointResponseStructure(graph, ["Graph", "nope"]),
-    undefined,
-  );
+  assertEquals(getEndpointResponseStructure(graph, ["Graph", "nope"]), undefined);
 });

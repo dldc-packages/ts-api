@@ -129,9 +129,6 @@ export type TStructure =
   | TStructureAlias
   | TBuiltinStructure;
 
-export type TAllStructure =
-  | TStructure
-  | TRootStructure
-  | TStructureArguments;
+export type TAllStructure = TStructure | TRootStructure | TStructureArguments;
 
 export type TStructureKind = TAllStructure["kind"];
