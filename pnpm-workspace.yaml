@@ -1,0 +1,10 @@
+# The @dldc packages are the owner's own — they are trusted immediately, so
+# they are exempt from pnpm's 24h minimum-release-age supply-chain policy
+# (which would otherwise reject a freshly-published @dldc dependency right
+# after a release, blocking installs until it ages past the cutoff).
+minimumReleaseAgeExclude:
+  - "@dldc/*"
+
+# esbuild ships a postinstall script that must run (Vite/Rolldown dependency).
+allowBuilds:
+  esbuild: true

@@ -4,47 +4,19 @@ on:
   push:
     branches:
       - main
-    tags:
-      - "v*"
 
 jobs:
   validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: voidzero-dev/setup-vp@v1.21.2
         with:
-          version: 10.33.4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .node-version
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm check
-      - run: pnpm test
-      - run: pnpm pack
+          # Node + package manager resolve from package.json `devEngines`
+          # (runtime + packageManager); no `.node-version` file is used.
+          cache: true
+      - run: vp check
+      - run: vp test run
+      - run: vp pack
       - name: Example smoke test (web transport over HTTP + superjson)
         run: pnpm example:pokedex
-
-  publish:
-    # Publish to npm when a version tag like `v4.0.1` is pushed.
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: validate
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.4
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: .node-version
-          cache: pnpm
-          registry-url: https://registry.npmjs.org
-      - run: pnpm install --frozen-lockfile
-      - name: Publish to npm
-        run: pnpm publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

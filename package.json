@@ -3,6 +3,10 @@
   "version": "5.0.0",
   "description": "TypeScript API - describe an API as a TypeScript graph, then query it from Rust-light clients",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dldc-packages/ts-api.git"
+  },
   "files": [
     "dist"
   ],
@@ -100,8 +104,19 @@
     "typescript": "^6.0.3",
     "vite-plus": "^1.1.0"
   },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.11.2",
+      "onFail": "warn"
+    },
+    "runtime": {
+      "name": "node",
+      "version": "26.11.1",
+      "onFail": "warn"
+    }
+  },
   "engines": {
     "node": "^22.18.0 || ^24.11.0 || >=26.0.0"
-  },
-  "packageManager": "pnpm@10.33.4"
+  }
 }
