@@ -73,7 +73,9 @@
     "pack": "vp pack",
     "example:family-planner": "tsx examples/family-planner/main.ts",
     "example:pokedex": "tsx examples/pokedex/main.ts",
-    "example:pokedex:server": "tsx examples/pokedex/server/index.ts"
+    "example:pokedex:server": "tsx examples/pokedex/server/index.ts",
+    "release:check": "vp check && vp test run && vp pack",
+    "release": "bumpp --execute \"npm run release:check\""
   },
   "dependencies": {
     "@dldc/erreur": "^7.1.0",
@@ -91,6 +93,7 @@
     "@std/testing": "jsr:@std/testing@^1.0.20",
     "@types/node": "^24.0.0",
     "@vitest/coverage-v8": "^5.0.3",
+    "bumpp": "^12.3.0",
     "temporal-polyfill": "^1.0.5",
     "temporal-spec": "^1.0.1",
     "tsx": "^4.19.0",
