@@ -1,6 +1,6 @@
 {
   "name": "@dldc/ts-api",
-  "version": "4.0.1",
+  "version": "5.0.0",
   "description": "TypeScript API - describe an API as a TypeScript graph, then query it from Rust-light clients",
   "license": "MIT",
   "files": [
